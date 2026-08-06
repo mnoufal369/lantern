@@ -48,14 +48,39 @@ export default function ChatView({ sessionId }: { sessionId: string }): React.JS
         className="selectable min-h-0 flex-1 overflow-y-auto px-6 py-4"
       >
         <Transcript blocks={entry.blocks} />
-        {entry.blocks.length === 0 && (
-          <p className="mt-16 text-center text-sm text-zinc-500">
-            Send a message to start the agent in{' '}
-            <span className="font-mono text-zinc-400">{entry.meta.cwd}</span>
-          </p>
-        )}
+        {entry.blocks.length === 0 && <StarterPrompts sessionId={sessionId} cwd={entry.meta.cwd} />}
       </div>
       <Composer sessionId={sessionId} status={entry.meta.status} />
+    </div>
+  )
+}
+
+const STARTERS = [
+  'Give me a tour of this project — what is it and how is it organized?',
+  'Look for anything broken or risky here and propose fixes',
+  'Write a clear README for this folder',
+  'Build a simple, beautiful landing page in this folder'
+]
+
+function StarterPrompts({ sessionId, cwd }: { sessionId: string; cwd: string }): React.JSX.Element {
+  const sendMessage = useSessionsStore((s) => s.sendMessage)
+  return (
+    <div className="mt-14 flex flex-col items-center gap-4">
+      <p className="text-sm text-zinc-500">
+        Your agent is ready in <span className="font-mono text-zinc-400">{cwd.replace(/^\/Users\/[^/]+/, '~')}</span>
+      </p>
+      <div className="flex max-w-lg flex-wrap justify-center gap-2">
+        {STARTERS.map((prompt) => (
+          <button
+            key={prompt}
+            onClick={() => void sendMessage(sessionId, prompt)}
+            className="rounded-full border border-deck-border bg-deck-panel px-3.5 py-1.5 text-[12.5px] text-zinc-300 transition-colors hover:border-deck-accent/60 hover:bg-deck-accent/10 hover:text-zinc-100"
+          >
+            {prompt}
+          </button>
+        ))}
+      </div>
+      <p className="text-[11px] text-zinc-600">…or type anything below. The agent asks before changing files.</p>
     </div>
   )
 }

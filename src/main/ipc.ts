@@ -68,4 +68,5 @@ export function registerIpc(manager: SessionManager): void {
 
   ipcMain.handle('app:getSettings', () => Settings.get())
   ipcMain.handle('app:setSettings', (_e, req: { settings: Partial<AppSettings> }) => Settings.set(req.settings))
+  ipcMain.handle('app:getAuthStatus', () => Settings.authStatus())
 }

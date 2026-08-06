@@ -1,5 +1,9 @@
+import { safeStorage } from 'electron'
+import { readFileSync } from 'node:fs'
+import { homedir } from 'node:os'
+import { join } from 'node:path'
 import Store from 'electron-store'
-import type { AgentProfile, AppSettings, SessionMeta } from '@shared/types'
+import type { AgentProfile, AppSettings, AuthStatus, SessionMeta } from '@shared/types'
 import { DEFAULT_MAX_CONCURRENT_SESSIONS, DEFAULT_MODEL } from '@shared/constants'
 
 const profileStore = new Store<{ profiles: AgentProfile[] }>({
@@ -12,16 +16,47 @@ const sessionStore = new Store<{ sessions: SessionMeta[] }>({
   defaults: { sessions: [] }
 })
 
-const settingsStore = new Store<{ settings: AppSettings }>({
+interface PersistedSettings {
+  /** API key encrypted with Electron safeStorage (keychain-backed), base64. */
+  apiKeyEnc: string
+  theme: 'dark'
+  maxConcurrentSessions: number
+}
+
+const settingsStore = new Store<{ settings: PersistedSettings }>({
   name: 'settings',
   defaults: {
     settings: {
-      apiKey: '',
+      apiKeyEnc: '',
       theme: 'dark',
       maxConcurrentSessions: DEFAULT_MAX_CONCURRENT_SESSIONS
     }
   }
 })
+
+function encryptKey(plain: string): string {
+  if (plain === '') {
+    return ''
+  }
+  if (safeStorage.isEncryptionAvailable()) {
+    return safeStorage.encryptString(plain).toString('base64')
+  }
+  return `plain:${Buffer.from(plain, 'utf8').toString('base64')}`
+}
+
+function decryptKey(stored: string): string {
+  if (stored === '') {
+    return ''
+  }
+  try {
+    if (stored.startsWith('plain:')) {
+      return Buffer.from(stored.slice(6), 'base64').toString('utf8')
+    }
+    return safeStorage.decryptString(Buffer.from(stored, 'base64'))
+  } catch {
+    return ''
+  }
+}
 
 export const ProfileStore = {
   list(): AgentProfile[] {
@@ -111,12 +146,48 @@ export const SessionStore = {
 }
 
 export const Settings = {
+  /** Renderer-safe view — the API key itself never leaves the main process. */
   get(): AppSettings {
-    return settingsStore.get('settings')
+    const persisted = settingsStore.get('settings')
+    return {
+      apiKey: '',
+      hasApiKey: persisted.apiKeyEnc !== '',
+      theme: persisted.theme,
+      maxConcurrentSessions: persisted.maxConcurrentSessions
+    }
+  },
+  /** Decrypted key for the session runtime only. */
+  getApiKey(): string {
+    return decryptKey(settingsStore.get('settings').apiKeyEnc)
   },
   set(patch: Partial<AppSettings>): AppSettings {
-    const merged = { ...settingsStore.get('settings'), ...patch }
-    settingsStore.set('settings', merged)
-    return merged
+    const persisted = settingsStore.get('settings')
+    if (patch.apiKey !== undefined) {
+      persisted.apiKeyEnc = encryptKey(patch.apiKey.trim())
+    }
+    if (patch.maxConcurrentSessions !== undefined) {
+      persisted.maxConcurrentSessions = Math.max(1, Math.min(10, patch.maxConcurrentSessions))
+    }
+    settingsStore.set('settings', persisted)
+    return Settings.get()
+  },
+  authStatus(): AuthStatus {
+    if (settingsStore.get('settings').apiKeyEnc !== '') {
+      return { source: 'settings-key', detail: 'API key from AgentDeck Settings (encrypted at rest)' }
+    }
+    if (process.env.ANTHROPIC_API_KEY) {
+      return { source: 'env-key', detail: 'ANTHROPIC_API_KEY from your environment' }
+    }
+    try {
+      const raw = readFileSync(join(homedir(), '.claude.json'), 'utf8')
+      const parsed = JSON.parse(raw) as { oauthAccount?: { emailAddress?: string } }
+      const email = parsed.oauthAccount?.emailAddress
+      if (email) {
+        return { source: 'claude-login', detail: email }
+      }
+    } catch {
+      // No Claude Code config on this machine.
+    }
+    return { source: 'none', detail: '' }
   }
 }

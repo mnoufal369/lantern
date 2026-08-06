@@ -121,9 +121,16 @@ export interface GitStatusSummary {
 }
 
 export interface AppSettings {
+  /** Always empty when sent to the renderer — the key never leaves the main process. */
   apiKey: string
+  hasApiKey: boolean
   theme: 'dark'
   maxConcurrentSessions: number
+}
+
+export interface AuthStatus {
+  source: 'settings-key' | 'env-key' | 'claude-login' | 'none'
+  detail: string
 }
 
 export interface ModelInfo {

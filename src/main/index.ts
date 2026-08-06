@@ -42,6 +42,12 @@ function createWindow(): void {
   })
 
   mainWindow.once('ready-to-show', () => mainWindow?.show())
+  mainWindow.webContents.setWindowOpenHandler(() => ({ action: 'deny' }))
+  mainWindow.webContents.on('will-navigate', (event, url) => {
+    if (!url.startsWith('http://localhost') && !url.startsWith('file://')) {
+      event.preventDefault()
+    }
+  })
   mainWindow.on('closed', () => {
     mainWindow = null
   })

@@ -1,6 +1,7 @@
 import type {
   AgentProfile,
   AppSettings,
+  AuthStatus,
   GitStatusSummary,
   ModelInfo,
   PermissionDecision,
@@ -38,6 +39,7 @@ export interface IpcApi {
   'shell:revealInFinder': (req: { path: string }) => void
   'app:getSettings': (req?: undefined) => AppSettings
   'app:setSettings': (req: { settings: Partial<AppSettings> }) => AppSettings
+  'app:getAuthStatus': (req?: undefined) => AuthStatus
 }
 
 /**

@@ -65,7 +65,7 @@ export default function App(): React.JSX.Element {
     return () => window.removeEventListener('keydown', handler)
   }, [])
 
-  const needsApiKey = settings !== null && settings.apiKey.trim() === ''
+  const needsApiKey = settings !== null && !settings.hasApiKey
 
   return (
     <div className="flex h-full flex-col">
@@ -96,6 +96,27 @@ export default function App(): React.JSX.Element {
   )
 }
 
+const MISSIONS = [
+  {
+    emoji: '🌱',
+    title: 'Build something new',
+    text: 'A website, a script, a tiny app — describe it in plain words, your agent writes every line.',
+    gradient: 'from-emerald-500/15 to-teal-500/5'
+  },
+  {
+    emoji: '🔧',
+    title: 'Fix or improve a project',
+    text: 'Point it at a folder. It reads the code, proposes changes as diffs, and asks before touching anything.',
+    gradient: 'from-indigo-500/15 to-violet-500/5'
+  },
+  {
+    emoji: '📖',
+    title: 'Understand anything',
+    text: 'Drop it into an unfamiliar project and ask "explain this to me" — get a guided tour, no jargon.',
+    gradient: 'from-amber-500/15 to-orange-500/5'
+  }
+]
+
 function EmptyState({
   onNewSession,
   needsApiKey,
@@ -106,17 +127,34 @@ function EmptyState({
   onOpenSettings: () => void
 }): React.JSX.Element {
   return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-4">
+    <div className="flex flex-1 flex-col items-center justify-center gap-5 px-8">
       <div className="text-5xl">🛰️</div>
-      <h1 className="text-xl font-semibold text-zinc-100">Welcome to AgentDeck</h1>
-      <p className="max-w-sm text-center text-sm text-zinc-400">
-        Run and configure AI agents in parallel — with rich diffs, permission control and git awareness.
-      </p>
+      <div className="text-center">
+        <h1 className="bg-gradient-to-r from-indigo-300 via-zinc-100 to-violet-300 bg-clip-text text-2xl font-bold text-transparent">
+          Welcome to AgentDeck
+        </h1>
+        <p className="mt-1.5 max-w-md text-sm text-zinc-400">
+          Your deck of AI agents. You talk, they build — you stay in control of every change.
+        </p>
+      </div>
+      <div className="grid w-full max-w-2xl grid-cols-3 gap-3">
+        {MISSIONS.map((mission) => (
+          <button
+            key={mission.title}
+            onClick={onNewSession}
+            className={`group rounded-xl border border-deck-border bg-gradient-to-b ${mission.gradient} p-4 text-left transition-transform hover:-translate-y-0.5 hover:border-zinc-600`}
+          >
+            <div className="text-2xl">{mission.emoji}</div>
+            <p className="mt-2 text-sm font-semibold text-zinc-100">{mission.title}</p>
+            <p className="mt-1 text-[12px] leading-relaxed text-zinc-400">{mission.text}</p>
+          </button>
+        ))}
+      </div>
       <button
         onClick={onNewSession}
-        className="rounded-lg bg-deck-accent px-4 py-2 text-sm font-medium text-white hover:opacity-90"
+        className="rounded-lg bg-deck-accent px-5 py-2 text-sm font-medium text-white shadow-lg shadow-indigo-950/40 hover:opacity-90"
       >
-        New Session&ensp;⌘N
+        Start a session&ensp;⌘N
       </button>
       {needsApiKey && (
         <button onClick={onOpenSettings} className="text-xs text-zinc-500 underline-offset-2 hover:underline">

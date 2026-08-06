@@ -1,0 +1,372 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AgentDeck — Your deck of AI agents for the Mac</title>
+<meta name="description" content="AgentDeck is a native macOS cockpit for AI coding agents. Run agents in parallel, review every change as a diff, and stay in control — no terminal required.">
+<style>
+  :root {
+    --bg: #09090b; --panel: #111113; --raised: #18181b; --border: #26262a;
+    --text: #e4e4e7; --dim: #a1a1aa; --faint: #64646e;
+    --accent: #6366f1; --accent2: #8b5cf6; --green: #4ade80; --amber: #f59e0b;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
+    line-height: 1.6; overflow-x: hidden;
+  }
+  .mono { font-family: "SF Mono", ui-monospace, Menlo, monospace; }
+  a { color: inherit; text-decoration: none; }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+
+  /* nav */
+  nav {
+    position: sticky; top: 0; z-index: 50; backdrop-filter: blur(14px);
+    background: rgba(9,9,11,.75); border-bottom: 1px solid var(--border);
+  }
+  nav .wrap { display: flex; align-items: center; gap: 28px; height: 60px; }
+  nav .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 16px; }
+  nav .links { display: flex; gap: 22px; margin-left: auto; font-size: 13.5px; color: var(--dim); }
+  nav .links a:hover { color: var(--text); }
+  .btn {
+    display: inline-block; padding: 10px 20px; border-radius: 10px; font-weight: 600; font-size: 14px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2)); color: #fff;
+    box-shadow: 0 8px 30px rgba(99,102,241,.35); transition: transform .15s, box-shadow .15s;
+  }
+  .btn:hover { transform: translateY(-1px); box-shadow: 0 12px 36px rgba(99,102,241,.45); }
+  .btn.ghost { background: none; border: 1px solid var(--border); box-shadow: none; color: var(--dim); }
+  .btn.ghost:hover { color: var(--text); border-color: var(--faint); }
+  nav .btn { padding: 7px 14px; font-size: 13px; }
+
+  /* hero */
+  header { position: relative; padding: 90px 0 60px; text-align: center; }
+  .glow {
+    position: absolute; inset: -200px 0 auto; height: 600px; pointer-events: none;
+    background: radial-gradient(600px 300px at 50% 20%, rgba(99,102,241,.22), transparent 70%),
+                radial-gradient(400px 250px at 70% 10%, rgba(139,92,246,.15), transparent 70%);
+  }
+  .eyebrow {
+    display: inline-block; font-size: 12.5px; letter-spacing: .04em; color: #c7d2fe;
+    border: 1px solid rgba(99,102,241,.4); background: rgba(99,102,241,.12);
+    padding: 4px 14px; border-radius: 999px; margin-bottom: 22px;
+  }
+  h1 {
+    font-size: clamp(36px, 6vw, 60px); line-height: 1.08; font-weight: 800; letter-spacing: -.02em;
+    background: linear-gradient(120deg, #c7d2fe, #f4f4f5 40%, #ddd6fe);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .sub { max-width: 620px; margin: 22px auto 0; font-size: 18px; color: var(--dim); }
+  .cta { margin-top: 34px; display: flex; gap: 14px; justify-content: center; align-items: center; }
+  .cta-note { margin-top: 14px; font-size: 12.5px; color: var(--faint); }
+
+  /* app mockup */
+  .mock {
+    margin: 70px auto 0; max-width: 920px; border-radius: 16px; overflow: hidden; text-align: left;
+    border: 1px solid var(--border); background: var(--panel);
+    box-shadow: 0 40px 120px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.03) inset;
+    font-size: 12px;
+  }
+  .mock-title { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-bottom: 1px solid var(--border); background: #0d0d10; }
+  .dot { width: 11px; height: 11px; border-radius: 50%; }
+  .mock-body { display: grid; grid-template-columns: 200px 1fr 190px; min-height: 420px; }
+  .mock aside { border-right: 1px solid var(--border); padding: 10px; }
+  .sess { border-radius: 9px; padding: 8px 10px; margin-bottom: 6px; }
+  .sess.active { background: var(--raised); border: 1px solid var(--border); }
+  .sess .t { display: flex; align-items: center; gap: 7px; font-weight: 600; color: var(--text); }
+  .sess .m { color: var(--faint); font-size: 10.5px; margin-top: 2px; }
+  .pulse { width: 7px; height: 7px; border-radius: 50%; background: var(--green); animation: pulse 1.4s infinite; }
+  .pulse.violet { background: var(--accent); } .pulse.amber { background: var(--amber); animation: none; }
+  @keyframes pulse { 50% { opacity: .3; } }
+  .chat { padding: 14px 18px; display: flex; flex-direction: column; gap: 10px; }
+  .bubble-user { align-self: flex-end; background: rgba(99,102,241,.15); border-radius: 14px 14px 4px 14px; padding: 8px 13px; color: #e0e7ff; max-width: 75%; }
+  .bubble-ai { color: var(--dim); max-width: 90%; }
+  .toolcard { border: 1px solid var(--border); background: #0d0d10; border-radius: 10px; overflow: hidden; }
+  .toolcard .h { display: flex; gap: 8px; padding: 7px 11px; color: var(--dim); border-bottom: 1px solid var(--border); }
+  .diff { padding: 8px 12px; line-height: 1.7; }
+  .del { background: rgba(127,29,29,.35); color: #fca5a5; display: block; padding: 0 6px; border-radius: 3px; }
+  .add { background: rgba(20,83,45,.4); color: #86efac; display: block; padding: 0 6px; border-radius: 3px; }
+  .turn { display: flex; align-items: center; gap: 10px; color: var(--faint); font-size: 10.5px; }
+  .turn::before, .turn::after { content: ""; height: 1px; flex: 1; background: var(--border); }
+  .gitpane { border-left: 1px solid var(--border); padding: 12px; }
+  .gitpane .gh { font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: var(--faint); margin: 10px 0 6px; }
+  .gf { display: flex; gap: 8px; padding: 3px 0; color: var(--dim); }
+  .gf b { width: 12px; text-align: center; }
+  .permission {
+    margin-top: 4px; border: 1px solid rgba(245,158,11,.4); background: rgba(69,26,3,.25);
+    border-radius: 10px; padding: 9px 12px;
+  }
+  .permission .pt { color: #fcd34d; font-weight: 600; margin-bottom: 6px; }
+  .pbtns { display: flex; gap: 6px; }
+  .pbtn { border-radius: 7px; padding: 3px 10px; font-size: 10.5px; border: 1px solid var(--border); color: var(--dim); }
+  .pbtn.allow { background: #15803d; border: none; color: #fff; }
+  .pbtn.once { background: var(--accent); border: none; color: #fff; }
+
+  /* sections */
+  section { padding: 84px 0; position: relative; }
+  .kicker { text-align: center; font-size: 13px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+  h2 { text-align: center; font-size: clamp(26px, 4vw, 38px); font-weight: 800; letter-spacing: -.01em; margin-top: 10px; }
+  .lead { text-align: center; max-width: 640px; margin: 14px auto 0; color: var(--dim); font-size: 16px; }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; margin-top: 48px; }
+  .card {
+    border: 1px solid var(--border); border-radius: 16px; padding: 24px; background: linear-gradient(180deg, var(--raised), var(--panel));
+    transition: transform .18s, border-color .18s;
+  }
+  .card:hover { transform: translateY(-3px); border-color: #3f3f50; }
+  .card .ic { font-size: 24px; }
+  .card h3 { font-size: 15.5px; margin: 12px 0 6px; }
+  .card p { font-size: 13.5px; color: var(--dim); }
+
+  .split { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center; margin-top: 48px; }
+  .split ul { list-style: none; display: flex; flex-direction: column; gap: 14px; }
+  .split li { display: flex; gap: 12px; font-size: 14.5px; color: var(--dim); }
+  .split li b { color: var(--text); }
+  .check { color: var(--green); font-weight: 700; }
+  @media (max-width: 760px) { .split { grid-template-columns: 1fr; } .mock-body { grid-template-columns: 1fr; } .mock aside, .gitpane { display: none; } }
+
+  /* pricing */
+  .tiers { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 18px; margin-top: 48px; }
+  .tier { border: 1px solid var(--border); border-radius: 18px; padding: 30px 26px; background: var(--panel); position: relative; }
+  .tier.hot { border-color: rgba(99,102,241,.6); background: linear-gradient(180deg, rgba(99,102,241,.10), var(--panel) 55%); }
+  .tier .badge { position: absolute; top: -11px; left: 50%; transform: translateX(-50%); background: linear-gradient(135deg, var(--accent), var(--accent2)); font-size: 11px; font-weight: 700; padding: 3px 12px; border-radius: 999px; }
+  .tier h3 { font-size: 16px; }
+  .price { font-size: 38px; font-weight: 800; margin: 12px 0 2px; }
+  .price span { font-size: 13.5px; font-weight: 500; color: var(--faint); }
+  .tier ul { list-style: none; margin: 18px 0 24px; display: flex; flex-direction: column; gap: 9px; font-size: 13.5px; color: var(--dim); }
+  .tier .btn { width: 100%; text-align: center; }
+  .pricing-note { text-align: center; margin-top: 26px; color: var(--faint); font-size: 13px; }
+
+  /* faq + footer */
+  details { border-bottom: 1px solid var(--border); padding: 18px 4px; max-width: 720px; margin: 0 auto; }
+  summary { cursor: pointer; font-weight: 600; font-size: 15px; list-style: none; display: flex; justify-content: space-between; }
+  summary::after { content: "+"; color: var(--faint); }
+  details[open] summary::after { content: "–"; }
+  details p { margin-top: 10px; color: var(--dim); font-size: 14px; }
+  footer { border-top: 1px solid var(--border); padding: 40px 0 60px; text-align: center; color: var(--faint); font-size: 13px; }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap">
+    <a class="brand" href="#">
+      <svg width="26" height="26" viewBox="0 0 64 64"><rect width="64" height="64" rx="15" fill="#1b1b30"/><rect x="14" y="14" width="36" height="9" rx="4.5" fill="#7276f2"/><rect x="14" y="27.5" width="36" height="9" rx="4.5" fill="#8b8ff4"/><rect x="14" y="41" width="36" height="9" rx="4.5" fill="#a5a8f6"/><circle cx="20" cy="18.5" r="2.6" fill="#e0e7ff"/><circle cx="20" cy="32" r="2.6" fill="#e0e7ff"/><circle cx="20" cy="45.5" r="2.6" fill="#4ade80"/></svg>
+      AgentDeck
+    </a>
+    <div class="links">
+      <a href="#features">Features</a>
+      <a href="#everyone">For everyone</a>
+      <a href="#security">Security</a>
+      <a href="#pricing">Pricing</a>
+    </div>
+    <a class="btn" href="#download">Download for Mac</a>
+  </div>
+</nav>
+
+<header>
+  <div class="glow"></div>
+  <div class="wrap">
+    <span class="eyebrow">⌘ The AI agent cockpit for macOS</span>
+    <h1>Your deck of AI agents.<br>No terminal required.</h1>
+    <p class="sub">
+      AgentDeck puts the world's best coding agent in a beautiful native Mac app.
+      Run agents in parallel, watch every change land as a reviewable diff, and approve
+      each action with one click — powered by the same engine as Claude Code.
+    </p>
+    <div class="cta">
+      <a class="btn" href="#download">Download for Mac&ensp;→</a>
+      <a class="btn ghost" href="#features">See what it does</a>
+    </div>
+    <p class="cta-note">Apple Silicon · Uses your existing Claude login or API key · Your code never leaves your Mac*</p>
+
+    <div class="mock">
+      <div class="mock-title">
+        <span class="dot" style="background:#ff5f57"></span><span class="dot" style="background:#febc2e"></span><span class="dot" style="background:#28c840"></span>
+        <span style="color:var(--faint); margin-left:8px; font-weight:600">AgentDeck</span>
+      </div>
+      <div class="mock-body">
+        <aside>
+          <div class="sess active">
+            <div class="t"><span class="pulse"></span> Add auth to API</div>
+            <div class="m">~/projects/api · running Bash · $0.42</div>
+          </div>
+          <div class="sess">
+            <div class="t"><span class="pulse violet"></span> Portfolio website</div>
+            <div class="m">~/sites/me · thinking… · $0.12</div>
+          </div>
+          <div class="sess">
+            <div class="t"><span class="pulse amber"></span> Fix flaky tests</div>
+            <div class="m">~/projects/web · needs permission</div>
+          </div>
+        </aside>
+        <div class="chat">
+          <div class="bubble-user">add login with sessions to my api</div>
+          <div class="bubble-ai">I'll add session-based auth. Creating the middleware first…</div>
+          <div class="toolcard">
+            <div class="h">✏️ <b>Edit</b> <span class="mono">src/auth.ts</span> <span style="margin-left:auto;color:var(--green)">✓ allowed</span></div>
+            <div class="diff mono">
+              <span class="del">- app.use(noAuth())</span>
+              <span class="add">+ app.use(session({ secret: env.SECRET }))</span>
+              <span class="add">+ app.use(requireLogin(["/api"]))</span>
+            </div>
+          </div>
+          <div class="permission">
+            <div class="pt">🛡️ Agent wants to run <span class="mono">npm test</span></div>
+            <div class="pbtns"><span class="pbtn">Deny</span><span class="pbtn once">Allow once</span><span class="pbtn allow">Always allow</span></div>
+          </div>
+          <div class="turn">✓ turn done · $0.13 · 8.2k tokens</div>
+        </div>
+        <div class="gitpane">
+          <div class="gh">Branch</div>
+          <div class="gf"><b style="color:#a5b4fc">⎇</b> feature/auth ↑2</div>
+          <div class="gh">Changes (3)</div>
+          <div class="gf"><b style="color:var(--amber)">M</b> src/auth.ts</div>
+          <div class="gf"><b style="color:var(--green)">A</b> src/session.ts</div>
+          <div class="gf"><b style="color:var(--amber)">M</b> package.json</div>
+          <div class="gh">Touched this session</div>
+          <div class="gf mono" style="font-size:10.5px">src/auth.ts</div>
+          <div class="gf mono" style="font-size:10.5px">src/session.ts</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<section id="features">
+  <div class="wrap">
+    <p class="kicker">Everything the terminal does — visual</p>
+    <h2>A cockpit, not a console</h2>
+    <p class="lead">Every capability of a terminal AI agent, redesigned as an interface a human actually enjoys.</p>
+    <div class="grid">
+      <div class="card"><div class="ic">🪄</div><h3>Rich live transcript</h3><p>File edits render as red/green diffs, commands as terminal blocks, plans as checklists, and code as copy-ready snippets — all streaming in real time.</p></div>
+      <div class="card"><div class="ic">🛡️</div><h3>One-click permission control</h3><p>See the exact diff or command an agent wants to run before it happens. Deny, allow once, or always allow — and flip between Plan, Ask, and Auto modes mid-flight.</p></div>
+      <div class="card"><div class="ic">🚀</div><h3>Agents in parallel</h3><p>Run several agents across different projects at once. Live status, per-session cost, and a dashboard that shows exactly who's doing what.</p></div>
+      <div class="card"><div class="ic">🎨</div><h3>Agent builder</h3><p>Design reusable agents: custom instructions, model choice, permission style, allowed tools, even MCP extensions — saved as one-click profiles.</p></div>
+      <div class="card"><div class="ic">⎇</div><h3>Git-aware by design</h3><p>Branch info, changed files with inline diffs, and per-file revert built into every session. Review like a pull request, undo like a time machine.</p></div>
+      <div class="card"><div class="ic">💬</div><h3>Talk while it works</h3><p>The composer never locks. Queue follow-ups mid-run, interrupt instantly with Esc, and keep the conversation flowing.</p></div>
+      <div class="card"><div class="ic">🔎</div><h3>Named, searchable threads</h3><p>Every session has a human name — rename with a double-click, find anything by search. Close the app, come back, resume where you left off.</p></div>
+      <div class="card"><div class="ic">📊</div><h3>Cost transparency</h3><p>Live token and dollar counters per turn and per session, plus hard budget caps per agent. No surprises on your bill.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="everyone" style="background:linear-gradient(180deg, transparent, rgba(99,102,241,.05), transparent)">
+  <div class="wrap">
+    <p class="kicker">Not just for developers</p>
+    <h2>If you can describe it, you can build it</h2>
+    <div class="split">
+      <ul>
+        <li><span class="check">✓</span><span><b>Plain-language missions.</b> "Build me a simple website for my bakery" is a valid instruction. The agent plans, builds, and shows you everything it did.</span></li>
+        <li><span class="check">✓</span><span><b>Nothing happens without you.</b> Every file change is previewed and approved by you. One click undoes any change.</span></li>
+        <li><span class="check">✓</span><span><b>Starter missions included.</b> Build something new, fix a project, or get a guided tour of any folder — one click from the welcome screen.</span></li>
+        <li><span class="check">✓</span><span><b>Learn as you go.</b> Ask "explain what you just did" any time. It's a builder and a patient teacher in one.</span></li>
+      </ul>
+      <div class="card" style="padding:34px">
+        <div class="ic">🌱</div>
+        <h3 style="font-size:18px">Your first mission, 60 seconds</h3>
+        <p style="margin-top:10px">1. Open AgentDeck, press <b class="mono">⌘N</b><br>
+        2. Pick a folder (even an empty one)<br>
+        3. Type: <i>"Build a beautiful one-page site about my dog"</i><br>
+        4. Approve the changes it proposes<br>
+        5. Open the folder — it's real. You built that.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="security">
+  <div class="wrap">
+    <p class="kicker">Security first</p>
+    <h2>Locked down like it should be</h2>
+    <p class="lead">AgentDeck is built on the principle that an AI with your keyboard deserves a seatbelt.</p>
+    <div class="grid">
+      <div class="card"><div class="ic">🔐</div><h3>Keys encrypted in your keychain</h3><p>API keys are encrypted at rest with macOS keychain-backed storage, and never leave the app's core process — the UI literally cannot read them.</p></div>
+      <div class="card"><div class="ic">🏠</div><h3>100% local, zero telemetry</h3><p>Sessions, transcripts and profiles live only on your Mac. No analytics, no tracking, no third-party servers. The only network traffic is the agent talking to Anthropic.</p></div>
+      <div class="card"><div class="ic">🧱</div><h3>Sandboxed by architecture</h3><p>The interface runs fully sandboxed with no file or network access, behind a strict content-security policy and a typed, enumerated bridge.</p></div>
+      <div class="card"><div class="ic">✋</div><h3>Human in the loop, always</h3><p>Unattended permission requests fail closed after 5 minutes. Full-auto mode is opt-in, visibly flagged red, and one click away from off.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="pricing">
+  <div class="wrap">
+    <p class="kicker">Pricing</p>
+    <h2>Fair, simple, indie</h2>
+    <p class="lead">You bring your own Claude login or API key — AgentDeck adds zero markup to your AI usage, ever.</p>
+    <div class="tiers">
+      <div class="tier">
+        <h3>Free</h3>
+        <div class="price">$0</div>
+        <ul>
+          <li>✓ Full chat cockpit &amp; rich diffs</li>
+          <li>✓ Permission control, all modes</li>
+          <li>✓ Git panel with revert</li>
+          <li>✓ 2 parallel sessions</li>
+          <li>✓ 3 agent profiles</li>
+        </ul>
+        <a class="btn ghost" href="#download">Download free</a>
+      </div>
+      <div class="tier hot">
+        <span class="badge">EARLY BIRD</span>
+        <h3>Pro</h3>
+        <div class="price">$19<span> / year — founding price, $29 later</span></div>
+        <ul>
+          <li>✓ Everything in Free</li>
+          <li>✓ Unlimited parallel sessions</li>
+          <li>✓ Unlimited agent profiles</li>
+          <li>✓ MCP server extensions</li>
+          <li>✓ Priority updates &amp; support</li>
+        </ul>
+        <a class="btn" href="#download">Get Pro&ensp;→</a>
+      </div>
+      <div class="tier">
+        <h3>Team <span style="font-size:11px;color:var(--faint)">(coming)</span></h3>
+        <div class="price">$49<span> / seat / year</span></div>
+        <ul>
+          <li>✓ Everything in Pro</li>
+          <li>✓ Shared agent profiles</li>
+          <li>✓ Org permission policies</li>
+          <li>✓ Central billing</li>
+        </ul>
+        <a class="btn ghost" href="#download">Join waitlist</a>
+      </div>
+    </div>
+    <p class="pricing-note">30-day money-back, no questions. One license, all your Macs.</p>
+  </div>
+</section>
+
+<section id="download" style="text-align:center">
+  <div class="wrap">
+    <h2>Fly the deck today</h2>
+    <p class="lead">AgentDeck 0.1 for Apple Silicon Macs. Bring your Claude Code login or an Anthropic API key.</p>
+    <div class="cta">
+      <a class="btn" href="AgentDeck-0.1.0-arm64.dmg">Download AgentDeck-0.1.0-arm64.dmg</a>
+    </div>
+    <p class="cta-note">Early build, unsigned — right-click the app and choose "Open" the first time.</p>
+  </div>
+</section>
+
+<section style="padding-top:0">
+  <div class="wrap">
+    <p class="kicker">FAQ</p>
+    <h2 style="margin-bottom:28px">Questions, answered</h2>
+    <details><summary>Do I need to know how to code?</summary><p>No. Describe what you want in plain language; the agent writes the code and shows you everything it changes. Developers get power tools; everyone else gets a builder that explains itself.</p></details>
+    <details><summary>How does it connect to Claude?</summary><p>Three ways, automatically: an API key you save in Settings (encrypted), an ANTHROPIC_API_KEY in your environment, or your existing Claude Code login on the Mac. Settings shows exactly which one is active.</p></details>
+    <details><summary>What does AI usage cost?</summary><p>Whatever your Claude plan or API usage costs — AgentDeck adds nothing on top and shows live per-turn costs so you always know. Budget caps per agent are built in.</p></details>
+    <details><summary>Can it break my project?</summary><p>It asks before changing files (unless you opt into auto mode), every change is visible as a diff, and the git panel reverts any file with one click. Work on a branch for extra comfort.</p></details>
+    <details><summary>Is my code sent anywhere?</summary><p>*Only what the agent needs goes to Anthropic's API to generate responses — the same as Claude Code in your terminal. AgentDeck itself has no servers, no telemetry, and stores everything locally.</p></details>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <p><b style="color:var(--dim)">AgentDeck</b> — built on the Claude Agent SDK. Not affiliated with Anthropic.</p>
+    <p style="margin-top:6px">© 2026 Mohammad Noufal · <a href="#security" style="text-decoration:underline">Security</a></p>
+  </div>
+</footer>
+
+</body>
+</html>

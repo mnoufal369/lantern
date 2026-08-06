@@ -110,7 +110,7 @@ export class SessionManager {
         SessionStore.save(sessionMeta)
       },
       emitGitChanged: (sessionId) => this.send('git:changed', { sessionId }),
-      getApiKey: () => Settings.get().apiKey
+      getApiKey: () => Settings.getApiKey()
     })
     this.runtimes.set(meta.id, runtime)
     runtime.start()
