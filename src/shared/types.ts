@@ -120,12 +120,18 @@ export interface GitStatusSummary {
   files: GitFileChange[]
 }
 
+export type UiMode = 'pro' | 'simple'
+
+export type Persona = 'developer' | 'qa' | 'consultant' | 'curious'
+
 export interface AppSettings {
   /** Always empty when sent to the renderer — the key never leaves the main process. */
   apiKey: string
   hasApiKey: boolean
   theme: 'dark'
   maxConcurrentSessions: number
+  uiMode: UiMode
+  onboarded: boolean
 }
 
 export interface AuthStatus {

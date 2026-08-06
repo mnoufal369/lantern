@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer } from 'electron'
+import { contextBridge, ipcRenderer, webUtils } from 'electron'
 import type { IpcApi, IpcEventChannel, IpcEvents } from '@shared/ipc'
 
 export interface DeckApi {
@@ -10,6 +10,8 @@ export interface DeckApi {
     channel: K,
     callback: (payload: IpcEvents[K]) => void
   ) => () => void
+  /** Resolves the filesystem path of a dropped File (drag & drop). */
+  getPathForFile: (file: File) => string
 }
 
 const api: DeckApi = {
@@ -20,7 +22,8 @@ const api: DeckApi = {
     }
     ipcRenderer.on(channel, listener)
     return () => ipcRenderer.removeListener(channel, listener)
-  }
+  },
+  getPathForFile: (file) => webUtils.getPathForFile(file)
 }
 
 contextBridge.exposeInMainWorld('api', api)

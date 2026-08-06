@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { SendHorizonal, Square } from 'lucide-react'
 import { useSessionsStore } from '@/stores/useSessionsStore'
+import { useSettingsStore } from '@/stores/useSettingsStore'
 import { FALLBACK_MODELS } from '@shared/constants'
 import type { PermissionMode, SessionStatus } from '@shared/types'
 
@@ -24,6 +25,7 @@ export default function Composer({
   const meta = useSessionsStore((s) => s.sessions[sessionId]?.meta)
   const setModel = useSessionsStore((s) => s.setModel)
   const setPermissionMode = useSessionsStore((s) => s.setPermissionMode)
+  const simple = useSettingsStore((s) => s.settings?.uiMode === 'simple')
 
   const busy = status.kind === 'thinking' || status.kind === 'running-tool'
 
@@ -74,7 +76,7 @@ export default function Composer({
           </button>
         )}
       </div>
-      {meta && (
+      {meta && !simple && (
         <div className="mt-2 flex items-center gap-2 px-1">
           <select
             value={meta.model}

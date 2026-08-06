@@ -18,6 +18,8 @@ import type {
  */
 export interface IpcApi {
   'sessions:create': (req: { profileId: string; cwd: string }) => SessionMeta
+  'sessions:createFromRepo': (req: { profileId: string; repoUrl: string }) => SessionMeta
+  'sessions:exportTranscript': (req: { sessionId: string; markdown: string }) => string | null
   'sessions:send': (req: { sessionId: string; text: string }) => void
   'sessions:interrupt': (req: { sessionId: string }) => void
   'sessions:archive': (req: { sessionId: string }) => void

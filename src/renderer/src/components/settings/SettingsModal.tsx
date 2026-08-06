@@ -100,6 +100,32 @@ export default function SettingsModal({ onClose }: { onClose: () => void }): Rea
         </div>
 
         <div>
+          <label className="mb-1 block text-xs font-medium text-zinc-400">Interface mode</label>
+          <div className="flex rounded-lg border border-deck-border bg-deck-raised p-0.5">
+            {(
+              [
+                { value: 'simple', label: 'Simple', hint: 'Plain language, guided, no jargon' },
+                { value: 'pro', label: 'Pro', hint: 'Diffs, git panel, models, all the dials' }
+              ] as const
+            ).map((mode) => (
+              <button
+                key={mode.value}
+                onClick={() => void update({ uiMode: mode.value })}
+                title={mode.hint}
+                className={`flex-1 rounded-md py-1.5 text-xs ${
+                  settings?.uiMode === mode.value ? 'bg-deck-accent text-white' : 'text-zinc-400 hover:text-zinc-200'
+                }`}
+              >
+                {mode.label}
+              </button>
+            ))}
+          </div>
+          <p className="mt-1 text-[11px] text-zinc-600">
+            Simple hides technical detail and explains changes in plain words. Same agents, same power.
+          </p>
+        </div>
+
+        <div>
           <label className="mb-1 block text-xs font-medium text-zinc-400">Max concurrent running sessions</label>
           <input
             type="number"

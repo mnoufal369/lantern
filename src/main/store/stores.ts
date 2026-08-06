@@ -21,6 +21,8 @@ interface PersistedSettings {
   apiKeyEnc: string
   theme: 'dark'
   maxConcurrentSessions: number
+  uiMode: 'pro' | 'simple'
+  onboarded: boolean
 }
 
 const settingsStore = new Store<{ settings: PersistedSettings }>({
@@ -29,7 +31,9 @@ const settingsStore = new Store<{ settings: PersistedSettings }>({
     settings: {
       apiKeyEnc: '',
       theme: 'dark',
-      maxConcurrentSessions: DEFAULT_MAX_CONCURRENT_SESSIONS
+      maxConcurrentSessions: DEFAULT_MAX_CONCURRENT_SESSIONS,
+      uiMode: 'pro',
+      onboarded: false
     }
   }
 })
@@ -88,44 +92,75 @@ export const ProfileStore = {
     }
   },
   seedDefaults(): void {
-    if (profileStore.get('profiles').length > 0) {
-      return
-    }
     const now = Date.now()
+    const base = {
+      systemPrompt: { mode: 'append' as const, text: '' },
+      model: DEFAULT_MODEL,
+      permissionMode: 'default' as const,
+      allowedTools: [] as string[],
+      disallowedTools: [] as string[],
+      mcpServers: {},
+      createdAt: now,
+      updatedAt: now
+    }
     const defaults: AgentProfile[] = [
+      { ...base, id: 'prof_default_dev', name: 'Dev Agent', icon: 'bot', color: '#6366f1' },
       {
-        id: 'prof_default_dev',
-        name: 'Dev Agent',
-        icon: 'bot',
-        color: '#6366f1',
-        systemPrompt: { mode: 'append', text: '' },
-        model: DEFAULT_MODEL,
-        permissionMode: 'default',
-        allowedTools: [],
-        disallowedTools: [],
-        mcpServers: {},
-        createdAt: now,
-        updatedAt: now
-      },
-      {
+        ...base,
         id: 'prof_default_planner',
         name: 'Planner',
         icon: 'book-open',
         color: '#22c55e',
+        permissionMode: 'plan',
         systemPrompt: {
           mode: 'append',
           text: 'Prefer analysis and planning. Explain your approach before making changes.'
-        },
-        model: DEFAULT_MODEL,
-        permissionMode: 'plan',
-        allowedTools: [],
-        disallowedTools: [],
-        mcpServers: {},
-        createdAt: now,
-        updatedAt: now
+        }
+      },
+      {
+        ...base,
+        id: 'prof_default_qa',
+        name: 'QA Agent',
+        icon: 'bug',
+        color: '#f59e0b',
+        allowedTools: ['Read', 'Glob', 'Grep'],
+        systemPrompt: {
+          mode: 'append',
+          text: 'You are a QA specialist. Hunt for bugs, edge cases, missing validation and risky code paths. When asked to verify behaviour, prefer reading code and running existing tests. Report findings as a clear numbered list with severity (high/medium/low), the affected file, and a concrete reproduction or reasoning. Do not modify code unless explicitly asked.'
+        }
+      },
+      {
+        ...base,
+        id: 'prof_default_consultant',
+        name: 'Consultant',
+        icon: 'briefcase',
+        color: '#06b6d4',
+        allowedTools: ['Read', 'Glob', 'Grep'],
+        systemPrompt: {
+          mode: 'append',
+          text: 'You are a technical consultant reviewing a codebase for a client. Answer questions about how the product works, assess quality and risks, and produce clear structured summaries a business audience can read. Avoid jargon unless asked; define terms when you must use them. Never modify files — you are read-only unless the user explicitly instructs otherwise.'
+        }
+      },
+      {
+        ...base,
+        id: 'prof_default_explainer',
+        name: 'Explainer',
+        icon: 'sparkles',
+        color: '#ec4899',
+        allowedTools: ['Read', 'Glob', 'Grep'],
+        systemPrompt: {
+          mode: 'append',
+          text: 'You are a friendly guide for someone who does not code. Explain what this app or project does in plain, everyday language — no jargon, short sentences, real-world analogies. When they ask "can it do X" or "where does Y happen", investigate the code yourself and answer in human terms. Never show raw code unless they ask; describe behaviour instead.'
+        }
       }
     ]
-    profileStore.set('profiles', defaults)
+    const existing = profileStore.get('profiles')
+    const missing = defaults.filter((d) => !existing.some((p) => p.id === d.id))
+    if (existing.length === 0) {
+      profileStore.set('profiles', defaults)
+    } else if (missing.length > 0) {
+      profileStore.set('profiles', [...existing, ...missing])
+    }
   }
 }
 
@@ -153,7 +188,9 @@ export const Settings = {
       apiKey: '',
       hasApiKey: persisted.apiKeyEnc !== '',
       theme: persisted.theme,
-      maxConcurrentSessions: persisted.maxConcurrentSessions
+      maxConcurrentSessions: persisted.maxConcurrentSessions,
+      uiMode: persisted.uiMode ?? 'pro',
+      onboarded: persisted.onboarded ?? false
     }
   },
   /** Decrypted key for the session runtime only. */
@@ -167,6 +204,12 @@ export const Settings = {
     }
     if (patch.maxConcurrentSessions !== undefined) {
       persisted.maxConcurrentSessions = Math.max(1, Math.min(10, patch.maxConcurrentSessions))
+    }
+    if (patch.uiMode !== undefined) {
+      persisted.uiMode = patch.uiMode
+    }
+    if (patch.onboarded !== undefined) {
+      persisted.onboarded = patch.onboarded
     }
     settingsStore.set('settings', persisted)
     return Settings.get()

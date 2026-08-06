@@ -3,8 +3,15 @@ import type { TranscriptBlock } from '@/lib/transcript'
 import Markdown from './Markdown'
 import ToolCallCard from '@/components/tools/ToolCallCard'
 import { Brain, CircleAlert } from 'lucide-react'
+import { useSettingsStore } from '@/stores/useSettingsStore'
 
-const Block = memo(function Block({ block }: { block: TranscriptBlock }): React.JSX.Element | null {
+const Block = memo(function Block({
+  block,
+  simple
+}: {
+  block: TranscriptBlock
+  simple: boolean
+}): React.JSX.Element | null {
   switch (block.kind) {
     case 'user':
       return (
@@ -24,6 +31,9 @@ const Block = memo(function Block({ block }: { block: TranscriptBlock }): React.
       )
 
     case 'thinking':
+      if (simple) {
+        return null
+      }
       return (
         <details className="my-2 max-w-[95%]">
           <summary className="flex cursor-pointer items-center gap-1.5 text-xs text-zinc-500 hover:text-zinc-400">
@@ -37,7 +47,7 @@ const Block = memo(function Block({ block }: { block: TranscriptBlock }): React.
       )
 
     case 'tool':
-      return <ToolCallCard block={block} />
+      return <ToolCallCard block={block} simple={simple} />
 
     case 'todo':
       return (
@@ -64,6 +74,8 @@ const Block = memo(function Block({ block }: { block: TranscriptBlock }): React.
           <div className="h-px flex-1 bg-deck-border" />
           {block.isError ? (
             <span className="text-red-400">turn failed{block.errorMessage ? ` — ${block.errorMessage}` : ''}</span>
+          ) : simple ? (
+            <span>✓ done · ${block.costUsd.toFixed(2)}</span>
           ) : (
             <span>
               ✓ turn done · ${block.costUsd.toFixed(3)} · {block.usage.inputTokens + block.usage.outputTokens} tokens
@@ -82,6 +94,9 @@ const Block = memo(function Block({ block }: { block: TranscriptBlock }): React.
       )
 
     case 'init':
+      if (simple) {
+        return null
+      }
       return (
         <div className="my-2 flex flex-wrap items-center gap-1.5 text-[11px] text-zinc-600">
           <span>
@@ -111,10 +126,11 @@ const Block = memo(function Block({ block }: { block: TranscriptBlock }): React.
 })
 
 export default function Transcript({ blocks }: { blocks: TranscriptBlock[] }): React.JSX.Element {
+  const simple = useSettingsStore((s) => s.settings?.uiMode === 'simple')
   return (
     <div className="mx-auto max-w-3xl">
       {blocks.map((block) => (
-        <Block key={block.id} block={block} />
+        <Block key={block.id} block={block} simple={simple} />
       ))}
     </div>
   )

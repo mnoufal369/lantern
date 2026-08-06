@@ -68,10 +68,85 @@ function CompactTool({ block }: { block: ToolBlock }): React.JSX.Element {
   )
 }
 
-const ToolCallCard = memo(function ToolCallCard({ block }: { block: ToolBlock }): React.JSX.Element {
+/** Plain-language rendering for Simple mode — sentences instead of tool jargon. */
+function SimpleToolCard({ block }: { block: ToolBlock }): React.JSX.Element | null {
+  const [open, setOpen] = useState(false)
+  const input = asRecord(block.input)
+  const running = block.output === undefined && block.permission !== 'denied'
+  const basename = (p: string): string => p.split('/').pop() ?? p
+
+  if (block.toolName === 'Read' || block.toolName === 'Glob' || block.toolName === 'Grep') {
+    const target = str(input.file_path) ? basename(str(input.file_path)) : str(input.pattern)
+    return (
+      <div className="my-1 flex items-center gap-2 text-[12.5px] text-zinc-500">
+        <span>👀</span>
+        <span>Looked at {target ? <span className="font-medium text-zinc-400">{target}</span> : 'the project'}</span>
+        {running && <Loader2 size={11} className="animate-spin text-zinc-600" />}
+      </div>
+    )
+  }
+
+  const isEditLike = ['Edit', 'MultiEdit', 'Write'].includes(block.toolName)
+  const sentence = isEditLike
+    ? `${block.toolName === 'Write' ? 'Created' : 'Changed'} ${basename(str(input.file_path))}`
+    : block.toolName === 'Bash'
+      ? str(input.description) || 'Did some work behind the scenes'
+      : block.toolName === 'Task'
+        ? `Asked a helper agent: ${str(input.description) || 'a sub-task'}`
+        : `Used ${block.toolName.replace(/^mcp__\w+__/, '')}`
+
+  const emoji = isEditLike ? '✏️' : block.toolName === 'Bash' ? '⚙️' : block.toolName === 'Task' ? '✨' : '🔧'
+
+  return (
+    <div className="my-2 max-w-[92%] rounded-xl border border-deck-border bg-deck-panel px-3.5 py-2.5">
+      <div className="flex items-center gap-2.5 text-[13px]">
+        <span>{emoji}</span>
+        <span className="text-zinc-300">{sentence}</span>
+        {running && <Loader2 size={12} className="animate-spin text-zinc-500" />}
+        {block.permission === 'denied' && <span className="text-[11px] text-red-400">stopped by you</span>}
+        <button
+          onClick={() => setOpen(!open)}
+          className="ml-auto text-[11px] text-indigo-400/80 hover:text-indigo-300"
+        >
+          {open ? 'hide' : 'details'}
+        </button>
+      </div>
+      {open && (
+        <div className="mt-2">
+          {isEditLike && (
+            <EditDiffView
+              oldText={block.toolName === 'Write' ? '' : str(input.old_string)}
+              newText={block.toolName === 'Write' ? str(input.content) : str(input.new_string)}
+            />
+          )}
+          {block.toolName === 'Bash' && (
+            <BashBlock command={str(input.command)} output={block.output} isError={block.isError} />
+          )}
+          {!isEditLike && block.toolName !== 'Bash' && (
+            <pre className="selectable max-h-40 overflow-y-auto whitespace-pre-wrap rounded bg-[#0d0d10] p-2 font-mono text-[11.5px] text-zinc-400">
+              {block.output ?? JSON.stringify(block.input, null, 2)}
+            </pre>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+const ToolCallCard = memo(function ToolCallCard({
+  block,
+  simple
+}: {
+  block: ToolBlock
+  simple?: boolean
+}): React.JSX.Element | null {
   const [open, setOpen] = useState(true)
   const input = asRecord(block.input)
   const running = block.output === undefined && block.permission !== 'denied'
+
+  if (simple) {
+    return <SimpleToolCard block={block} />
+  }
 
   if (block.toolName === 'Read' || block.toolName === 'Glob' || block.toolName === 'Grep') {
     return <CompactTool block={block} />

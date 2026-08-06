@@ -1,4 +1,6 @@
 import { BrowserWindow, dialog, ipcMain, shell } from 'electron'
+import { writeFile } from 'node:fs/promises'
+import { prepareRepoWorkspace } from './git/RepoWorkspace'
 import type { PermissionDecision } from '@shared/types'
 import { FALLBACK_MODELS } from '@shared/constants'
 import type { SessionManager } from './sessions/SessionManager'
@@ -20,6 +22,26 @@ export function registerIpc(manager: SessionManager): void {
   ipcMain.handle('sessions:create', (_e, req: { profileId: string; cwd: string }) =>
     manager.create(req.profileId, req.cwd)
   )
+  ipcMain.handle('sessions:createFromRepo', async (_e, req: { profileId: string; repoUrl: string }) => {
+    const workspace = await prepareRepoWorkspace(req.repoUrl)
+    return manager.create(req.profileId, workspace)
+  })
+  ipcMain.handle('sessions:exportTranscript', async (_e, req: { sessionId: string; markdown: string }) => {
+    const meta = manager.getMeta(req.sessionId)
+    const window = BrowserWindow.getFocusedWindow()
+    if (!window) {
+      return null
+    }
+    const result = await dialog.showSaveDialog(window, {
+      defaultPath: `${(meta?.title ?? 'session').replace(/[^\w\s-]/g, '').slice(0, 40) || 'session'}.md`,
+      filters: [{ name: 'Markdown', extensions: ['md'] }]
+    })
+    if (result.canceled || !result.filePath) {
+      return null
+    }
+    await writeFile(result.filePath, req.markdown, 'utf8')
+    return result.filePath
+  })
   ipcMain.handle('sessions:send', (_e, req: { sessionId: string; text: string }) =>
     manager.sendMessage(req.sessionId, req.text)
   )

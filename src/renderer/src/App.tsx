@@ -7,6 +7,7 @@ import PermissionDialog from '@/components/permissions/PermissionDialog'
 import SettingsModal from '@/components/settings/SettingsModal'
 import NewSessionModal from '@/components/sessions/NewSessionModal'
 import AgentBuilder from '@/components/agents/AgentBuilder'
+import OnboardingModal from '@/components/onboarding/OnboardingModal'
 import { useSessionsStore } from '@/stores/useSessionsStore'
 import { useProfilesStore } from '@/stores/useProfilesStore'
 import { usePermissionsStore } from '@/stores/usePermissionsStore'
@@ -16,8 +17,10 @@ export default function App(): React.JSX.Element {
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [newSessionOpen, setNewSessionOpen] = useState(false)
   const [builderOpen, setBuilderOpen] = useState(false)
+  const [droppedFolder, setDroppedFolder] = useState<string | null>(null)
   const activeId = useSessionsStore((s) => s.activeId)
   const settings = useSettingsStore((s) => s.settings)
+  const simple = settings?.uiMode === 'simple'
 
   useEffect(() => {
     void useSessionsStore.getState().init()
@@ -67,8 +70,25 @@ export default function App(): React.JSX.Element {
 
   const needsApiKey = settings !== null && !settings.hasApiKey
 
+  const onDrop = (e: React.DragEvent): void => {
+    e.preventDefault()
+    const file = e.dataTransfer.files[0]
+    if (!file) {
+      return
+    }
+    const path = window.api.getPathForFile(file)
+    if (path) {
+      setDroppedFolder(path)
+      setNewSessionOpen(true)
+    }
+  }
+
+  if (settings && !settings.onboarded) {
+    return <OnboardingModal />
+  }
+
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full flex-col" onDragOver={(e) => e.preventDefault()} onDrop={onDrop}>
       <TopBar
         onNewSession={() => setNewSessionOpen(true)}
         onOpenSettings={() => setSettingsOpen(true)}
@@ -82,14 +102,21 @@ export default function App(): React.JSX.Element {
           ) : (
             <EmptyState onNewSession={() => setNewSessionOpen(true)} needsApiKey={needsApiKey} onOpenSettings={() => setSettingsOpen(true)} />
           )}
-          {activeId && <RightPanel sessionId={activeId} />}
+          {activeId && !simple && <RightPanel sessionId={activeId} />}
         </main>
       </div>
 
       <PermissionDialog />
       {settingsOpen && <SettingsModal onClose={() => setSettingsOpen(false)} />}
       {newSessionOpen && (
-        <NewSessionModal onClose={() => setNewSessionOpen(false)} onOpenBuilder={() => setBuilderOpen(true)} />
+        <NewSessionModal
+          onClose={() => {
+            setNewSessionOpen(false)
+            setDroppedFolder(null)
+          }}
+          onOpenBuilder={() => setBuilderOpen(true)}
+          initialCwd={droppedFolder ?? undefined}
+        />
       )}
       {builderOpen && <AgentBuilder onClose={() => setBuilderOpen(false)} />}
     </div>

@@ -1,14 +1,30 @@
-import { useEffect, useRef } from 'react'
-import { FolderGit2, Sparkles } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { Check, Download, FolderGit2, Sparkles } from 'lucide-react'
 import Transcript from './Transcript'
 import Composer from './Composer'
 import { useSessionsStore } from '@/stores/useSessionsStore'
+import { useSettingsStore } from '@/stores/useSettingsStore'
+import { transcriptToMarkdown } from '@/lib/exportMarkdown'
 
 export default function ChatView({ sessionId }: { sessionId: string }): React.JSX.Element {
   const entry = useSessionsStore((s) => s.sessions[sessionId])
+  const simple = useSettingsStore((s) => s.settings?.uiMode === 'simple')
   const scrollRef = useRef<HTMLDivElement>(null)
   const stickToBottom = useRef(true)
+  const [exported, setExported] = useState(false)
   const subagentCount = entry?.blocks.filter((b) => b.kind === 'tool' && b.toolName === 'Task').length ?? 0
+
+  const exportTranscript = async (): Promise<void> => {
+    if (!entry) {
+      return
+    }
+    const markdown = transcriptToMarkdown(entry.meta, entry.blocks)
+    const saved = await window.api.invoke('sessions:exportTranscript', { sessionId, markdown })
+    if (saved) {
+      setExported(true)
+      setTimeout(() => setExported(false), 2000)
+    }
+  }
 
   useEffect(() => {
     const el = scrollRef.current
@@ -35,9 +51,19 @@ export default function ChatView({ sessionId }: { sessionId: string }): React.JS
           </span>
         )}
         <span className="ml-auto tabular-nums">
-          {entry.meta.stats.turns} turn{entry.meta.stats.turns === 1 ? '' : 's'} · $
-          {entry.meta.stats.totalCostUsd.toFixed(3)}
+          {simple
+            ? `$${entry.meta.stats.totalCostUsd.toFixed(2)}`
+            : `${entry.meta.stats.turns} turn${entry.meta.stats.turns === 1 ? '' : 's'} · $${entry.meta.stats.totalCostUsd.toFixed(3)}`}
         </span>
+        <button
+          onClick={() => void exportTranscript()}
+          disabled={entry.blocks.length === 0}
+          title="Export session as Markdown report"
+          className="flex items-center gap-1 rounded px-1.5 py-0.5 hover:bg-deck-raised hover:text-zinc-300 disabled:opacity-30"
+        >
+          {exported ? <Check size={11} className="text-green-400" /> : <Download size={11} />}
+          {exported ? 'Saved' : 'Export'}
+        </button>
       </div>
       <div
         ref={scrollRef}
