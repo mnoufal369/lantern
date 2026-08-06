@@ -66,9 +66,6 @@ export class SessionManager {
     if (!profile) {
       throw new Error('Agent profile not found')
     }
-    if (Settings.get().apiKey.trim() === '') {
-      throw new Error('Add your Anthropic API key in Settings first')
-    }
     if (this.runningCount() >= Settings.get().maxConcurrentSessions) {
       throw new Error(
         `Concurrent session limit reached (${Settings.get().maxConcurrentSessions}). Interrupt or archive a running session first.`
@@ -80,6 +77,8 @@ export class SessionManager {
       profileId,
       title: '',
       cwd,
+      model: profile.model,
+      permissionMode: profile.permissionMode,
       status: { kind: 'idle' },
       stats: { totalCostUsd: 0, inputTokens: 0, outputTokens: 0, cacheReadTokens: 0, turns: 0 },
       filesTouched: [],
@@ -185,11 +184,29 @@ export class SessionManager {
   }
 
   async setModel(sessionId: string, model: string): Promise<void> {
+    const meta = this.metas.get(sessionId)
+    if (meta) {
+      meta.model = model
+      SessionStore.save(meta)
+    }
     await this.runtimes.get(sessionId)?.setModel(model)
   }
 
   async setPermissionMode(sessionId: string, mode: string): Promise<void> {
+    const meta = this.metas.get(sessionId)
+    if (meta) {
+      meta.permissionMode = mode as SessionMeta['permissionMode']
+      SessionStore.save(meta)
+    }
     await this.runtimes.get(sessionId)?.setPermissionMode(mode)
+  }
+
+  rename(sessionId: string, title: string): void {
+    const meta = this.metas.get(sessionId)
+    if (meta) {
+      meta.title = title.trim() || meta.title
+      SessionStore.save(meta)
+    }
   }
 
   getMeta(sessionId: string): SessionMeta | undefined {

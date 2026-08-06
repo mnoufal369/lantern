@@ -34,6 +34,9 @@ export function registerIpc(manager: SessionManager): void {
   ipcMain.handle('sessions:setPermissionMode', (_e, req: { sessionId: string; mode: string }) =>
     manager.setPermissionMode(req.sessionId, req.mode)
   )
+  ipcMain.handle('sessions:rename', (_e, req: { sessionId: string; title: string }) =>
+    manager.rename(req.sessionId, req.title)
+  )
 
   ipcMain.handle('permissions:respond', (_e, req: { requestId: string; decision: PermissionDecision }) =>
     manager.broker.respond(req.requestId, req.decision)

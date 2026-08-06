@@ -25,6 +25,7 @@ export interface IpcApi {
   'sessions:history': (req: { sessionId: string }) => UiEvent[]
   'sessions:setModel': (req: { sessionId: string; model: string }) => void
   'sessions:setPermissionMode': (req: { sessionId: string; mode: string }) => void
+  'sessions:rename': (req: { sessionId: string; title: string }) => void
   'permissions:respond': (req: { requestId: string; decision: PermissionDecision }) => void
   'profiles:list': (req?: undefined) => AgentProfile[]
   'profiles:save': (req: { profile: AgentProfile }) => AgentProfile

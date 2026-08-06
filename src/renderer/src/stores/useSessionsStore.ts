@@ -21,6 +21,9 @@ interface SessionsState {
   interrupt: (sessionId: string) => Promise<void>
   archive: (sessionId: string) => Promise<void>
   reopen: (sessionId: string) => Promise<void>
+  rename: (sessionId: string, title: string) => Promise<void>
+  setModel: (sessionId: string, model: string) => Promise<void>
+  setPermissionMode: (sessionId: string, mode: SessionMeta['permissionMode']) => Promise<void>
   applyEventBatch: (sessionId: string, events: UiEvent[]) => void
   applyStatus: (sessionId: string, status: SessionStatus, stats: SessionStats, filesTouched: string[]) => void
 }
@@ -117,6 +120,45 @@ export const useSessionsStore = create<SessionsState>((set, get) => ({
       },
       activeId: sessionId
     }))
+  },
+
+  rename: async (sessionId, title) => {
+    await window.api.invoke('sessions:rename', { sessionId, title })
+    set((state) => {
+      const entry = state.sessions[sessionId]
+      if (!entry) {
+        return state
+      }
+      return {
+        sessions: { ...state.sessions, [sessionId]: { ...entry, meta: { ...entry.meta, title } } }
+      }
+    })
+  },
+
+  setModel: async (sessionId, model) => {
+    await window.api.invoke('sessions:setModel', { sessionId, model })
+    set((state) => {
+      const entry = state.sessions[sessionId]
+      if (!entry) {
+        return state
+      }
+      return {
+        sessions: { ...state.sessions, [sessionId]: { ...entry, meta: { ...entry.meta, model } } }
+      }
+    })
+  },
+
+  setPermissionMode: async (sessionId, mode) => {
+    await window.api.invoke('sessions:setPermissionMode', { sessionId, mode })
+    set((state) => {
+      const entry = state.sessions[sessionId]
+      if (!entry) {
+        return state
+      }
+      return {
+        sessions: { ...state.sessions, [sessionId]: { ...entry, meta: { ...entry.meta, permissionMode: mode } } }
+      }
+    })
   },
 
   applyEventBatch: (sessionId, events) => {

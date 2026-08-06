@@ -63,10 +63,10 @@ export class SessionRuntime {
           : ({ type: 'preset', preset: 'claude_code' } as const)
 
     const options: Options = {
-      model: this.profile.model,
+      model: this.meta.model || this.profile.model,
       cwd: this.meta.cwd,
       systemPrompt,
-      permissionMode: this.profile.permissionMode,
+      permissionMode: this.meta.permissionMode || this.profile.permissionMode,
       allowedTools: this.profile.allowedTools.length > 0 ? this.profile.allowedTools : undefined,
       disallowedTools: this.profile.disallowedTools.length > 0 ? this.profile.disallowedTools : undefined,
       mcpServers: Object.keys(this.profile.mcpServers).length > 0 ? this.profile.mcpServers : undefined,
@@ -75,7 +75,7 @@ export class SessionRuntime {
       abortController: this.abort,
       env: {
         ...process.env,
-        ANTHROPIC_API_KEY: this.deps.getApiKey(),
+        ...(this.deps.getApiKey().trim() !== '' ? { ANTHROPIC_API_KEY: this.deps.getApiKey() } : {}),
         CLAUDE_AGENT_SDK_CLIENT_APP: 'agentdeck/0.1.0'
       },
       canUseTool: (toolName, input, context) =>
@@ -88,7 +88,7 @@ export class SessionRuntime {
       pathToClaudeCodeExecutable: resolvePackagedCli()
     }
 
-    if (this.profile.permissionMode === 'bypassPermissions') {
+    if ((this.meta.permissionMode || this.profile.permissionMode) === 'bypassPermissions') {
       ;(options as Record<string, unknown>).allowDangerouslySkipPermissions = true
     }
 

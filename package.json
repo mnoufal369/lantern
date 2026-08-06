@@ -20,6 +20,9 @@
     "electron-store": "^11.0.2",
     "simple-git": "^3.36.0"
   },
+  "resolutions": {
+    "@noble/hashes": "^1.8.0"
+  },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.3",
     "@types/node": "^20.14.0",

@@ -80,6 +80,33 @@ const Block = memo(function Block({ block }: { block: TranscriptBlock }): React.
           <span className="selectable">{block.message}</span>
         </div>
       )
+
+    case 'init':
+      return (
+        <div className="my-2 flex flex-wrap items-center gap-1.5 text-[11px] text-zinc-600">
+          <span>
+            session started · {block.model} · {block.tools.length} tools
+            {block.mcpServers.length > 0 && ` · ${block.mcpServers.length} MCP server${block.mcpServers.length > 1 ? 's' : ''}`}
+          </span>
+          {block.newNames.map((name) => (
+            <span
+              key={name}
+              className="rounded-full border border-deck-accent/40 bg-deck-accent/10 px-2 py-0.5 font-mono text-[10px] text-indigo-300"
+              title="First time this tool appears on your deck"
+            >
+              {name.replace(/^mcp:/, '')} <span className="font-sans font-semibold">NEW</span>
+            </span>
+          ))}
+          {block.mcpServers.filter((s) => s.status !== 'connected').map((server) => (
+            <span
+              key={server.name}
+              className="rounded-full border border-amber-900/60 bg-amber-950/40 px-2 py-0.5 font-mono text-[10px] text-amber-400"
+            >
+              {server.name}: {server.status}
+            </span>
+          ))}
+        </div>
+      )
   }
 })
 

@@ -112,19 +112,15 @@ function EmptyState({
       <p className="max-w-sm text-center text-sm text-zinc-400">
         Run and configure AI agents in parallel — with rich diffs, permission control and git awareness.
       </p>
-      {needsApiKey ? (
-        <button
-          onClick={onOpenSettings}
-          className="rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-white hover:bg-amber-500"
-        >
-          Add your Anthropic API key to get started
-        </button>
-      ) : (
-        <button
-          onClick={onNewSession}
-          className="rounded-lg bg-deck-accent px-4 py-2 text-sm font-medium text-white hover:opacity-90"
-        >
-          New Session&ensp;⌘N
+      <button
+        onClick={onNewSession}
+        className="rounded-lg bg-deck-accent px-4 py-2 text-sm font-medium text-white hover:opacity-90"
+      >
+        New Session&ensp;⌘N
+      </button>
+      {needsApiKey && (
+        <button onClick={onOpenSettings} className="text-xs text-zinc-500 underline-offset-2 hover:underline">
+          Using your Claude Code login — or add an API key in Settings
         </button>
       )}
     </div>

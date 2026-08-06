@@ -54,6 +54,8 @@ export interface SessionMeta {
   profileId: string
   title: string
   cwd: string
+  model: string
+  permissionMode: PermissionMode
   status: SessionStatus
   stats: SessionStats
   filesTouched: string[]

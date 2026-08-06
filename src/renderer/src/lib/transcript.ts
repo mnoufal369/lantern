@@ -15,6 +15,7 @@ export type TranscriptBlock =
       children: TranscriptBlock[]
     }
   | { kind: 'todo'; id: string; items: TodoItem[] }
+  | { kind: 'init'; id: string; model: string; tools: string[]; mcpServers: { name: string; status: string }[]; newNames: string[] }
   | { kind: 'turn'; id: string; costUsd: number; usage: TurnUsage; isError: boolean; errorMessage?: string }
   | { kind: 'error'; id: string; message: string }
 
@@ -133,10 +134,47 @@ export function applyEvents(blocks: TranscriptBlock[], events: UiEvent[]): Trans
         next.push({ kind: 'error', id: nextBlockId(), message: event.message })
         break
 
-      case 'system-init':
+      case 'system-init': {
+        const known = loadKnownNames()
+        const names = [...event.tools, ...event.mcpServers.map((s) => `mcp:${s.name}`)]
+        const newNames = names.filter((name) => !known.has(name))
+        if (!next.some((b) => b.kind === 'init')) {
+          next.push({
+            kind: 'init',
+            id: nextBlockId(),
+            model: event.model,
+            tools: event.tools,
+            mcpServers: event.mcpServers,
+            newNames
+          })
+        }
+        if (newNames.length > 0) {
+          newNames.forEach((name) => known.add(name))
+          saveKnownNames(known)
+        }
         break
+      }
     }
   }
 
   return next
+}
+
+const KNOWN_NAMES_KEY = 'agentdeck.knownToolNames'
+
+function loadKnownNames(): Set<string> {
+  try {
+    const raw = localStorage.getItem(KNOWN_NAMES_KEY)
+    return new Set(raw ? (JSON.parse(raw) as string[]) : [])
+  } catch {
+    return new Set()
+  }
+}
+
+function saveKnownNames(names: Set<string>): void {
+  try {
+    localStorage.setItem(KNOWN_NAMES_KEY, JSON.stringify([...names]))
+  } catch {
+    // Non-fatal.
+  }
 }

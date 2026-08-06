@@ -1,7 +1,15 @@
 import { useState } from 'react'
 import { SendHorizonal, Square } from 'lucide-react'
 import { useSessionsStore } from '@/stores/useSessionsStore'
-import type { SessionStatus } from '@shared/types'
+import { FALLBACK_MODELS } from '@shared/constants'
+import type { PermissionMode, SessionStatus } from '@shared/types'
+
+const MODE_OPTIONS: { value: PermissionMode; label: string; hint: string }[] = [
+  { value: 'plan', label: 'Plan', hint: 'Plans before acting' },
+  { value: 'default', label: 'Ask', hint: 'Asks before risky tools' },
+  { value: 'acceptEdits', label: 'Auto-edit', hint: 'Auto-approves file edits' },
+  { value: 'bypassPermissions', label: 'Full auto', hint: 'Never asks — careful!' }
+]
 
 export default function Composer({
   sessionId,
@@ -13,6 +21,9 @@ export default function Composer({
   const [text, setText] = useState('')
   const sendMessage = useSessionsStore((s) => s.sendMessage)
   const interrupt = useSessionsStore((s) => s.interrupt)
+  const meta = useSessionsStore((s) => s.sessions[sessionId]?.meta)
+  const setModel = useSessionsStore((s) => s.setModel)
+  const setPermissionMode = useSessionsStore((s) => s.setPermissionMode)
 
   const busy = status.kind === 'thinking' || status.kind === 'running-tool'
 
@@ -63,6 +74,46 @@ export default function Composer({
           </button>
         )}
       </div>
+      {meta && (
+        <div className="mt-2 flex items-center gap-2 px-1">
+          <select
+            value={meta.model}
+            onChange={(e) => void setModel(sessionId, e.target.value)}
+            title="Model for this session"
+            className="rounded-md border border-deck-border bg-deck-raised px-1.5 py-0.5 text-[11px] text-zinc-400 outline-none hover:text-zinc-200"
+          >
+            {FALLBACK_MODELS.map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.displayName}
+              </option>
+            ))}
+            {!FALLBACK_MODELS.some((m) => m.id === meta.model) && (
+              <option value={meta.model}>{meta.model}</option>
+            )}
+          </select>
+          <div className="flex rounded-md border border-deck-border bg-deck-raised p-0.5">
+            {MODE_OPTIONS.map((mode) => (
+              <button
+                key={mode.value}
+                onClick={() => void setPermissionMode(sessionId, mode.value)}
+                title={mode.hint}
+                className={`rounded px-2 py-0.5 text-[11px] ${
+                  meta.permissionMode === mode.value
+                    ? mode.value === 'bypassPermissions'
+                      ? 'bg-red-700/80 text-white'
+                      : 'bg-deck-accent text-white'
+                    : 'text-zinc-500 hover:text-zinc-300'
+                }`}
+              >
+                {mode.label}
+              </button>
+            ))}
+          </div>
+          {meta.permissionMode === 'bypassPermissions' && (
+            <span className="text-[11px] text-red-400">agent acts without asking</span>
+          )}
+        </div>
+      )}
     </div>
   )
 }
