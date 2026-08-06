@@ -2,7 +2,7 @@
   "name": "crew",
   "productName": "Crew",
   "version": "0.1.0",
-  "description": "Crew — your deck for running and configuring AI agents on the Mac",
+  "description": "Crew — you talk, your crew builds. A desktop cockpit for AI agents.",
   "author": "Mohammad Noufal",
   "license": "MIT",
   "private": true,

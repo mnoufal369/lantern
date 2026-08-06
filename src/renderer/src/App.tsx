@@ -158,10 +158,10 @@ function EmptyState({
       <div className="text-5xl">🛰️</div>
       <div className="text-center">
         <h1 className="bg-gradient-to-r from-indigo-300 via-zinc-100 to-violet-300 bg-clip-text text-2xl font-bold text-transparent">
-          Welcome to Crew
+          You talk. Your crew builds.
         </h1>
         <p className="mt-1.5 max-w-md text-sm text-zinc-400">
-          Your deck of AI agents. You talk, they build — you stay in control of every change.
+          A whole team of AI agents at your command — and you approve every change.
         </p>
       </div>
       <div className="grid w-full max-w-2xl grid-cols-3 gap-3">

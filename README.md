@@ -1,6 +1,6 @@
-# Crew 🛰️
+# Crew
 
-**Your deck for running and configuring AI agents on the Mac.**
+**You talk. Your crew builds.**
 
 Crew is what GitHub Desktop was to the git terminal — a native, interactive cockpit for terminal AI coding agents, powered by the same engine as Claude Code (the official Claude Agent SDK).
 
