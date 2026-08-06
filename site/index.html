@@ -141,6 +141,18 @@
   .card h3 { font-size: 15.5px; margin: 12px 0 6px; }
   .card p { font-size: 13.5px; color: var(--dim); }
 
+  .personas { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-top: 48px; }
+  .persona { border: 1px solid var(--border); border-radius: 18px; padding: 26px 22px; background: linear-gradient(180deg, var(--raised), var(--panel)); display: flex; flex-direction: column; transition: transform .18s, border-color .18s; }
+  .persona:hover { transform: translateY(-3px); }
+  .persona .pe { font-size: 30px; }
+  .persona h3 { font-size: 16.5px; margin: 12px 0 4px; }
+  .persona .role-tag { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+  .persona ul { list-style: none; margin: 12px 0 16px; display: flex; flex-direction: column; gap: 7px; font-size: 13px; color: var(--dim); }
+  .persona li::before { content: "✓ "; color: var(--green); font-weight: 700; }
+  .prompt-bubble {
+    margin-top: auto; border-radius: 14px 14px 14px 4px; padding: 10px 13px; font-size: 12.5px; line-height: 1.5;
+    background: rgba(99,102,241,.12); border: 1px solid rgba(99,102,241,.25); color: #c7d2fe; font-style: italic;
+  }
   .split { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center; margin-top: 48px; }
   .split ul { list-style: none; display: flex; flex-direction: column; gap: 14px; }
   .split li { display: flex; gap: 12px; font-size: 14.5px; color: var(--dim); }
@@ -178,8 +190,8 @@
       <span class="wordmark">Crew</span>
     </a>
     <div class="links">
+      <a href="#whoitsfor">Who it's for</a>
       <a href="#features">Features</a>
-      <a href="#everyone">For everyone</a>
       <a href="#security">Security</a>
       <a href="#pricing">Pricing</a>
     </div>
@@ -259,7 +271,61 @@
   </div>
 </header>
 
-<section id="features">
+<section id="whoitsfor" style="padding-top:70px">
+  <div class="wrap">
+    <p class="kicker">One app, four crews</p>
+    <h2>Whatever you do, there's a crew for it</h2>
+    <p class="lead">Crew asks who you are on first launch and reshapes itself — full instrument panel for engineers, plain language for everyone else.</p>
+    <div class="personas">
+      <div class="persona">
+        <div class="pe">👩‍💻</div>
+        <span class="role-tag" style="color:#a5b4fc">Developers</span>
+        <h3>The full cockpit</h3>
+        <ul>
+          <li>Live diffs, git panel, one-click revert</li>
+          <li>Agents in parallel across projects</li>
+          <li>Models, permission modes, MCP extensions</li>
+        </ul>
+        <p class="prompt-bubble">"Refactor the auth module and run the tests — ask me before touching the schema."</p>
+      </div>
+      <div class="persona">
+        <div class="pe">🐞</div>
+        <span class="role-tag" style="color:#fbbf24">QA &amp; Testers</span>
+        <h3>Test any branch, no setup</h3>
+        <ul>
+          <li>Paste a repo URL + branch — no Docker, no checkout</li>
+          <li>One-click: generate test cases, find risky changes</li>
+          <li>Export findings as a Markdown report for the ticket</li>
+        </ul>
+        <p class="prompt-bubble">"What changed on release/2.4 that could break payments? Give me a regression checklist."</p>
+      </div>
+      <div class="persona">
+        <div class="pe">💼</div>
+        <span class="role-tag" style="color:#67e8f9">Consultants &amp; Analysts</span>
+        <h3>Answers your clients can read</h3>
+        <ul>
+          <li>Ask anything about any codebase — read-only agent</li>
+          <li>Executive summaries, risk &amp; quality assessments</li>
+          <li>"A client asks…" button for instant client Q&amp;A</li>
+        </ul>
+        <p class="prompt-bubble">"A client asks: does this platform support multi-currency invoicing? Verify and answer plainly."</p>
+      </div>
+      <div class="persona">
+        <div class="pe">🌱</div>
+        <span class="role-tag" style="color:#86efac">Curious builders</span>
+        <h3>No code. No jargon. Real results.</h3>
+        <ul>
+          <li>Simple mode: changes explained in plain sentences</li>
+          <li>Understand any app by just asking about it</li>
+          <li>Build by describing — approve each step</li>
+        </ul>
+        <p class="prompt-bubble">"Build a beautiful one-page site about my bakery. Explain what you're doing as you go."</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="features" style="padding-top:40px">
   <div class="wrap">
     <p class="kicker">Everything the terminal does — visual</p>
     <h2>A cockpit, not a console</h2>
@@ -273,30 +339,8 @@
       <div class="card"><div class="ic">💬</div><h3>Talk while it works</h3><p>The composer never locks. Queue follow-ups mid-run, interrupt instantly with Esc, and keep the conversation flowing.</p></div>
       <div class="card"><div class="ic">🔎</div><h3>Named, searchable threads</h3><p>Every session has a human name — rename with a double-click, find anything by search. Close the app, come back, resume where you left off.</p></div>
       <div class="card"><div class="ic">📊</div><h3>Cost transparency</h3><p>Live token and dollar counters per turn and per session, plus hard budget caps per agent. No surprises on your bill.</p></div>
-    </div>
-  </div>
-</section>
-
-<section id="everyone" style="background:linear-gradient(180deg, transparent, rgba(99,102,241,.05), transparent)">
-  <div class="wrap">
-    <p class="kicker">Not just for developers</p>
-    <h2>If you can describe it, you can build it</h2>
-    <div class="split">
-      <ul>
-        <li><span class="check">✓</span><span><b>Plain-language missions.</b> "Build me a simple website for my bakery" is a valid instruction. The agent plans, builds, and shows you everything it did.</span></li>
-        <li><span class="check">✓</span><span><b>Nothing happens without you.</b> Every file change is previewed and approved by you. One click undoes any change.</span></li>
-        <li><span class="check">✓</span><span><b>Starter missions included.</b> Build something new, fix a project, or get a guided tour of any folder — one click from the welcome screen.</span></li>
-        <li><span class="check">✓</span><span><b>Learn as you go.</b> Ask "explain what you just did" any time. It's a builder and a patient teacher in one.</span></li>
-      </ul>
-      <div class="card" style="padding:34px">
-        <div class="ic">🌱</div>
-        <h3 style="font-size:18px">Your first mission, 60 seconds</h3>
-        <p style="margin-top:10px">1. Open Crew, press <b class="mono">⌘N</b><br>
-        2. Pick a folder (even an empty one)<br>
-        3. Type: <i>"Build a beautiful one-page site about my dog"</i><br>
-        4. Approve the changes it proposes<br>
-        5. Open the folder — it's real. You built that.</p>
-      </div>
+      <div class="card"><div class="ic">🌍</div><h3>Any repo, any branch</h3><p>Paste a repository link and a branch — Crew fetches it into its own workspace and you start asking. Switch branches from a dropdown. No cloning, no Docker, no running the app.</p></div>
+      <div class="card"><div class="ic">🌱</div><h3>Simple mode</h3><p>One toggle turns the cockpit into plain language: changes described in sentences, no jargon, same power underneath. Perfect for teammates who don't live in code.</p></div>
     </div>
   </div>
 </section>
@@ -400,6 +444,7 @@
     <details><summary>Do I need to know how to code?</summary><p>No. Describe what you want in plain language; the agent writes the code and shows you everything it changes. Developers get power tools; everyone else gets a builder that explains itself.</p></details>
     <details><summary>How does it connect to Claude?</summary><p>Three ways, automatically: an API key you save in Settings (encrypted), an ANTHROPIC_API_KEY in your environment, or your existing Claude Code login on the machine. Settings shows exactly which one is active.</p></details>
     <details><summary>Does the Windows version do everything the Mac version does?</summary><p>Yes — same engine, same features: agents, personas, repo sessions with branch switching, permission control, exports. It's the identical app built for Windows x64.</p></details>
+    <details><summary>I'm in QA or consulting — do I need a dev environment?</summary><p>No. Install Crew, paste the repository link (and the branch you're testing), and ask. Crew fetches the code into its own workspace — no Docker, no local build, no IDE. Generate test cases or client-ready summaries and export them as reports. The only requirement is Git installed on the machine.</p></details>
     <details><summary>What does AI usage cost?</summary><p>Whatever your Claude plan or API usage costs — Crew adds nothing on top and shows live per-turn costs so you always know. Budget caps per agent are built in.</p></details>
     <details><summary>Can it break my project?</summary><p>It asks before changing files (unless you opt into auto mode), every change is visible as a diff, and the git panel reverts any file with one click. Work on a branch for extra comfort.</p></details>
     <details><summary>Is my code sent anywhere?</summary><p>*Only what the agent needs goes to Anthropic's API to generate responses — the same as Claude Code in your terminal. Crew itself has no servers, no telemetry, and stores everything locally.</p></details>
