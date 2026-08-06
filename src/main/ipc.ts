@@ -1,0 +1,68 @@
+import { BrowserWindow, dialog, ipcMain, shell } from 'electron'
+import type { PermissionDecision } from '@shared/types'
+import { FALLBACK_MODELS } from '@shared/constants'
+import type { SessionManager } from './sessions/SessionManager'
+import { GitService } from './git/GitService'
+import { ProfileStore, Settings } from './store/stores'
+import type { AgentProfile, AppSettings } from '@shared/types'
+
+export function registerIpc(manager: SessionManager): void {
+  const gitService = new GitService()
+
+  const cwdOf = (sessionId: string): string => {
+    const meta = manager.getMeta(sessionId)
+    if (!meta) {
+      throw new Error('Session not found')
+    }
+    return meta.cwd
+  }
+
+  ipcMain.handle('sessions:create', (_e, req: { profileId: string; cwd: string }) =>
+    manager.create(req.profileId, req.cwd)
+  )
+  ipcMain.handle('sessions:send', (_e, req: { sessionId: string; text: string }) =>
+    manager.sendMessage(req.sessionId, req.text)
+  )
+  ipcMain.handle('sessions:interrupt', (_e, req: { sessionId: string }) => manager.interrupt(req.sessionId))
+  ipcMain.handle('sessions:archive', (_e, req: { sessionId: string }) => manager.archive(req.sessionId))
+  ipcMain.handle('sessions:reopen', (_e, req: { sessionId: string }) => manager.reopen(req.sessionId))
+  ipcMain.handle('sessions:list', () => manager.list())
+  ipcMain.handle('sessions:history', (_e, req: { sessionId: string }) => manager.history(req.sessionId))
+  ipcMain.handle('sessions:setModel', (_e, req: { sessionId: string; model: string }) =>
+    manager.setModel(req.sessionId, req.model)
+  )
+  ipcMain.handle('sessions:setPermissionMode', (_e, req: { sessionId: string; mode: string }) =>
+    manager.setPermissionMode(req.sessionId, req.mode)
+  )
+
+  ipcMain.handle('permissions:respond', (_e, req: { requestId: string; decision: PermissionDecision }) =>
+    manager.broker.respond(req.requestId, req.decision)
+  )
+
+  ipcMain.handle('profiles:list', () => ProfileStore.list())
+  ipcMain.handle('profiles:save', (_e, req: { profile: AgentProfile }) => ProfileStore.save(req.profile))
+  ipcMain.handle('profiles:delete', (_e, req: { profileId: string }) => ProfileStore.delete(req.profileId))
+
+  ipcMain.handle('models:list', () => FALLBACK_MODELS)
+
+  ipcMain.handle('git:status', (_e, req: { sessionId: string }) => gitService.status(cwdOf(req.sessionId)))
+  ipcMain.handle('git:diffFile', (_e, req: { sessionId: string; path: string }) =>
+    gitService.diffFile(cwdOf(req.sessionId), req.path)
+  )
+  ipcMain.handle('git:revertFile', (_e, req: { sessionId: string; path: string }) =>
+    gitService.revertFile(cwdOf(req.sessionId), req.path)
+  )
+
+  ipcMain.handle('dialog:pickFolder', async () => {
+    const window = BrowserWindow.getFocusedWindow()
+    const result = await dialog.showOpenDialog(window ?? new BrowserWindow({ show: false }), {
+      properties: ['openDirectory', 'createDirectory']
+    })
+    return result.canceled ? null : result.filePaths[0]
+  })
+
+  ipcMain.handle('shell:revealInFinder', (_e, req: { path: string }) => shell.showItemInFolder(req.path))
+
+  ipcMain.handle('app:getSettings', () => Settings.get())
+  ipcMain.handle('app:setSettings', (_e, req: { settings: Partial<AppSettings> }) => Settings.set(req.settings))
+}

@@ -1,0 +1,33 @@
+appId: nl.noufal.agentdeck
+productName: AgentDeck
+directories:
+  output: release
+  buildResources: resources
+files:
+  - out/**
+  - package.json
+  - "!node_modules/@anthropic-ai/claude-agent-sdk-linux-*/**"
+  - "!node_modules/@anthropic-ai/claude-agent-sdk-win32-*/**"
+asar: true
+asarUnpack:
+  - "node_modules/@anthropic-ai/claude-agent-sdk/**"
+  - "node_modules/@anthropic-ai/claude-agent-sdk-darwin-arm64/**"
+npmRebuild: false
+mac:
+  target:
+    - target: dmg
+      arch:
+        - arm64
+  category: public.app-category.developer-tools
+  identity: null
+  hardenedRuntime: false
+  gatekeeperAssess: false
+dmg:
+  title: AgentDeck
+  contents:
+    - x: 130
+      y: 220
+    - x: 410
+      y: 220
+      type: link
+      path: /Applications
