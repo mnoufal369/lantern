@@ -9,7 +9,9 @@ interface Props {
 export default function TopBar({ onNewSession, onOpenSettings, onOpenBuilder }: Props): React.JSX.Element {
   return (
     <header className="drag-region flex h-11 shrink-0 items-center border-b border-deck-border bg-deck-panel pl-20 pr-3">
-      <span className="text-[13px] font-semibold tracking-wide text-zinc-300">Crew</span>
+      <span className="text-[13px] font-semibold tracking-wide text-zinc-300">
+        dockPilot <span className="text-[10px] font-normal text-zinc-600">by Salesdock</span>
+      </span>
       <div className="flex-1" />
       <div className="no-drag flex items-center gap-1">
         <button

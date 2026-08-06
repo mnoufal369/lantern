@@ -134,7 +134,7 @@ const MISSIONS = [
     emoji: '🔧',
     title: 'Fix or improve a project',
     text: 'Point it at a folder. It reads the code, proposes changes as diffs, and asks before touching anything.',
-    gradient: 'from-indigo-500/15 to-violet-500/5'
+    gradient: 'from-sky-500/15 to-violet-500/5'
   },
   {
     emoji: '📖',
@@ -157,8 +157,8 @@ function EmptyState({
     <div className="flex flex-1 flex-col items-center justify-center gap-5 px-8">
       <div className="text-5xl">🛰️</div>
       <div className="text-center">
-        <h1 className="bg-gradient-to-r from-indigo-300 via-zinc-100 to-violet-300 bg-clip-text text-2xl font-bold text-transparent">
-          You talk. Your crew builds.
+        <h1 className="bg-gradient-to-r from-sky-300 via-zinc-100 to-cyan-300 bg-clip-text text-2xl font-bold text-transparent">
+          You talk. dockPilot builds.
         </h1>
         <p className="mt-1.5 max-w-md text-sm text-zinc-400">
           A whole team of AI agents at your command — and you approve every change.
@@ -179,7 +179,7 @@ function EmptyState({
       </div>
       <button
         onClick={onNewSession}
-        className="rounded-lg bg-deck-accent px-5 py-2 text-sm font-medium text-white shadow-lg shadow-indigo-950/40 hover:opacity-90"
+        className="rounded-lg bg-deck-accent px-5 py-2 text-sm font-medium text-white shadow-lg shadow-sky-950/40 hover:opacity-90"
       >
         Start a session&ensp;⌘N
       </button>

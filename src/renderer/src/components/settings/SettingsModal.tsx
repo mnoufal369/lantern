@@ -17,7 +17,7 @@ function AuthStatusLine({ status }: { status: AuthStatus | null }): React.JSX.El
     'env-key': {
       icon: <TerminalSquare size={13} className="text-green-400" />,
       text: 'Using ANTHROPIC_API_KEY from your environment',
-      sub: 'Set before launching Crew'
+      sub: 'Set before launching dockPilot'
     },
     'claude-login': {
       icon: <UserRound size={13} className="text-green-400" />,

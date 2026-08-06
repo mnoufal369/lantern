@@ -106,7 +106,7 @@ const Block = memo(function Block({
           {block.newNames.map((name) => (
             <span
               key={name}
-              className="rounded-full border border-deck-accent/40 bg-deck-accent/10 px-2 py-0.5 font-mono text-[10px] text-indigo-300"
+              className="rounded-full border border-deck-accent/40 bg-deck-accent/10 px-2 py-0.5 font-mono text-[10px] text-sky-300"
               title="First time this tool appears on your deck"
             >
               {name.replace(/^mcp:/, '')} <span className="font-sans font-semibold">NEW</span>

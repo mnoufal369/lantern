@@ -88,7 +88,7 @@ export function registerIpc(manager: SessionManager): void {
   ipcMain.handle('git:checkoutBranch', async (_e, req: { sessionId: string; branch: string }) => {
     const cwd = cwdOf(req.sessionId)
     if (!isManaged(cwd)) {
-      throw new Error('Branch switching is only available for repositories Crew fetched for you')
+      throw new Error('Branch switching is only available for repositories dockPilot fetched for you')
     }
     await gitService.checkoutBranch(cwd, req.branch)
     const status = await gitService.status(cwd)

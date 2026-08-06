@@ -58,8 +58,8 @@ export default function OnboardingModal(): React.JSX.Element {
       <div className="w-full max-w-2xl px-8">
         <div className="text-center">
           <div className="text-5xl">🛰️</div>
-          <h1 className="mt-3 bg-gradient-to-r from-indigo-300 via-zinc-100 to-violet-300 bg-clip-text text-2xl font-bold text-transparent">
-            Welcome aboard Crew
+          <h1 className="mt-3 bg-gradient-to-r from-sky-300 via-zinc-100 to-violet-300 bg-clip-text text-2xl font-bold text-transparent">
+            Welcome aboard dockPilot
           </h1>
           <p className="mt-2 text-sm text-zinc-400">What describes you best? This tunes the whole app — you can switch anytime in Settings.</p>
         </div>
@@ -74,7 +74,7 @@ export default function OnboardingModal(): React.JSX.Element {
               <div className="text-3xl">{persona.emoji}</div>
               <p className="mt-2.5 text-[15px] font-semibold text-zinc-100">{persona.title}</p>
               <p className="mt-1 text-[12.5px] leading-relaxed text-zinc-400">{persona.text}</p>
-              <p className="mt-3 text-[11px] font-medium text-indigo-400/80">
+              <p className="mt-3 text-[11px] font-medium text-sky-400/80">
                 {picking === persona.key ? 'Setting up…' : persona.footer}
               </p>
             </button>

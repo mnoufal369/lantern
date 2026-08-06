@@ -230,7 +230,7 @@ export const Settings = {
   },
   authStatus(): AuthStatus {
     if (settingsStore.get('settings').apiKeyEnc !== '') {
-      return { source: 'settings-key', detail: 'API key from Crew Settings (encrypted at rest)' }
+      return { source: 'settings-key', detail: 'API key from dockPilot Settings (encrypted at rest)' }
     }
     if (process.env.ANTHROPIC_API_KEY) {
       return { source: 'env-key', detail: 'ANTHROPIC_API_KEY from your environment' }

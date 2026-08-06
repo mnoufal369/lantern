@@ -22,7 +22,7 @@ export function isLikelyRepoUrl(value: string): boolean {
 }
 
 /**
- * Clones a remote repository (shallow) into Crew's managed workspace
+ * Clones a remote repository (shallow) into dockPilot's managed workspace
  * directory so non-technical users can ask questions about any repo without
  * touching git themselves. Reuses an existing clone and refreshes it.
  */

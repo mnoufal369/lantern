@@ -106,7 +106,7 @@ function SimpleToolCard({ block }: { block: ToolBlock }): React.JSX.Element | nu
         {block.permission === 'denied' && <span className="text-[11px] text-red-400">stopped by you</span>}
         <button
           onClick={() => setOpen(!open)}
-          className="ml-auto text-[11px] text-indigo-400/80 hover:text-indigo-300"
+          className="ml-auto text-[11px] text-sky-400/80 hover:text-sky-300"
         >
           {open ? 'hide' : 'details'}
         </button>

@@ -170,7 +170,7 @@ export default function NewSessionModal({ onClose, onOpenBuilder, initialCwd }: 
                 />
               </div>
               <p className="mt-1.5 text-[11px] text-zinc-600">
-                Crew fetches it for you — no cloning, no terminal, no running the app. Leave branch empty for the
+                dockPilot fetches it for you — no cloning, no terminal, no running the app. Leave branch empty for the
                 default. Private repos use the git access already on this machine.
               </p>
             </div>

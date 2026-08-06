@@ -1,5 +1,5 @@
-appId: nl.noufal.crew
-productName: Crew
+appId: nl.salesdock.dockpilot
+productName: dockPilot
 directories:
   output: release
   buildResources: resources
@@ -36,9 +36,9 @@ nsis:
   oneClick: true
   perMachine: false
   deleteAppDataOnUninstall: false
-  artifactName: "Crew-Setup-${version}-x64.${ext}"
+  artifactName: "dockPilot-Setup-${version}-x64.${ext}"
 dmg:
-  title: Crew
+  title: dockPilot
   contents:
     - x: 130
       y: 220
