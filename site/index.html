@@ -28,7 +28,11 @@
     background: rgba(9,9,11,.75); border-bottom: 1px solid var(--border);
   }
   nav .wrap { display: flex; align-items: center; gap: 28px; height: 60px; }
-  nav .brand { display: flex; align-items: center; gap: 11px; font-weight: 700; font-size: 18px; letter-spacing: -.01em; }
+  nav .brand { display: flex; align-items: center; gap: 12px; font-weight: 800; font-size: 23px; letter-spacing: -.02em; }
+  .wordmark {
+    background: linear-gradient(100deg, #a5b4fc, #c4b5fd 45%, #4ade80 130%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
   nav .links { display: flex; gap: 22px; margin-left: auto; font-size: 13.5px; color: var(--dim); }
   nav .links a:hover { color: var(--text); }
   .btn {
@@ -153,8 +157,8 @@
 <nav>
   <div class="wrap">
     <a class="brand" href="#">
-      <svg width="34" height="34" viewBox="0 0 64 64"><rect width="64" height="64" rx="15" fill="#171233"/><circle cx="41.4" cy="16.9" r="2.6" fill="#8185f3"/><circle cx="28.9" cy="14.5" r="3" fill="#8589f3"/><circle cx="18" cy="21" r="3.5" fill="#8a8ef4"/><circle cx="14.2" cy="33.2" r="4" fill="#9094f5"/><circle cx="19.6" cy="44.8" r="4.5" fill="#989cf6"/><circle cx="31.4" cy="49.8" r="5" fill="#a2a5f7"/><circle cx="42.2" cy="46.6" r="5.7" fill="#4ade80"/></svg>
-      Crew
+      <svg width="42" height="42" viewBox="0 0 64 64"><rect width="64" height="64" rx="15" fill="#171233"/><circle cx="41.4" cy="16.9" r="2.6" fill="#8185f3"/><circle cx="28.9" cy="14.5" r="3" fill="#8589f3"/><circle cx="18" cy="21" r="3.5" fill="#8a8ef4"/><circle cx="14.2" cy="33.2" r="4" fill="#9094f5"/><circle cx="19.6" cy="44.8" r="4.5" fill="#989cf6"/><circle cx="31.4" cy="49.8" r="5" fill="#a2a5f7"/><circle cx="42.2" cy="46.6" r="5.7" fill="#4ade80"/></svg>
+      <span class="wordmark">Crew</span>
     </a>
     <div class="links">
       <a href="#features">Features</a>
@@ -169,7 +173,7 @@
 <header>
   <div class="glow"></div>
   <div class="wrap">
-    <svg width="88" height="88" viewBox="0 0 64 64" style="margin-bottom:26px; filter: drop-shadow(0 12px 40px rgba(99,102,241,.45))"><rect width="64" height="64" rx="15" fill="#171233"/><circle cx="41.4" cy="16.9" r="2.6" fill="#8185f3"/><circle cx="28.9" cy="14.5" r="3" fill="#8589f3"/><circle cx="18" cy="21" r="3.5" fill="#8a8ef4"/><circle cx="14.2" cy="33.2" r="4" fill="#9094f5"/><circle cx="19.6" cy="44.8" r="4.5" fill="#989cf6"/><circle cx="31.4" cy="49.8" r="5" fill="#a2a5f7"/><circle cx="42.2" cy="46.6" r="5.7" fill="#4ade80"/></svg>
+    <svg width="120" height="120" viewBox="0 0 64 64" style="margin-bottom:28px; filter: drop-shadow(0 16px 54px rgba(99,102,241,.55))"><rect width="64" height="64" rx="15" fill="#171233"/><circle cx="41.4" cy="16.9" r="2.6" fill="#8185f3"/><circle cx="28.9" cy="14.5" r="3" fill="#8589f3"/><circle cx="18" cy="21" r="3.5" fill="#8a8ef4"/><circle cx="14.2" cy="33.2" r="4" fill="#9094f5"/><circle cx="19.6" cy="44.8" r="4.5" fill="#989cf6"/><circle cx="31.4" cy="49.8" r="5" fill="#a2a5f7"/><circle cx="42.2" cy="46.6" r="5.7" fill="#4ade80"/></svg>
     <br>
     <span class="eyebrow">The AI agent cockpit — macOS &amp; Windows</span>
     <h1>You talk.<br>Your crew builds.</h1>
