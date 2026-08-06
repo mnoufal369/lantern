@@ -33,6 +33,23 @@
     background: linear-gradient(100deg, #a5b4fc, #c4b5fd 45%, #4ade80 130%);
     -webkit-background-clip: text; background-clip: text; color: transparent;
   }
+  .lead-dot {
+    transform-box: fill-box; transform-origin: center;
+    animation: lead-pulse 2.2s ease-in-out infinite;
+  }
+  .lead-ring {
+    transform-box: fill-box; transform-origin: center;
+    fill: none; stroke: #4ade80; stroke-width: 1.4;
+    animation: lead-ring 2.2s ease-out infinite;
+  }
+  @keyframes lead-pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: .6; transform: scale(.84); }
+  }
+  @keyframes lead-ring {
+    0% { transform: scale(1); opacity: .9; }
+    70%, 100% { transform: scale(2.2); opacity: 0; }
+  }
   nav .links { display: flex; gap: 22px; margin-left: auto; font-size: 13.5px; color: var(--dim); }
   nav .links a:hover { color: var(--text); }
   .btn {
@@ -173,7 +190,7 @@
 <header>
   <div class="glow"></div>
   <div class="wrap">
-    <svg width="120" height="120" viewBox="0 0 64 64" style="margin-bottom:28px; filter: drop-shadow(0 16px 54px rgba(99,102,241,.55))"><rect width="64" height="64" rx="15" fill="#171233"/><circle cx="41.4" cy="16.9" r="2.6" fill="#8185f3"/><circle cx="28.9" cy="14.5" r="3" fill="#8589f3"/><circle cx="18" cy="21" r="3.5" fill="#8a8ef4"/><circle cx="14.2" cy="33.2" r="4" fill="#9094f5"/><circle cx="19.6" cy="44.8" r="4.5" fill="#989cf6"/><circle cx="31.4" cy="49.8" r="5" fill="#a2a5f7"/><circle cx="42.2" cy="46.6" r="5.7" fill="#4ade80"/></svg>
+    <svg width="120" height="120" viewBox="0 0 64 64" style="margin-bottom:28px; filter: drop-shadow(0 16px 54px rgba(99,102,241,.55))"><rect width="64" height="64" rx="15" fill="#171233"/><circle cx="41.4" cy="16.9" r="2.6" fill="#8185f3"/><circle cx="28.9" cy="14.5" r="3" fill="#8589f3"/><circle cx="18" cy="21" r="3.5" fill="#8a8ef4"/><circle cx="14.2" cy="33.2" r="4" fill="#9094f5"/><circle cx="19.6" cy="44.8" r="4.5" fill="#989cf6"/><circle cx="31.4" cy="49.8" r="5" fill="#a2a5f7"/><circle class="lead-ring" cx="42.2" cy="46.6" r="5.7"/><circle class="lead-dot" cx="42.2" cy="46.6" r="5.7" fill="#4ade80"/></svg>
     <br>
     <span class="eyebrow">The AI agent cockpit — macOS &amp; Windows</span>
     <h1>You talk.<br>Your crew builds.</h1>
