@@ -1,5 +1,5 @@
-appId: nl.salesdock.dockpilot
-productName: dockPilot
+appId: nl.salesdock.pilot
+productName: Pilot
 directories:
   output: release
   buildResources: resources
@@ -36,9 +36,9 @@ nsis:
   oneClick: true
   perMachine: false
   deleteAppDataOnUninstall: false
-  artifactName: "dockPilot-Setup-${version}-x64.${ext}"
+  artifactName: "Pilot-Setup-${version}-x64.${ext}"
 dmg:
-  title: dockPilot
+  title: Pilot
   contents:
     - x: 130
       y: 220

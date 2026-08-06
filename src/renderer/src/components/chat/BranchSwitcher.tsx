@@ -67,7 +67,7 @@ export default function BranchSwitcher({ sessionId }: { sessionId: string }): Re
     <div ref={containerRef} className="relative">
       <button
         onClick={() => void toggle()}
-        title="Switch branch — dockPilot refetches the code for you"
+        title="Switch branch — Pilot refetches the code for you"
         className="flex items-center gap-1 rounded-md border border-deck-border px-1.5 py-0.5 text-[11px] text-zinc-400 hover:bg-deck-raised hover:text-zinc-200"
       >
         <GitBranch size={11} />

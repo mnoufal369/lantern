@@ -80,7 +80,7 @@ export class PermissionBroker {
       const timeout = setTimeout(() => {
         this.finish(requestId, {
           behavior: 'deny',
-          message: 'Timed out waiting for user approval in dockPilot'
+          message: 'Timed out waiting for user approval in Pilot'
         })
       }, PERMISSION_TIMEOUT_MS)
 
@@ -111,7 +111,7 @@ export class PermissionBroker {
     if (decision.kind === 'deny') {
       this.finish(requestId, {
         behavior: 'deny',
-        message: decision.reason ?? 'User denied this action in dockPilot'
+        message: decision.reason ?? 'User denied this action in Pilot'
       })
       return
     }

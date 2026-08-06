@@ -1,6 +1,6 @@
 import type { ModelInfo } from './types'
 
-export const APP_NAME = 'dockPilot'
+export const APP_NAME = 'Pilot'
 
 /** Fallback list; the UI prefers query.supportedModels() when a session is live. */
 export const FALLBACK_MODELS: ModelInfo[] = [

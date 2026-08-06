@@ -158,7 +158,7 @@ function EmptyState({
       <div className="text-5xl">🛰️</div>
       <div className="text-center">
         <h1 className="bg-gradient-to-r from-sky-300 via-zinc-100 to-cyan-300 bg-clip-text text-2xl font-bold text-transparent">
-          You talk. dockPilot builds.
+          You talk. Pilot builds.
         </h1>
         <p className="mt-1.5 max-w-md text-sm text-zinc-400">
           A whole team of AI agents at your command — and you approve every change.

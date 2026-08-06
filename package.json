@@ -1,8 +1,8 @@
 {
-  "name": "dockpilot",
-  "productName": "dockPilot",
+  "name": "pilot",
+  "productName": "Pilot",
   "version": "0.1.0",
-  "description": "dockPilot by Salesdock — you talk, dockPilot builds. A desktop cockpit for AI agents.",
+  "description": "Pilot by Salesdock — you talk, Pilot builds. A desktop cockpit for AI agents.",
   "author": "Salesdock",
   "license": "MIT",
   "private": true,

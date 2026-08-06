@@ -63,14 +63,14 @@ function createWindow(): void {
   }
 }
 
-/** One-time migration: the app was renamed AgentDeck -> Crew -> dockPilot; carry data over. */
+/** One-time migration: the app was renamed AgentDeck -> Crew -> Pilot; carry data over. */
 function migrateLegacyAppData(): void {
   try {
     const newDir = app.getPath('userData')
     if (existsSync(path.join(newDir, 'settings.json'))) {
       return
     }
-    for (const legacyName of ['Crew', 'AgentDeck']) {
+    for (const legacyName of ['dockPilot', 'Crew', 'AgentDeck']) {
       const oldDir = path.join(path.dirname(newDir), legacyName)
       if (existsSync(path.join(oldDir, 'settings.json'))) {
         cpSync(oldDir, newDir, { recursive: true, errorOnExist: false, force: false })

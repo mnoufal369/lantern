@@ -76,7 +76,7 @@ export class SessionRuntime {
       env: {
         ...process.env,
         ...(this.deps.getApiKey().trim() !== '' ? { ANTHROPIC_API_KEY: this.deps.getApiKey() } : {}),
-        CLAUDE_AGENT_SDK_CLIENT_APP: 'dockpilot/0.1.0'
+        CLAUDE_AGENT_SDK_CLIENT_APP: 'pilot/0.1.0'
       },
       canUseTool: (toolName, input, context) =>
         this.deps.broker.request(this.meta.id, toolName, input, {

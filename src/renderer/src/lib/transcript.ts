@@ -160,7 +160,7 @@ export function applyEvents(blocks: TranscriptBlock[], events: UiEvent[]): Trans
   return next
 }
 
-const KNOWN_NAMES_KEY = 'dockpilot.knownToolNames'
+const KNOWN_NAMES_KEY = 'pilot.knownToolNames'
 
 function loadKnownNames(): Set<string> {
   try {

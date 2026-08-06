@@ -1,10 +1,10 @@
-# dockPilot · by Salesdock
+# Pilot · by Salesdock
 
-**You talk. dockPilot builds.**
+**You talk. Pilot builds.**
 
 Internal Salesdock asset — not for external distribution or sale.
 
-dockPilot is what GitHub Desktop was to the git terminal — a native, interactive cockpit for terminal AI coding agents, powered by the same engine as Claude Code (the official Claude Agent SDK).
+Pilot is what GitHub Desktop was to the git terminal — a native, interactive cockpit for terminal AI coding agents, powered by the same engine as Claude Code (the official Claude Agent SDK).
 
 ## Features
 
@@ -26,12 +26,12 @@ Sessions authenticate in this order:
 ## Windows (for QA teams)
 
 ```bash
-yarn dist:win     # cross-builds release/dockPilot-Setup-<version>-x64.exe from macOS
+yarn dist:win     # cross-builds release/Pilot-Setup-<version>-x64.exe from macOS
 ```
 
 The installer bundles the Windows agent runtime (`claude.exe`) — no Docker, no local checkout, no dev setup. A QA workflow:
 
-1. Install dockPilot (one unsigned-installer SmartScreen prompt: *More info → Run anyway*).
+1. Install Pilot (one unsigned-installer SmartScreen prompt: *More info → Run anyway*).
 2. Add auth: paste an API key in Settings, **or** log in once with the `claude` CLI if installed.
 3. New Session → **Online repository** → paste the repo URL **and the branch under test** (e.g. `release/2.4`).
 4. Pick the **QA Agent** and ask: "generate test cases for the checkout flow", "what changed on this branch that could break payments?", "is input validation complete on the signup form?"
@@ -45,11 +45,11 @@ Requirements on the Windows machine: [Git for Windows](https://git-scm.com/downl
 yarn install          # Node 20+, engines are advisory (.yarnrc has --ignore-engines)
 yarn dev              # run with HMR
 yarn typecheck        # TS across main/preload/renderer
-yarn dist             # build release/dockPilot-<version>-arm64.dmg (unsigned)
+yarn dist             # build release/Pilot-<version>-arm64.dmg (unsigned)
 ```
 
 The dmg is unsigned (local distribution). If macOS complains after copying to another machine:
-`xattr -d com.apple.quarantine "/Applications/dockPilot.app"` or right-click → Open.
+`xattr -d com.apple.quarantine "/Applications/Pilot.app"` or right-click → Open.
 
 ## Architecture
 
