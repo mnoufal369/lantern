@@ -80,7 +80,7 @@ export class PermissionBroker {
       const timeout = setTimeout(() => {
         this.finish(requestId, {
           behavior: 'deny',
-          message: 'Timed out waiting for user approval in AgentDeck'
+          message: 'Timed out waiting for user approval in Crew'
         })
       }, PERMISSION_TIMEOUT_MS)
 
@@ -111,7 +111,7 @@ export class PermissionBroker {
     if (decision.kind === 'deny') {
       this.finish(requestId, {
         behavior: 'deny',
-        message: decision.reason ?? 'User denied this action in AgentDeck'
+        message: decision.reason ?? 'User denied this action in Crew'
       })
       return
     }

@@ -31,7 +31,7 @@ function toolSection(block: TranscriptBlock & { kind: 'tool' }, depth: number): 
 
 export function transcriptToMarkdown(meta: SessionMeta, blocks: TranscriptBlock[]): string {
   const lines: string[] = [
-    `# ${meta.title || 'AgentDeck session'}`,
+    `# ${meta.title || 'Crew session'}`,
     '',
     `**Project:** \`${meta.cwd}\`  `,
     `**Date:** ${new Date(meta.createdAt).toLocaleString()}  `,
@@ -70,6 +70,6 @@ export function transcriptToMarkdown(meta: SessionMeta, blocks: TranscriptBlock[
     }
   }
 
-  lines.push('---', '', '_Exported from AgentDeck_')
+  lines.push('---', '', '_Exported from Crew_')
   return lines.join('\n')
 }

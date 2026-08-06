@@ -77,6 +77,28 @@ export class GitService {
     return await git.diff(['HEAD', '--', filePath]).catch(() => git.diff(['--', filePath]))
   }
 
+  async remoteBranches(cwd: string): Promise<string[]> {
+    try {
+      const raw = await this.client(cwd).raw(['ls-remote', '--heads', 'origin'])
+      return raw
+        .split('\n')
+        .map((line) => line.split('\t')[1]?.replace('refs/heads/', '').trim())
+        .filter((name): name is string => Boolean(name))
+        .sort()
+    } catch {
+      return []
+    }
+  }
+
+  async checkoutBranch(cwd: string, branch: string): Promise<void> {
+    if (!/^[\w./-]+$/.test(branch)) {
+      throw new Error('Invalid branch name')
+    }
+    const git = this.client(cwd)
+    await git.fetch(['--depth', '1', 'origin', `${branch}:refs/remotes/origin/${branch}`])
+    await git.checkout(['-B', branch, `origin/${branch}`])
+  }
+
   async revertFile(cwd: string, filePath: string): Promise<void> {
     const git = this.client(cwd)
     const status = await git.status()

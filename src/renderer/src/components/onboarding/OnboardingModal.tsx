@@ -59,7 +59,7 @@ export default function OnboardingModal(): React.JSX.Element {
         <div className="text-center">
           <div className="text-5xl">🛰️</div>
           <h1 className="mt-3 bg-gradient-to-r from-indigo-300 via-zinc-100 to-violet-300 bg-clip-text text-2xl font-bold text-transparent">
-            Welcome aboard AgentDeck
+            Welcome aboard Crew
           </h1>
           <p className="mt-2 text-sm text-zinc-400">What describes you best? This tunes the whole app — you can switch anytime in Settings.</p>
         </div>

@@ -158,7 +158,7 @@ function EmptyState({
       <div className="text-5xl">🛰️</div>
       <div className="text-center">
         <h1 className="bg-gradient-to-r from-indigo-300 via-zinc-100 to-violet-300 bg-clip-text text-2xl font-bold text-transparent">
-          Welcome to AgentDeck
+          Welcome to Crew
         </h1>
         <p className="mt-1.5 max-w-md text-sm text-zinc-400">
           Your deck of AI agents. You talk, they build — you stay in control of every change.

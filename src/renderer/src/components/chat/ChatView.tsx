@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import { Check, Download, FolderGit2, Sparkles } from 'lucide-react'
 import Transcript from './Transcript'
 import Composer from './Composer'
+import BranchSwitcher from './BranchSwitcher'
+import QuickActions from './QuickActions'
 import { useSessionsStore } from '@/stores/useSessionsStore'
 import { useSettingsStore } from '@/stores/useSettingsStore'
 import { transcriptToMarkdown } from '@/lib/exportMarkdown'
@@ -12,6 +14,7 @@ export default function ChatView({ sessionId }: { sessionId: string }): React.JS
   const scrollRef = useRef<HTMLDivElement>(null)
   const stickToBottom = useRef(true)
   const [exported, setExported] = useState(false)
+  const [draft, setDraft] = useState<{ text: string; nonce: number } | null>(null)
   const subagentCount = entry?.blocks.filter((b) => b.kind === 'tool' && b.toolName === 'Task').length ?? 0
 
   const exportTranscript = async (): Promise<void> => {
@@ -44,6 +47,7 @@ export default function ChatView({ sessionId }: { sessionId: string }): React.JS
           <FolderGit2 size={11} />
           <span className="truncate font-mono">{entry.meta.cwd.replace(/^\/Users\/[^/]+/, '~')}</span>
         </span>
+        <BranchSwitcher key={sessionId} sessionId={sessionId} />
         {subagentCount > 0 && (
           <span className="flex items-center gap-1 text-purple-400">
             <Sparkles size={11} />
@@ -76,7 +80,12 @@ export default function ChatView({ sessionId }: { sessionId: string }): React.JS
         <Transcript blocks={entry.blocks} />
         {entry.blocks.length === 0 && <StarterPrompts sessionId={sessionId} cwd={entry.meta.cwd} />}
       </div>
-      <Composer sessionId={sessionId} status={entry.meta.status} />
+      <QuickActions
+        sessionId={sessionId}
+        profileId={entry.meta.profileId}
+        onPrefill={(text) => setDraft({ text, nonce: Date.now() })}
+      />
+      <Composer sessionId={sessionId} status={entry.meta.status} injectedDraft={draft} />
     </div>
   )
 }

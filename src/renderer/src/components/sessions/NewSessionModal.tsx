@@ -21,6 +21,7 @@ export default function NewSessionModal({ onClose, onOpenBuilder, initialCwd }: 
   const [source, setSource] = useState<'local' | 'remote'>(initialCwd ? 'local' : simple ? 'remote' : 'local')
   const [cwd, setCwd] = useState(initialCwd ?? profiles[0]?.defaultCwd ?? '')
   const [repoUrl, setRepoUrl] = useState('')
+  const [branch, setBranch] = useState('')
   const [creating, setCreating] = useState(false)
   const [error, setError] = useState('')
 
@@ -45,7 +46,11 @@ export default function NewSessionModal({ onClose, onOpenBuilder, initialCwd }: 
           setCreating(false)
           return
         }
-        const meta = await window.api.invoke('sessions:createFromRepo', { profileId, repoUrl: repoUrl.trim() })
+        const meta = await window.api.invoke('sessions:createFromRepo', {
+          profileId,
+          repoUrl: repoUrl.trim(),
+          branch: branch.trim() || undefined
+        })
         useSessionsStore.setState((state) => ({
           sessions: { ...state.sessions, [meta.id]: { meta, blocks: [], historyLoaded: true } },
           order: [meta.id, ...state.order],
@@ -147,16 +152,26 @@ export default function NewSessionModal({ onClose, onOpenBuilder, initialCwd }: 
             </div>
           ) : (
             <div>
-              <input
-                value={repoUrl}
-                onChange={(e) => setRepoUrl(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && void start()}
-                placeholder="https://github.com/your-team/your-app"
-                className="selectable w-full rounded-lg border border-deck-border bg-deck-raised px-3 py-2 font-mono text-xs text-zinc-100 outline-none focus:border-deck-accent"
-              />
+              <div className="flex gap-2">
+                <input
+                  value={repoUrl}
+                  onChange={(e) => setRepoUrl(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && void start()}
+                  placeholder="https://github.com/your-team/your-app"
+                  className="selectable flex-1 rounded-lg border border-deck-border bg-deck-raised px-3 py-2 font-mono text-xs text-zinc-100 outline-none focus:border-deck-accent"
+                />
+                <input
+                  value={branch}
+                  onChange={(e) => setBranch(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && void start()}
+                  placeholder="branch (optional)"
+                  title="Land on a specific branch, e.g. develop or release/2.4"
+                  className="selectable w-36 rounded-lg border border-deck-border bg-deck-raised px-3 py-2 font-mono text-xs text-zinc-100 outline-none focus:border-deck-accent"
+                />
+              </div>
               <p className="mt-1.5 text-[11px] text-zinc-600">
-                AgentDeck fetches it for you — no cloning, no terminal, no running the app. Private repos use the git
-                access already on this Mac.
+                Crew fetches it for you — no cloning, no terminal, no running the app. Leave branch empty for the
+                default. Private repos use the git access already on this machine.
               </p>
             </div>
           )}

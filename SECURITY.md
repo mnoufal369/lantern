@@ -1,10 +1,10 @@
-# AgentDeck Security Posture
+# Crew Security Posture
 
 ## Credentials
 
 - **API key encrypted at rest** with Electron `safeStorage` — the encryption key lives in your macOS keychain, so the settings file on disk contains only ciphertext.
 - **The key never reaches the UI layer.** The renderer process only ever receives a `hasApiKey` boolean; the decrypted key exists solely in the main process and is passed to the agent subprocess via its environment.
-- Claude Code login reuse reads only your account email (for display) from `~/.claude.json`; the actual OAuth credential stays in the keychain and is consumed directly by the official Claude runtime binary — AgentDeck never touches it.
+- Claude Code login reuse reads only your account email (for display) from `~/.claude.json`; the actual OAuth credential stays in the keychain and is consumed directly by the official Claude runtime binary — Crew never touches it.
 
 ## Process isolation
 
@@ -23,7 +23,7 @@
 
 ## Data locality
 
-- Sessions, transcripts, profiles and settings are stored only in `~/Library/Application Support/agentdeck/`.
+- Sessions, transcripts, profiles and settings are stored only in `~/Library/Application Support/crew/`.
 - No telemetry, no analytics, no third-party services.
 
 ## Known limitations (v0.1)

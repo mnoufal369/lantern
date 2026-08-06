@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { SendHorizonal, Square } from 'lucide-react'
 import { useSessionsStore } from '@/stores/useSessionsStore'
 import { useSettingsStore } from '@/stores/useSettingsStore'
@@ -14,12 +14,22 @@ const MODE_OPTIONS: { value: PermissionMode; label: string; hint: string }[] = [
 
 export default function Composer({
   sessionId,
-  status
+  status,
+  injectedDraft
 }: {
   sessionId: string
   status: SessionStatus
+  injectedDraft?: { text: string; nonce: number } | null
 }): React.JSX.Element {
   const [text, setText] = useState('')
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+  useEffect(() => {
+    if (injectedDraft) {
+      setText(injectedDraft.text)
+      textareaRef.current?.focus()
+    }
+  }, [injectedDraft])
   const sendMessage = useSessionsStore((s) => s.sendMessage)
   const interrupt = useSessionsStore((s) => s.interrupt)
   const meta = useSessionsStore((s) => s.sessions[sessionId]?.meta)
@@ -42,6 +52,7 @@ export default function Composer({
     <div className="shrink-0 border-t border-deck-border bg-deck-panel p-3">
       <div className="flex items-end gap-2 rounded-xl border border-deck-border bg-deck-raised p-2">
         <textarea
+          ref={textareaRef}
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => {

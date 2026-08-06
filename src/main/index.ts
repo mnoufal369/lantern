@@ -1,5 +1,6 @@
 import { app, BrowserWindow } from 'electron'
 import { execSync } from 'node:child_process'
+import { cpSync, existsSync } from 'node:fs'
 import path from 'node:path'
 import { registerIpc } from './ipc'
 import { SessionManager } from './sessions/SessionManager'
@@ -13,6 +14,9 @@ let manager: SessionManager | null = null
  * agent's Bash tool and npx-based MCP servers can't find node, git, etc.
  */
 function adoptLoginShellPath(): void {
+  if (process.platform !== 'darwin') {
+    return
+  }
   try {
     const shellBin = process.env.SHELL ?? '/bin/zsh'
     const shellPath = execSync(`${shellBin} -ilc 'echo -n $PATH'`, { timeout: 4000 }).toString().trim()
@@ -59,7 +63,21 @@ function createWindow(): void {
   }
 }
 
+/** One-time migration: the app was renamed AgentDeck -> Crew; carry data over. */
+function migrateLegacyAppData(): void {
+  try {
+    const newDir = app.getPath('userData')
+    const oldDir = path.join(path.dirname(newDir), 'AgentDeck')
+    if (!existsSync(path.join(newDir, 'settings.json')) && existsSync(oldDir)) {
+      cpSync(oldDir, newDir, { recursive: true, errorOnExist: false, force: false })
+    }
+  } catch (error) {
+    console.warn('Legacy data migration skipped', error)
+  }
+}
+
 app.whenReady().then(() => {
+  migrateLegacyAppData()
   adoptLoginShellPath()
   ProfileStore.seedDefaults()
   manager = new SessionManager(() => mainWindow)

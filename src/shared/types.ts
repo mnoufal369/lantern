@@ -118,6 +118,8 @@ export interface GitStatusSummary {
   ahead?: number
   behind?: number
   files: GitFileChange[]
+  /** True when the session lives in a Crew-managed workspace (safe to switch branches). */
+  managed?: boolean
 }
 
 export type UiMode = 'pro' | 'simple'

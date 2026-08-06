@@ -22,23 +22,30 @@ export function isLikelyRepoUrl(value: string): boolean {
 }
 
 /**
- * Clones a remote repository (shallow) into AgentDeck's managed workspace
+ * Clones a remote repository (shallow) into Crew's managed workspace
  * directory so non-technical users can ask questions about any repo without
  * touching git themselves. Reuses an existing clone and refreshes it.
  */
-export async function prepareRepoWorkspace(repoUrl: string): Promise<string> {
+export async function prepareRepoWorkspace(repoUrl: string, branch?: string): Promise<string> {
   const url = repoUrl.trim()
   if (!isLikelyRepoUrl(url)) {
     throw new Error('That does not look like a repository URL (expected https://… or git@…)')
   }
+  const cleanBranch = branch?.trim() || undefined
+  if (cleanBranch && !/^[\w./-]+$/.test(cleanBranch)) {
+    throw new Error('That branch name contains unexpected characters')
+  }
   const workspacesDir = path.join(app.getPath('userData'), 'workspaces')
   await mkdir(workspacesDir, { recursive: true })
-  const target = path.join(workspacesDir, workspaceSlug(url))
+  const target = path.join(workspacesDir, workspaceSlug(url) + (cleanBranch ? `@${cleanBranch.replace(/[^\w.-]/g, '-')}` : ''))
 
   if (existsSync(path.join(target, '.git'))) {
     try {
       const git = simpleGit({ baseDir: target, binary: GIT_BINARY })
-      await git.fetch(['--depth', '1'])
+      if (cleanBranch) {
+        await git.fetch(['--depth', '1', 'origin', cleanBranch])
+        await git.checkout(cleanBranch)
+      }
       await git.pull()
     } catch {
       // Offline or diverged — the existing snapshot is still usable.
@@ -47,13 +54,17 @@ export async function prepareRepoWorkspace(repoUrl: string): Promise<string> {
   }
 
   try {
-    await simpleGit({ binary: GIT_BINARY }).clone(url, target, ['--depth', '1'])
+    const cloneArgs = ['--depth', '1', ...(cleanBranch ? ['--branch', cleanBranch] : [])]
+    await simpleGit({ binary: GIT_BINARY }).clone(url, target, cloneArgs)
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
     if (/authentication|denied|403|401/i.test(message)) {
       throw new Error(
         'Could not access this repository. If it is private, make sure your git credentials (or gh auth) are set up on this Mac.'
       )
+    }
+    if (/Remote branch .* not found|couldn't find remote ref/i.test(message)) {
+      throw new Error(`Branch "${cleanBranch}" was not found in that repository.`)
     }
     throw new Error(`Could not fetch the repository: ${message.split('\n')[0]}`)
   }

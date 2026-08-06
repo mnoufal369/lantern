@@ -6,10 +6,15 @@ import Store from 'electron-store'
 import type { AgentProfile, AppSettings, AuthStatus, SessionMeta } from '@shared/types'
 import { DEFAULT_MAX_CONCURRENT_SESSIONS, DEFAULT_MODEL } from '@shared/constants'
 
-const profileStore = new Store<{ profiles: AgentProfile[] }>({
+const profileStore = new Store<{ profiles: AgentProfile[]; seedVersion: number }>({
   name: 'profiles',
-  defaults: { profiles: [] }
+  defaults: { profiles: [], seedVersion: 0 }
 })
+
+const SEED_VERSION = 2
+
+const HUMAN_TONE =
+  'Tone: write like a warm, friendly colleague, not a machine. Use contractions, first person and everyday words. Short sentences. Be encouraging without being fake. Never sound like a manual.'
 
 const sessionStore = new Store<{ sessions: SessionMeta[] }>({
   name: 'sessions',
@@ -126,7 +131,7 @@ export const ProfileStore = {
         allowedTools: ['Read', 'Glob', 'Grep'],
         systemPrompt: {
           mode: 'append',
-          text: 'You are a QA specialist. Hunt for bugs, edge cases, missing validation and risky code paths. When asked to verify behaviour, prefer reading code and running existing tests. Report findings as a clear numbered list with severity (high/medium/low), the affected file, and a concrete reproduction or reasoning. Do not modify code unless explicitly asked.'
+          text: `You are a QA specialist. Hunt for bugs, edge cases, missing validation and risky code paths. When asked to verify behaviour, prefer reading code and running existing tests. Report findings as a clear numbered list with severity (high/medium/low), the affected file, and a concrete reproduction or reasoning. Do not modify code unless explicitly asked. ${HUMAN_TONE}`
         }
       },
       {
@@ -138,7 +143,7 @@ export const ProfileStore = {
         allowedTools: ['Read', 'Glob', 'Grep'],
         systemPrompt: {
           mode: 'append',
-          text: 'You are a technical consultant reviewing a codebase for a client. Answer questions about how the product works, assess quality and risks, and produce clear structured summaries a business audience can read. Avoid jargon unless asked; define terms when you must use them. Never modify files — you are read-only unless the user explicitly instructs otherwise.'
+          text: `You are a technical consultant reviewing a codebase for a client. Answer questions about how the product works, assess quality and risks, and produce clear structured summaries a business audience can read. Avoid jargon unless asked; define terms when you must use them. Never modify files — you are read-only unless the user explicitly instructs otherwise. ${HUMAN_TONE}`
         }
       },
       {
@@ -150,7 +155,7 @@ export const ProfileStore = {
         allowedTools: ['Read', 'Glob', 'Grep'],
         systemPrompt: {
           mode: 'append',
-          text: 'You are a friendly guide for someone who does not code. Explain what this app or project does in plain, everyday language — no jargon, short sentences, real-world analogies. When they ask "can it do X" or "where does Y happen", investigate the code yourself and answer in human terms. Never show raw code unless they ask; describe behaviour instead.'
+          text: `You are a friendly guide for someone who does not code — a patient, upbeat human explaining things over coffee. Plain everyday language, real-world analogies, zero jargon (if a technical word is unavoidable, explain it in one short phrase). When they ask "can it do X" or "where does Y happen", investigate the code yourself and answer in human terms. Never show raw code unless they ask; describe behaviour instead. React to what they say like a person would ("Good question — let me look."). ${HUMAN_TONE}`
         }
       }
     ]
@@ -160,6 +165,15 @@ export const ProfileStore = {
       profileStore.set('profiles', defaults)
     } else if (missing.length > 0) {
       profileStore.set('profiles', [...existing, ...missing])
+    }
+
+    if (profileStore.get('seedVersion') !== SEED_VERSION) {
+      const refreshed = profileStore.get('profiles').map((profile) => {
+        const seed = defaults.find((d) => d.id === profile.id)
+        return seed ? { ...profile, systemPrompt: seed.systemPrompt, updatedAt: now } : profile
+      })
+      profileStore.set('profiles', refreshed)
+      profileStore.set('seedVersion', SEED_VERSION)
     }
   }
 }
@@ -216,7 +230,7 @@ export const Settings = {
   },
   authStatus(): AuthStatus {
     if (settingsStore.get('settings').apiKeyEnc !== '') {
-      return { source: 'settings-key', detail: 'API key from AgentDeck Settings (encrypted at rest)' }
+      return { source: 'settings-key', detail: 'API key from Crew Settings (encrypted at rest)' }
     }
     if (process.env.ANTHROPIC_API_KEY) {
       return { source: 'env-key', detail: 'ANTHROPIC_API_KEY from your environment' }

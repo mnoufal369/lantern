@@ -18,7 +18,7 @@ import type {
  */
 export interface IpcApi {
   'sessions:create': (req: { profileId: string; cwd: string }) => SessionMeta
-  'sessions:createFromRepo': (req: { profileId: string; repoUrl: string }) => SessionMeta
+  'sessions:createFromRepo': (req: { profileId: string; repoUrl: string; branch?: string }) => SessionMeta
   'sessions:exportTranscript': (req: { sessionId: string; markdown: string }) => string | null
   'sessions:send': (req: { sessionId: string; text: string }) => void
   'sessions:interrupt': (req: { sessionId: string }) => void
@@ -35,6 +35,8 @@ export interface IpcApi {
   'profiles:delete': (req: { profileId: string }) => void
   'models:list': (req?: undefined) => ModelInfo[]
   'git:status': (req: { sessionId: string }) => GitStatusSummary
+  'git:remoteBranches': (req: { sessionId: string }) => string[]
+  'git:checkoutBranch': (req: { sessionId: string; branch: string }) => GitStatusSummary
   'git:diffFile': (req: { sessionId: string; path: string }) => string
   'git:revertFile': (req: { sessionId: string; path: string }) => void
   'dialog:pickFolder': (req?: undefined) => string | null

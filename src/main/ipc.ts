@@ -1,5 +1,6 @@
-import { BrowserWindow, dialog, ipcMain, shell } from 'electron'
+import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron'
 import { writeFile } from 'node:fs/promises'
+import path from 'node:path'
 import { prepareRepoWorkspace } from './git/RepoWorkspace'
 import type { PermissionDecision } from '@shared/types'
 import { FALLBACK_MODELS } from '@shared/constants'
@@ -22,10 +23,13 @@ export function registerIpc(manager: SessionManager): void {
   ipcMain.handle('sessions:create', (_e, req: { profileId: string; cwd: string }) =>
     manager.create(req.profileId, req.cwd)
   )
-  ipcMain.handle('sessions:createFromRepo', async (_e, req: { profileId: string; repoUrl: string }) => {
-    const workspace = await prepareRepoWorkspace(req.repoUrl)
-    return manager.create(req.profileId, workspace)
-  })
+  ipcMain.handle(
+    'sessions:createFromRepo',
+    async (_e, req: { profileId: string; repoUrl: string; branch?: string }) => {
+      const workspace = await prepareRepoWorkspace(req.repoUrl, req.branch)
+      return manager.create(req.profileId, workspace)
+    }
+  )
   ipcMain.handle('sessions:exportTranscript', async (_e, req: { sessionId: string; markdown: string }) => {
     const meta = manager.getMeta(req.sessionId)
     const window = BrowserWindow.getFocusedWindow()
@@ -70,7 +74,26 @@ export function registerIpc(manager: SessionManager): void {
 
   ipcMain.handle('models:list', () => FALLBACK_MODELS)
 
-  ipcMain.handle('git:status', (_e, req: { sessionId: string }) => gitService.status(cwdOf(req.sessionId)))
+  const workspacesRoot = path.join(app.getPath('userData'), 'workspaces')
+  const isManaged = (cwd: string): boolean => cwd.startsWith(workspacesRoot + path.sep)
+
+  ipcMain.handle('git:status', async (_e, req: { sessionId: string }) => {
+    const cwd = cwdOf(req.sessionId)
+    const status = await gitService.status(cwd)
+    return { ...status, managed: isManaged(cwd) }
+  })
+  ipcMain.handle('git:remoteBranches', (_e, req: { sessionId: string }) =>
+    gitService.remoteBranches(cwdOf(req.sessionId))
+  )
+  ipcMain.handle('git:checkoutBranch', async (_e, req: { sessionId: string; branch: string }) => {
+    const cwd = cwdOf(req.sessionId)
+    if (!isManaged(cwd)) {
+      throw new Error('Branch switching is only available for repositories Crew fetched for you')
+    }
+    await gitService.checkoutBranch(cwd, req.branch)
+    const status = await gitService.status(cwd)
+    return { ...status, managed: true }
+  })
   ipcMain.handle('git:diffFile', (_e, req: { sessionId: string; path: string }) =>
     gitService.diffFile(cwdOf(req.sessionId), req.path)
   )

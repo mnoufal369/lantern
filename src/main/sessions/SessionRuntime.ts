@@ -76,7 +76,7 @@ export class SessionRuntime {
       env: {
         ...process.env,
         ...(this.deps.getApiKey().trim() !== '' ? { ANTHROPIC_API_KEY: this.deps.getApiKey() } : {}),
-        CLAUDE_AGENT_SDK_CLIENT_APP: 'agentdeck/0.1.0'
+        CLAUDE_AGENT_SDK_CLIENT_APP: 'crew/0.1.0'
       },
       canUseTool: (toolName, input, context) =>
         this.deps.broker.request(this.meta.id, toolName, input, {
@@ -277,6 +277,7 @@ function resolvePackagedCli(): string | undefined {
   if (!app.isPackaged) {
     return undefined
   }
+  const binaryName = process.platform === 'win32' ? 'claude.exe' : 'claude'
   const candidates = [
     path.join(
       process.resourcesPath,
@@ -284,7 +285,7 @@ function resolvePackagedCli(): string | undefined {
       'node_modules',
       '@anthropic-ai',
       `claude-agent-sdk-${process.platform}-${process.arch}`,
-      'claude'
+      binaryName
     )
   ]
   return candidates.find((candidate) => existsSync(candidate))

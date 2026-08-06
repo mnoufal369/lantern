@@ -160,7 +160,7 @@ export function applyEvents(blocks: TranscriptBlock[], events: UiEvent[]): Trans
   return next
 }
 
-const KNOWN_NAMES_KEY = 'agentdeck.knownToolNames'
+const KNOWN_NAMES_KEY = 'crew.knownToolNames'
 
 function loadKnownNames(): Set<string> {
   try {

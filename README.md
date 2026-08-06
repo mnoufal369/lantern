@@ -1,8 +1,8 @@
-# AgentDeck 🛰️
+# Crew 🛰️
 
 **Your deck for running and configuring AI agents on the Mac.**
 
-AgentDeck is what GitHub Desktop was to the git terminal — a native, interactive cockpit for terminal AI coding agents, powered by the same engine as Claude Code (the official Claude Agent SDK).
+Crew is what GitHub Desktop was to the git terminal — a native, interactive cockpit for terminal AI coding agents, powered by the same engine as Claude Code (the official Claude Agent SDK).
 
 ## Features
 
@@ -21,17 +21,33 @@ Sessions authenticate in this order:
 2. `ANTHROPIC_API_KEY` from your environment
 3. Your existing **Claude Code login** on this Mac (keychain)
 
+## Windows (for QA teams)
+
+```bash
+yarn dist:win     # cross-builds release/Crew-Setup-<version>-x64.exe from macOS
+```
+
+The installer bundles the Windows agent runtime (`claude.exe`) — no Docker, no local checkout, no dev setup. A QA workflow:
+
+1. Install Crew (one unsigned-installer SmartScreen prompt: *More info → Run anyway*).
+2. Add auth: paste an API key in Settings, **or** log in once with the `claude` CLI if installed.
+3. New Session → **Online repository** → paste the repo URL **and the branch under test** (e.g. `release/2.4`).
+4. Pick the **QA Agent** and ask: "generate test cases for the checkout flow", "what changed on this branch that could break payments?", "is input validation complete on the signup form?"
+5. **Export** the session as a Markdown report and attach it to the ticket.
+
+Requirements on the Windows machine: [Git for Windows](https://git-scm.com/download/win) (for fetching repos).
+
 ## Development
 
 ```bash
 yarn install          # Node 20+, engines are advisory (.yarnrc has --ignore-engines)
 yarn dev              # run with HMR
 yarn typecheck        # TS across main/preload/renderer
-yarn dist             # build release/AgentDeck-<version>-arm64.dmg (unsigned)
+yarn dist             # build release/Crew-<version>-arm64.dmg (unsigned)
 ```
 
 The dmg is unsigned (local distribution). If macOS complains after copying to another machine:
-`xattr -d com.apple.quarantine "/Applications/AgentDeck.app"` or right-click → Open.
+`xattr -d com.apple.quarantine "/Applications/Crew.app"` or right-click → Open.
 
 ## Architecture
 
