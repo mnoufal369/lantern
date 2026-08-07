@@ -26,7 +26,12 @@ Sessions authenticate in this order:
 ## Windows (for QA teams)
 
 ```bash
-yarn dist:win     # cross-builds release/Pilot-Setup-<version>-x64.exe from macOS
+# one-time: fetch the Windows agent runtime (not installed by yarn on macOS)
+curl -sL https://registry.npmjs.org/@anthropic-ai/claude-agent-sdk-win32-x64/-/claude-agent-sdk-win32-x64-0.3.223.tgz -o /tmp/sdk-win32.tgz
+mkdir -p node_modules/@anthropic-ai/claude-agent-sdk-win32-x64
+tar -xzf /tmp/sdk-win32.tgz -C node_modules/@anthropic-ai/claude-agent-sdk-win32-x64 --strip-components=1
+
+yarn dist:win     # cross-builds release/Pilot-Setup-<version>-x64.exe from macOS (--x64 matters!)
 ```
 
 The installer bundles the Windows agent runtime (`claude.exe`) — no Docker, no local checkout, no dev setup. A QA workflow:
