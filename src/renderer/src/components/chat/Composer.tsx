@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { SendHorizonal, Square } from 'lucide-react'
+import { SendHorizonal, Square, Zap } from 'lucide-react'
 import { useSessionsStore } from '@/stores/useSessionsStore'
-import { useSettingsStore } from '@/stores/useSettingsStore'
 import { FALLBACK_MODELS } from '@shared/constants'
 import type { PermissionMode, SessionStatus } from '@shared/types'
 import QuickMenu, { MODE_SEQUENCE, type QuickCommand } from './QuickMenu'
@@ -54,7 +53,6 @@ export default function Composer({
   const meta = useSessionsStore((s) => s.sessions[sessionId]?.meta)
   const setModel = useSessionsStore((s) => s.setModel)
   const setPermissionMode = useSessionsStore((s) => s.setPermissionMode)
-  const simple = useSettingsStore((s) => s.settings?.uiMode === 'simple')
 
   const busy = status.kind === 'thinking' || status.kind === 'running-tool'
 
@@ -137,6 +135,21 @@ export default function Composer({
           placeholder="Message the agent…  (/ or ⌘K quick actions · ⇧Tab mode · ⏎ send · Esc interrupt)"
           className="selectable max-h-40 flex-1 resize-none bg-transparent px-1 py-1 text-sm text-zinc-100 outline-none placeholder:text-zinc-600"
         />
+        <button
+          onClick={() => {
+            setText(menuOpen ? '' : '/')
+            setMenuIndex(0)
+            textareaRef.current?.focus()
+          }}
+          title="Quick actions (/ or ⌘K) — mode, model, branch, export…"
+          className={`flex h-8 w-8 items-center justify-center rounded-lg border ${
+            menuOpen
+              ? 'border-deck-accent bg-deck-accent/20 text-deck-accent'
+              : 'border-deck-border text-zinc-400 hover:bg-deck-panel hover:text-zinc-200'
+          }`}
+        >
+          <Zap size={14} />
+        </button>
         {busy ? (
           <button
             onClick={() => void interrupt(sessionId)}
@@ -156,7 +169,7 @@ export default function Composer({
           </button>
         )}
       </div>
-      {meta && !simple && (
+      {meta && (
         <div className="mt-2 flex items-center gap-2 px-1">
           <select
             value={meta.model}
