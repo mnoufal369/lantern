@@ -47,6 +47,7 @@ export default function SettingsModal({ onClose }: { onClose: () => void }): Rea
   const update = useSettingsStore((s) => s.update)
   const [apiKey, setApiKey] = useState('')
   const [maxSessions, setMaxSessions] = useState(settings?.maxConcurrentSessions ?? 5)
+  const [customInstructions, setCustomInstructions] = useState(settings?.customInstructions ?? '')
   const [saving, setSaving] = useState(false)
   const [authStatus, setAuthStatus] = useState<AuthStatus | null>(null)
 
@@ -56,7 +57,10 @@ export default function SettingsModal({ onClose }: { onClose: () => void }): Rea
 
   const save = async (): Promise<void> => {
     setSaving(true)
-    const patch: { apiKey?: string; maxConcurrentSessions: number } = { maxConcurrentSessions: maxSessions }
+    const patch: { apiKey?: string; maxConcurrentSessions: number; customInstructions: string } = {
+      maxConcurrentSessions: maxSessions,
+      customInstructions
+    }
     if (apiKey.trim() !== '') {
       patch.apiKey = apiKey.trim()
     }
@@ -144,6 +148,20 @@ export default function SettingsModal({ onClose }: { onClose: () => void }): Rea
           </div>
           <p className="mt-1 text-[11px] text-zinc-600">
             Simple hides technical detail and explains changes in plain words. Same agents, same power.
+          </p>
+        </div>
+
+        <div>
+          <label className="mb-1 block text-xs font-medium text-zinc-400">Instructions for your agents</label>
+          <textarea
+            value={customInstructions}
+            onChange={(e) => setCustomInstructions(e.target.value)}
+            rows={4}
+            placeholder={'Style and behaviour rules every agent follows, e.g.\n- Keep answers scannable: short headers, bullets, key point first\n- No filler openers like "Certainly" or "Great question"'}
+            className="selectable w-full resize-y rounded-lg border border-deck-border bg-deck-raised px-3 py-2 text-xs text-zinc-100 outline-none focus:border-deck-accent"
+          />
+          <p className="mt-1 text-[11px] text-zinc-600">
+            Applies to every agent and session, on top of each agent's own prompt. Takes effect on new sessions.
           </p>
         </div>
 

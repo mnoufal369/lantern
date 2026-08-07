@@ -113,7 +113,8 @@ export class SessionManager {
         SessionStore.save(sessionMeta)
       },
       emitGitChanged: (sessionId) => this.send('git:changed', { sessionId }),
-      getApiKey: () => Settings.getApiKey()
+      getApiKey: () => Settings.getApiKey(),
+      getCustomInstructions: () => Settings.get().customInstructions
     })
     this.runtimes.set(meta.id, runtime)
     runtime.start()
@@ -180,7 +181,8 @@ export class SessionManager {
       emitEvents: () => undefined,
       emitStatus: () => undefined,
       emitGitChanged: () => undefined,
-      getApiKey: () => ''
+      getApiKey: () => '',
+      getCustomInstructions: () => ''
     })
     await probe.loadTranscript()
     return probe.getEventLog()

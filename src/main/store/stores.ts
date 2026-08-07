@@ -28,6 +28,7 @@ interface PersistedSettings {
   maxConcurrentSessions: number
   uiMode: 'pro' | 'simple'
   onboarded: boolean
+  customInstructions?: string
 }
 
 const settingsStore = new Store<{ settings: PersistedSettings }>({
@@ -36,6 +37,7 @@ const settingsStore = new Store<{ settings: PersistedSettings }>({
     settings: {
       apiKeyEnc: '',
       theme: 'dark',
+      customInstructions: '',
       maxConcurrentSessions: DEFAULT_MAX_CONCURRENT_SESSIONS,
       uiMode: 'pro',
       onboarded: false
@@ -203,6 +205,7 @@ export const Settings = {
       hasApiKey: persisted.apiKeyEnc !== '',
       theme: persisted.theme,
       maxConcurrentSessions: persisted.maxConcurrentSessions,
+      customInstructions: persisted.customInstructions ?? '',
       uiMode: persisted.uiMode ?? 'pro',
       onboarded: persisted.onboarded ?? false
     }
@@ -224,6 +227,9 @@ export const Settings = {
     }
     if (patch.theme !== undefined) {
       persisted.theme = patch.theme
+    }
+    if (patch.customInstructions !== undefined) {
+      persisted.customInstructions = patch.customInstructions
     }
     if (patch.onboarded !== undefined) {
       persisted.onboarded = patch.onboarded

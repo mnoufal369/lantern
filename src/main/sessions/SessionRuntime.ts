@@ -15,6 +15,7 @@ export interface RuntimeDeps {
   emitStatus: (meta: SessionMeta) => void
   emitGitChanged: (sessionId: string) => void
   getApiKey: () => string
+  getCustomInstructions: () => string
 }
 
 function transcriptPath(sessionId: string): string {
@@ -55,11 +56,14 @@ export class SessionRuntime {
   }
 
   private buildOptions(): Options {
+    const globalInstructions = this.deps.getCustomInstructions().trim()
+    const profileText = this.profile.systemPrompt.text.trim()
+    const combined = [profileText, globalInstructions].filter(Boolean).join('\n\n')
     const systemPrompt =
-      this.profile.systemPrompt.mode === 'replace' && this.profile.systemPrompt.text.trim() !== ''
-        ? this.profile.systemPrompt.text
-        : this.profile.systemPrompt.text.trim() !== ''
-          ? ({ type: 'preset', preset: 'claude_code', append: this.profile.systemPrompt.text } as const)
+      this.profile.systemPrompt.mode === 'replace' && profileText !== ''
+        ? combined
+        : combined !== ''
+          ? ({ type: 'preset', preset: 'claude_code', append: combined } as const)
           : ({ type: 'preset', preset: 'claude_code' } as const)
 
     const options: Options = {

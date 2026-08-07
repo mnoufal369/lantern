@@ -134,6 +134,8 @@ export interface AppSettings {
   maxConcurrentSessions: number
   uiMode: UiMode
   onboarded: boolean
+  /** Global style/behaviour instructions appended to every agent's system prompt. */
+  customInstructions: string
 }
 
 export interface AuthStatus {
