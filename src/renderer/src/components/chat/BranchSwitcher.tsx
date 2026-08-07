@@ -7,6 +7,7 @@ export default function BranchSwitcher({ sessionId }: { sessionId: string }): Re
   const [open, setOpen] = useState(false)
   const [branches, setBranches] = useState<string[] | null>(null)
   const [switching, setSwitching] = useState<string | null>(null)
+  const [search, setSearch] = useState('')
   const containerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -32,6 +33,7 @@ export default function BranchSwitcher({ sessionId }: { sessionId: string }): Re
   const toggle = async (): Promise<void> => {
     const next = !open
     setOpen(next)
+    setSearch('')
     if (next && branches === null) {
       const remote = await window.api.invoke('git:remoteBranches', { sessionId })
       setBranches(remote)
@@ -63,6 +65,8 @@ export default function BranchSwitcher({ sessionId }: { sessionId: string }): Re
     )
   }
 
+  const visibleBranches = branches?.filter((b) => b.toLowerCase().includes(search.toLowerCase())) ?? null
+
   return (
     <div ref={containerRef} className="relative">
       <button
@@ -75,29 +79,48 @@ export default function BranchSwitcher({ sessionId }: { sessionId: string }): Re
         <ChevronDown size={10} />
       </button>
       {open && (
-        <div className="absolute left-0 top-6 z-30 max-h-64 w-56 overflow-y-auto rounded-lg border border-deck-border bg-deck-panel py-1 shadow-2xl">
-          {branches === null && (
-            <p className="flex items-center gap-2 px-3 py-2 text-[11px] text-zinc-500">
-              <Loader2 size={11} className="animate-spin" /> Loading branches…
-            </p>
-          )}
-          {branches?.length === 0 && <p className="px-3 py-2 text-[11px] text-zinc-500">No branches found</p>}
-          {branches?.map((branch) => (
-            <button
-              key={branch}
-              onClick={() => void switchTo(branch)}
-              className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[12px] text-zinc-300 hover:bg-deck-raised"
-            >
-              {switching === branch ? (
-                <Loader2 size={11} className="shrink-0 animate-spin" />
-              ) : branch === status.branch ? (
-                <Check size={11} className="shrink-0 text-green-400" />
-              ) : (
-                <span className="w-[11px] shrink-0" />
-              )}
-              <span className="truncate font-mono">{branch}</span>
-            </button>
-          ))}
+        <div className="absolute left-0 top-6 z-30 flex max-h-72 w-60 flex-col rounded-lg border border-deck-border bg-deck-panel shadow-2xl">
+          <input
+            autoFocus
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') {
+                setOpen(false)
+              }
+              if (e.key === 'Enter' && visibleBranches && visibleBranches.length === 1) {
+                void switchTo(visibleBranches[0])
+              }
+            }}
+            placeholder="Search branches…"
+            className="selectable mx-1.5 mt-1.5 rounded-md border border-deck-border bg-deck-raised px-2 py-1 text-[11.5px] text-zinc-100 outline-none focus:border-deck-accent"
+          />
+          <div className="min-h-0 flex-1 overflow-y-auto py-1">
+            {branches === null && (
+              <p className="flex items-center gap-2 px-3 py-2 text-[11px] text-zinc-500">
+                <Loader2 size={11} className="animate-spin" /> Loading branches…
+              </p>
+            )}
+            {branches !== null && visibleBranches?.length === 0 && (
+              <p className="px-3 py-2 text-[11px] text-zinc-500">{search ? 'No branches match' : 'No branches found'}</p>
+            )}
+            {visibleBranches?.map((branch) => (
+              <button
+                key={branch}
+                onClick={() => void switchTo(branch)}
+                className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[12px] text-zinc-300 hover:bg-deck-raised"
+              >
+                {switching === branch ? (
+                  <Loader2 size={11} className="shrink-0 animate-spin" />
+                ) : branch === status.branch ? (
+                  <Check size={11} className="shrink-0 text-green-400" />
+                ) : (
+                  <span className="w-[11px] shrink-0" />
+                )}
+                <span className="truncate font-mono">{branch}</span>
+              </button>
+            ))}
+          </div>
         </div>
       )}
     </div>
