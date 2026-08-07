@@ -2,7 +2,7 @@ import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron'
 import { writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { prepareRepoWorkspace } from './git/RepoWorkspace'
-import type { PermissionDecision } from '@shared/types'
+import type { PastedImage, PermissionDecision } from '@shared/types'
 import { FALLBACK_MODELS } from '@shared/constants'
 import type { SessionManager } from './sessions/SessionManager'
 import { GitService } from './git/GitService'
@@ -46,8 +46,8 @@ export function registerIpc(manager: SessionManager): void {
     await writeFile(result.filePath, req.markdown, 'utf8')
     return result.filePath
   })
-  ipcMain.handle('sessions:send', (_e, req: { sessionId: string; text: string }) =>
-    manager.sendMessage(req.sessionId, req.text)
+  ipcMain.handle('sessions:send', (_e, req: { sessionId: string; text: string; images?: PastedImage[] }) =>
+    manager.sendMessage(req.sessionId, req.text, req.images)
   )
   ipcMain.handle('sessions:interrupt', (_e, req: { sessionId: string }) => manager.interrupt(req.sessionId))
   ipcMain.handle('sessions:archive', (_e, req: { sessionId: string }) => manager.archive(req.sessionId))

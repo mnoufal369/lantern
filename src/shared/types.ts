@@ -80,7 +80,7 @@ export interface TurnUsage {
  * shapes — src/main/sessions/normalize.ts converts them into this union.
  */
 export type UiEvent =
-  | { t: 'user-text'; id: string; text: string }
+  | { t: 'user-text'; id: string; text: string; images?: string[] }
   | { t: 'text'; id: string; delta: string; done?: boolean }
   | { t: 'thinking'; id: string; delta: string; done?: boolean }
   | { t: 'tool-start'; id: string; toolName: string; input: unknown; parentToolUseId?: string }
@@ -153,4 +153,10 @@ export interface ClaudeHistoryItem {
   cwd: string
   lastModified: number
   gitBranch?: string
+}
+
+/** An image pasted into the composer, base64-encoded for the model. */
+export interface PastedImage {
+  mediaType: string
+  base64: string
 }

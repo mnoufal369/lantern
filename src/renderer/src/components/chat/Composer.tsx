@@ -22,6 +22,7 @@ export default function Composer({
   injectedDraft?: { text: string; nonce: number } | null
 }): React.JSX.Element {
   const [text, setText] = useState('')
+  const [attachments, setAttachments] = useState<{ dataUrl: string; mediaType: string }[]>([])
   const [menuIndex, setMenuIndex] = useState(0)
   const menuCommands = useRef<QuickCommand[]>([])
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -56,13 +57,36 @@ export default function Composer({
 
   const busy = status.kind === 'thinking' || status.kind === 'running-tool'
 
-  const submit = (): void => {
-    const trimmed = text.trim()
-    if (!trimmed || menuOpen) {
+  const onPaste = (e: React.ClipboardEvent): void => {
+    const imageItems = Array.from(e.clipboardData.items).filter((item) => item.type.startsWith('image/'))
+    if (imageItems.length === 0) {
       return
     }
-    void sendMessage(sessionId, trimmed)
+    e.preventDefault()
+    for (const item of imageItems.slice(0, 3 - attachments.length)) {
+      const file = item.getAsFile()
+      if (!file) {
+        continue
+      }
+      const reader = new FileReader()
+      reader.onload = () => {
+        setAttachments((prev) =>
+          prev.length >= 3 ? prev : [...prev, { dataUrl: String(reader.result), mediaType: item.type }]
+        )
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const submit = (): void => {
+    const trimmed = text.trim()
+    if ((!trimmed && attachments.length === 0) || menuOpen) {
+      return
+    }
+    const images = attachments.map((a) => ({ mediaType: a.mediaType, base64: a.dataUrl.split(',')[1] }))
+    void sendMessage(sessionId, trimmed, images.length > 0 ? images : undefined)
     setText('')
+    setAttachments([])
   }
 
   return (
@@ -79,9 +103,32 @@ export default function Composer({
           }}
         />
       )}
-      <div className="flex items-end gap-2 rounded-xl border border-deck-border bg-deck-raised p-2">
+      <div className="flex flex-col gap-2 rounded-xl border border-deck-border bg-deck-raised p-2">
+        {attachments.length > 0 && (
+          <div className="flex gap-2 px-1 pt-1">
+            {attachments.map((att, index) => (
+              <div key={index} className="group relative">
+                <img
+                  src={att.dataUrl}
+                  alt="pasted screenshot"
+                  className="h-16 w-auto max-w-40 rounded-lg border border-deck-border object-cover"
+                />
+                <button
+                  onClick={() => setAttachments((prev) => prev.filter((_, i) => i !== index))}
+                  title="Remove"
+                  className="absolute -right-1.5 -top-1.5 hidden h-4.5 w-4.5 items-center justify-center rounded-full bg-zinc-700 text-[10px] text-white group-hover:flex"
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+            <span className="self-end text-[10.5px] text-zinc-600">{attachments.length}/3</span>
+          </div>
+        )}
+        <div className="flex items-end gap-2">
         <textarea
           ref={textareaRef}
+          onPaste={onPaste}
           value={text}
           onChange={(e) => {
             setText(e.target.value)
@@ -132,7 +179,7 @@ export default function Composer({
             }
           }}
           rows={Math.min(6, Math.max(1, text.split('\n').length))}
-          placeholder="Message the agent…  (/ or ⌘K quick actions · ⇧Tab mode · ⏎ send · Esc interrupt)"
+          placeholder="Message the agent… paste screenshots too  (/ or ⌘K quick actions · ⇧Tab mode · ⏎ send)"
           className="selectable max-h-40 flex-1 resize-none bg-transparent px-1 py-1 text-sm text-zinc-100 outline-none placeholder:text-zinc-600"
         />
         <button
@@ -161,13 +208,14 @@ export default function Composer({
         ) : (
           <button
             onClick={submit}
-            disabled={!text.trim()}
+            disabled={!text.trim() && attachments.length === 0}
             title="Send (⏎)"
             className="flex h-8 w-8 items-center justify-center rounded-lg bg-deck-accent text-white disabled:opacity-30"
           >
             <SendHorizonal size={14} />
           </button>
         )}
+        </div>
       </div>
       {meta && (
         <div className="mt-2 flex items-center gap-2 px-1">

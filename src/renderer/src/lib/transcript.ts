@@ -1,7 +1,7 @@
 import type { TodoItem, TurnUsage, UiEvent } from '@shared/types'
 
 export type TranscriptBlock =
-  | { kind: 'user'; id: string; text: string }
+  | { kind: 'user'; id: string; text: string; images?: string[] }
   | { kind: 'text'; id: string; text: string; done: boolean }
   | { kind: 'thinking'; id: string; text: string; done: boolean }
   | {
@@ -49,7 +49,7 @@ export function applyEvents(blocks: TranscriptBlock[], events: UiEvent[]): Trans
   for (const event of events) {
     switch (event.t) {
       case 'user-text':
-        next.push({ kind: 'user', id: event.id, text: event.text })
+        next.push({ kind: 'user', id: event.id, text: event.text, images: event.images })
         break
 
       case 'text':

@@ -3,7 +3,7 @@ import { app } from 'electron'
 import { existsSync } from 'node:fs'
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
-import type { AgentProfile, SessionMeta, SessionStats, SessionStatus, UiEvent } from '@shared/types'
+import type { AgentProfile, PastedImage, SessionMeta, SessionStats, SessionStatus, UiEvent } from '@shared/types'
 import { FILE_EDIT_TOOLS, STREAM_FLUSH_MS } from '@shared/constants'
 import { AsyncQueue } from './AsyncQueue'
 import { Normalizer } from './normalize'
@@ -197,16 +197,33 @@ export class SessionRuntime {
     }
   }
 
-  sendMessage(text: string): void {
+  sendMessage(text: string, images?: PastedImage[]): void {
     if (this.meta.title === '' || this.meta.title === 'New session') {
-      this.meta.title = text.length > 48 ? `${text.slice(0, 48)}…` : text
+      const base = text.trim() !== '' ? text : 'Screenshot'
+      this.meta.title = base.length > 48 ? `${base.slice(0, 48)}…` : base
     }
-    const userEvent: UiEvent = { t: 'user-text', id: `usr_${++this.messageCounter}`, text }
+    const userEvent: UiEvent = {
+      t: 'user-text',
+      id: `usr_${++this.messageCounter}`,
+      text,
+      images: images?.map((img) => `data:${img.mediaType};base64,${img.base64}`)
+    }
     this.handleEvents([userEvent])
     this.setStatus({ kind: 'thinking' })
+
+    const content =
+      images && images.length > 0
+        ? [
+            ...images.map((img) => ({
+              type: 'image' as const,
+              source: { type: 'base64' as const, media_type: img.mediaType, data: img.base64 }
+            })),
+            ...(text.trim() !== '' ? [{ type: 'text' as const, text }] : [])
+          ]
+        : text
     this.queue.push({
       type: 'user',
-      message: { role: 'user', content: text },
+      message: { role: 'user', content },
       parent_tool_use_id: null
     } as SDKUserMessage)
   }

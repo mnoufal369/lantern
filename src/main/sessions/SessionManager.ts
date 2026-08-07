@@ -1,7 +1,7 @@
 import { app, type BrowserWindow } from 'electron'
 import { mkdir, writeFile } from 'node:fs/promises'
 import path from 'node:path'
-import type { ClaudeHistoryItem, SessionMeta, UiEvent } from '@shared/types'
+import type { ClaudeHistoryItem, PastedImage, SessionMeta, UiEvent } from '@shared/types'
 import { PermissionBroker } from '../permissions/PermissionBroker'
 import { ProfileStore, SessionStore, Settings } from '../store/stores'
 import { importClaudeTranscript, listClaudeSessions } from './ClaudeHistory'
@@ -120,7 +120,7 @@ export class SessionManager {
     return runtime
   }
 
-  async sendMessage(sessionId: string, text: string): Promise<void> {
+  async sendMessage(sessionId: string, text: string, images?: PastedImage[]): Promise<void> {
     const meta = this.metas.get(sessionId)
     if (!meta) {
       throw new Error('Session not found')
@@ -133,7 +133,7 @@ export class SessionManager {
       runtime = this.startRuntime(meta)
       await runtime.loadTranscript()
     }
-    runtime.sendMessage(text)
+    runtime.sendMessage(text, images)
   }
 
   async interrupt(sessionId: string): Promise<void> {

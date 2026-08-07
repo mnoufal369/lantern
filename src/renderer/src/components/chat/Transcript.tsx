@@ -17,7 +17,14 @@ const Block = memo(function Block({
       return (
         <div className="my-3 flex justify-end">
           <div className="max-w-[85%] rounded-2xl rounded-br-md bg-deck-accent/15 px-4 py-2.5 text-sm text-zinc-100">
-            <Markdown text={block.text} />
+            {block.images && block.images.length > 0 && (
+              <div className="mb-1.5 flex flex-wrap gap-1.5">
+                {block.images.map((src, i) => (
+                  <img key={i} src={src} alt="screenshot" className="max-h-48 rounded-lg border border-deck-border" />
+                ))}
+              </div>
+            )}
+            {block.text.trim() !== '' && <Markdown text={block.text} />}
           </div>
         </div>
       )

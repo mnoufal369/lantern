@@ -1,4 +1,5 @@
 import type {
+  PastedImage,
   AgentProfile,
   AppSettings,
   AuthStatus,
@@ -21,7 +22,7 @@ export interface IpcApi {
   'sessions:create': (req: { profileId: string; cwd: string }) => SessionMeta
   'sessions:createFromRepo': (req: { profileId: string; repoUrl: string; branch?: string }) => SessionMeta
   'sessions:exportTranscript': (req: { sessionId: string; markdown: string }) => string | null
-  'sessions:send': (req: { sessionId: string; text: string }) => void
+  'sessions:send': (req: { sessionId: string; text: string; images?: PastedImage[] }) => void
   'sessions:interrupt': (req: { sessionId: string }) => void
   'sessions:archive': (req: { sessionId: string }) => void
   'sessions:reopen': (req: { sessionId: string }) => SessionMeta

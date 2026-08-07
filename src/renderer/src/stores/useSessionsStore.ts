@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { SessionMeta, SessionStats, SessionStatus, UiEvent } from '@shared/types'
+import type { PastedImage, SessionMeta, SessionStats, SessionStatus, UiEvent } from '@shared/types'
 import { applyEvents, type TranscriptBlock } from '@/lib/transcript'
 
 export interface SessionEntry {
@@ -17,7 +17,7 @@ interface SessionsState {
   init: () => Promise<void>
   createSession: (profileId: string, cwd: string) => Promise<string>
   setActive: (sessionId: string | null) => void
-  sendMessage: (sessionId: string, text: string) => Promise<void>
+  sendMessage: (sessionId: string, text: string, images?: PastedImage[]) => Promise<void>
   interrupt: (sessionId: string) => Promise<void>
   archive: (sessionId: string) => Promise<void>
   reopen: (sessionId: string) => Promise<void>
@@ -86,8 +86,8 @@ export const useSessionsStore = create<SessionsState>((set, get) => ({
     }
   },
 
-  sendMessage: async (sessionId, text) => {
-    await window.api.invoke('sessions:send', { sessionId, text })
+  sendMessage: async (sessionId, text, images) => {
+    await window.api.invoke('sessions:send', { sessionId, text, images })
   },
 
   interrupt: async (sessionId) => {
