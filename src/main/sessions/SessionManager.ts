@@ -1,7 +1,10 @@
-import type { BrowserWindow } from 'electron'
-import type { SessionMeta, UiEvent } from '@shared/types'
+import { app, type BrowserWindow } from 'electron'
+import { mkdir, writeFile } from 'node:fs/promises'
+import path from 'node:path'
+import type { ClaudeHistoryItem, SessionMeta, UiEvent } from '@shared/types'
 import { PermissionBroker } from '../permissions/PermissionBroker'
 import { ProfileStore, SessionStore, Settings } from '../store/stores'
+import { importClaudeTranscript, listClaudeSessions } from './ClaudeHistory'
 import { SessionRuntime } from './SessionRuntime'
 
 /**
@@ -211,6 +214,46 @@ export class SessionManager {
 
   getMeta(sessionId: string): SessionMeta | undefined {
     return this.metas.get(sessionId)
+  }
+
+  /** Past Claude Code sessions from the shared store, minus ones Pilot already owns. */
+  async listTerminalHistory(): Promise<ClaudeHistoryItem[]> {
+    const known = new Set([...this.metas.values()].map((m) => m.sdkSessionId).filter(Boolean))
+    const sessions = await listClaudeSessions()
+    return sessions.filter((s) => !known.has(s.sdkSessionId))
+  }
+
+  /** Adopts a terminal session: imports its transcript and makes it resumable in Pilot. */
+  async importTerminal(sdkSessionId: string): Promise<SessionMeta> {
+    const item = (await listClaudeSessions()).find((s) => s.sdkSessionId === sdkSessionId)
+    if (!item) {
+      throw new Error('Session not found in the Claude store')
+    }
+    const profile = ProfileStore.list()[0]
+    const meta: SessionMeta = {
+      id: `sess_${Date.now()}_${++this.counter}`,
+      sdkSessionId,
+      profileId: profile.id,
+      title: item.title.length > 60 ? `${item.title.slice(0, 60)}…` : item.title,
+      cwd: item.cwd,
+      model: profile.model,
+      permissionMode: profile.permissionMode,
+      status: { kind: 'idle' },
+      stats: { totalCostUsd: 0, inputTokens: 0, outputTokens: 0, cacheReadTokens: 0, turns: 0 },
+      filesTouched: [],
+      createdAt: item.lastModified,
+      lastActiveAt: item.lastModified,
+      archived: false
+    }
+
+    const events = await importClaudeTranscript(sdkSessionId)
+    const transcriptDir = path.join(app.getPath('userData'), 'transcripts')
+    await mkdir(transcriptDir, { recursive: true })
+    await writeFile(path.join(transcriptDir, `${meta.id}.json`), JSON.stringify(events), 'utf8')
+
+    this.metas.set(meta.id, meta)
+    SessionStore.save(meta)
+    return meta
   }
 
   disposeAll(): void {

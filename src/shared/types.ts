@@ -145,3 +145,12 @@ export interface ModelInfo {
   id: string
   displayName: string
 }
+
+/** A past Claude Code session found in the shared ~/.claude store (terminal or otherwise). */
+export interface ClaudeHistoryItem {
+  sdkSessionId: string
+  title: string
+  cwd: string
+  lastModified: number
+  gitBranch?: string
+}

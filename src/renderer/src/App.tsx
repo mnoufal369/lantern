@@ -6,6 +6,7 @@ import RightPanel from '@/components/git/RightPanel'
 import PermissionDialog from '@/components/permissions/PermissionDialog'
 import SettingsModal from '@/components/settings/SettingsModal'
 import NewSessionModal from '@/components/sessions/NewSessionModal'
+import TerminalHistoryModal from '@/components/sessions/TerminalHistoryModal'
 import AgentBuilder from '@/components/agents/AgentBuilder'
 import OnboardingModal from '@/components/onboarding/OnboardingModal'
 import { useSessionsStore } from '@/stores/useSessionsStore'
@@ -18,6 +19,7 @@ export default function App(): React.JSX.Element {
   const [newSessionOpen, setNewSessionOpen] = useState(false)
   const [builderOpen, setBuilderOpen] = useState(false)
   const [droppedFolder, setDroppedFolder] = useState<string | null>(null)
+  const [historyOpen, setHistoryOpen] = useState(false)
   const activeId = useSessionsStore((s) => s.activeId)
   const settings = useSettingsStore((s) => s.settings)
   const simple = settings?.uiMode === 'simple'
@@ -95,7 +97,7 @@ export default function App(): React.JSX.Element {
         onOpenBuilder={() => setBuilderOpen(true)}
       />
       <div className="flex min-h-0 flex-1">
-        <Sidebar onNewSession={() => setNewSessionOpen(true)} />
+        <Sidebar onNewSession={() => setNewSessionOpen(true)} onOpenHistory={() => setHistoryOpen(true)} />
         <main className="flex min-w-0 flex-1">
           {activeId ? (
             <ChatView key={activeId} sessionId={activeId} />
@@ -119,6 +121,7 @@ export default function App(): React.JSX.Element {
         />
       )}
       {builderOpen && <AgentBuilder onClose={() => setBuilderOpen(false)} />}
+      {historyOpen && <TerminalHistoryModal onClose={() => setHistoryOpen(false)} />}
     </div>
   )
 }

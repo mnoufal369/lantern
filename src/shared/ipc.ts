@@ -2,6 +2,7 @@ import type {
   AgentProfile,
   AppSettings,
   AuthStatus,
+  ClaudeHistoryItem,
   GitStatusSummary,
   ModelInfo,
   PermissionDecision,
@@ -30,6 +31,8 @@ export interface IpcApi {
   'sessions:setPermissionMode': (req: { sessionId: string; mode: string }) => void
   'sessions:rename': (req: { sessionId: string; title: string }) => void
   'permissions:respond': (req: { requestId: string; decision: PermissionDecision }) => void
+  'history:list': (req?: undefined) => ClaudeHistoryItem[]
+  'history:import': (req: { sdkSessionId: string }) => SessionMeta
   'profiles:list': (req?: undefined) => AgentProfile[]
   'profiles:save': (req: { profile: AgentProfile }) => AgentProfile
   'profiles:delete': (req: { profileId: string }) => void

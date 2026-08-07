@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Plus, Archive, CircleStop, Search } from 'lucide-react'
+import { Plus, Archive, CircleStop, History, Search } from 'lucide-react'
 import { useSessionsStore } from '@/stores/useSessionsStore'
 import { useProfilesStore } from '@/stores/useProfilesStore'
 import type { SessionStatus } from '@shared/types'
@@ -32,7 +32,13 @@ function StatusDot({ status, color }: { status: SessionStatus; color: string }):
   )
 }
 
-export default function Sidebar({ onNewSession }: { onNewSession: () => void }): React.JSX.Element {
+export default function Sidebar({
+  onNewSession,
+  onOpenHistory
+}: {
+  onNewSession: () => void
+  onOpenHistory: () => void
+}): React.JSX.Element {
   const sessions = useSessionsStore((s) => s.sessions)
   const order = useSessionsStore((s) => s.order)
   const activeId = useSessionsStore((s) => s.activeId)
@@ -178,12 +184,21 @@ export default function Sidebar({ onNewSession }: { onNewSession: () => void }):
           )
         })}
       </div>
-      <button
-        onClick={onNewSession}
-        className="m-2 flex items-center justify-center gap-1.5 rounded-lg border border-dashed border-deck-border py-2 text-xs text-zinc-400 hover:bg-deck-raised hover:text-zinc-200"
-      >
-        <Plus size={13} /> New session
-      </button>
+      <div className="m-2 flex flex-col gap-1.5">
+        <button
+          onClick={onNewSession}
+          className="flex items-center justify-center gap-1.5 rounded-lg border border-dashed border-deck-border py-2 text-xs text-zinc-400 hover:bg-deck-raised hover:text-zinc-200"
+        >
+          <Plus size={13} /> New session
+        </button>
+        <button
+          onClick={onOpenHistory}
+          title="Browse and continue your terminal Claude Code conversations"
+          className="flex items-center justify-center gap-1.5 rounded-lg py-1.5 text-[11.5px] text-zinc-500 hover:bg-deck-raised hover:text-zinc-300"
+        >
+          <History size={12} /> Terminal history
+        </button>
+      </div>
     </aside>
   )
 }

@@ -68,6 +68,9 @@ export function registerIpc(manager: SessionManager): void {
     manager.broker.respond(req.requestId, req.decision)
   )
 
+  ipcMain.handle('history:list', () => manager.listTerminalHistory())
+  ipcMain.handle('history:import', (_e, req: { sdkSessionId: string }) => manager.importTerminal(req.sdkSessionId))
+
   ipcMain.handle('profiles:list', () => ProfileStore.list())
   ipcMain.handle('profiles:save', (_e, req: { profile: AgentProfile }) => ProfileStore.save(req.profile))
   ipcMain.handle('profiles:delete', (_e, req: { profileId: string }) => ProfileStore.delete(req.profileId))
