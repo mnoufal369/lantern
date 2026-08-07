@@ -85,17 +85,19 @@ export function registerIpc(manager: SessionManager): void {
     const status = await gitService.status(cwd)
     return { ...status, managed: isManaged(cwd) }
   })
-  ipcMain.handle('git:remoteBranches', (_e, req: { sessionId: string }) =>
-    gitService.remoteBranches(cwdOf(req.sessionId))
-  )
+  ipcMain.handle('git:remoteBranches', (_e, req: { sessionId: string }) => {
+    const cwd = cwdOf(req.sessionId)
+    return isManaged(cwd) ? gitService.remoteBranches(cwd) : gitService.allBranches(cwd)
+  })
   ipcMain.handle('git:checkoutBranch', async (_e, req: { sessionId: string; branch: string }) => {
     const cwd = cwdOf(req.sessionId)
-    if (!isManaged(cwd)) {
-      throw new Error('Branch switching is only available for repositories Pilot fetched for you')
+    if (isManaged(cwd)) {
+      await gitService.checkoutBranch(cwd, req.branch)
+    } else {
+      await gitService.checkoutLocalBranch(cwd, req.branch)
     }
-    await gitService.checkoutBranch(cwd, req.branch)
     const status = await gitService.status(cwd)
-    return { ...status, managed: true }
+    return { ...status, managed: isManaged(cwd) }
   })
   ipcMain.handle('git:diffFile', (_e, req: { sessionId: string; path: string }) =>
     gitService.diffFile(cwdOf(req.sessionId), req.path)

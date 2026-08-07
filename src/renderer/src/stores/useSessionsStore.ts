@@ -45,7 +45,15 @@ export const useSessionsStore = create<SessionsState>((set, get) => ({
       sessions[meta.id] = { meta, blocks: [], historyLoaded: false }
       order.push(meta.id)
     }
-    set({ sessions, order, initialized: true, activeId: order.find((id) => !sessions[id].meta.archived) ?? null })
+    set({ sessions, order, initialized: true })
+    const remembered = localStorage.getItem('pilot.activeSession')
+    const target =
+      (remembered && sessions[remembered] && !sessions[remembered].meta.archived ? remembered : null) ??
+      order.find((id) => !sessions[id].meta.archived) ??
+      null
+    if (target) {
+      get().setActive(target)
+    }
   },
 
   createSession: async (profileId, cwd) => {
@@ -61,8 +69,10 @@ export const useSessionsStore = create<SessionsState>((set, get) => ({
   setActive: (sessionId) => {
     set({ activeId: sessionId })
     if (!sessionId) {
+      localStorage.removeItem('pilot.activeSession')
       return
     }
+    localStorage.setItem('pilot.activeSession', sessionId)
     const entry = get().sessions[sessionId]
     if (entry && !entry.historyLoaded) {
       window.api.invoke('sessions:history', { sessionId }).then((events) => {

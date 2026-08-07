@@ -41,6 +41,24 @@ const ACTIONS_BY_PROFILE: Record<string, QuickAction[]> = {
   ]
 }
 
+const GITHUB_ACTIONS: QuickAction[] = [
+  {
+    label: '🔍 Review a PR…',
+    prefill:
+      'Review this PR the way we do at Salesdock: fetch it with gh, check security, ACL/tenant scoping, correctness, conventions, tests and translations, and report findings by severity with file references. PR #'
+  },
+  {
+    label: '🎫 Compose a ticket…',
+    prefill:
+      'Draft a GitHub issue following our format — Title, Problem, Proposed solution, and a "Technical todos" checklist. Show me the draft before creating it with gh. Topic: '
+  },
+  {
+    label: '☑️ Update technical todos…',
+    prefill:
+      'Fetch this GitHub issue with gh, review the "Technical todos" checklist against the current state of the code, tick what is done, add missing items, and update the issue after showing me the diff. Issue #'
+  }
+]
+
 interface Props {
   sessionId: string
   profileId: string
@@ -49,10 +67,7 @@ interface Props {
 
 export default function QuickActions({ sessionId, profileId, onPrefill }: Props): React.JSX.Element | null {
   const sendMessage = useSessionsStore((s) => s.sendMessage)
-  const actions = ACTIONS_BY_PROFILE[profileId]
-  if (!actions) {
-    return null
-  }
+  const actions = [...(ACTIONS_BY_PROFILE[profileId] ?? []), ...GITHUB_ACTIONS]
 
   return (
     <div className="flex flex-wrap gap-1.5 px-4 pb-1 pt-2">

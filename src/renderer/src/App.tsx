@@ -70,6 +70,10 @@ export default function App(): React.JSX.Element {
     return () => window.removeEventListener('keydown', handler)
   }, [])
 
+  useEffect(() => {
+    document.documentElement.classList.toggle('light', settings?.theme === 'light')
+  }, [settings?.theme])
+
   const needsApiKey = settings !== null && !settings.hasApiKey
 
   const onDrop = (e: React.DragEvent): void => {

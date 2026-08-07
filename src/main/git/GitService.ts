@@ -90,6 +90,23 @@ export class GitService {
     }
   }
 
+  /** Local + remote branch names for a full (non-managed) repository. */
+  async allBranches(cwd: string): Promise<string[]> {
+    try {
+      const git = this.client(cwd)
+      const summary = await git.branch(['-a'])
+      const names = new Set<string>()
+      for (const name of summary.all) {
+        names.add(name.replace(/^remotes\/origin\//, ''))
+      }
+      names.delete('HEAD')
+      return [...names].sort()
+    } catch {
+      return []
+    }
+  }
+
+  /** Shallow-fetch checkout for Pilot-managed workspaces. */
   async checkoutBranch(cwd: string, branch: string): Promise<void> {
     if (!/^[\w./-]+$/.test(branch)) {
       throw new Error('Invalid branch name')
@@ -97,6 +114,22 @@ export class GitService {
     const git = this.client(cwd)
     await git.fetch(['--depth', '1', 'origin', `${branch}:refs/remotes/origin/${branch}`])
     await git.checkout(['-B', branch, `origin/${branch}`])
+  }
+
+  /** Plain checkout for the user's own repositories — guarded against losing work. */
+  async checkoutLocalBranch(cwd: string, branch: string): Promise<void> {
+    if (!/^[\w./-]+$/.test(branch)) {
+      throw new Error('Invalid branch name')
+    }
+    const git = this.client(cwd)
+    const status = await git.status()
+    const dirty = status.files.filter((f) => f.working_dir !== '?' && f.index !== '?')
+    if (dirty.length > 0) {
+      throw new Error(
+        `You have ${dirty.length} uncommitted change${dirty.length > 1 ? 's' : ''} on ${status.current}. Commit or stash first, then switch.`
+      )
+    }
+    await git.checkout(branch)
   }
 
   async revertFile(cwd: string, filePath: string): Promise<void> {

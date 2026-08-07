@@ -130,7 +130,7 @@ export interface AppSettings {
   /** Always empty when sent to the renderer — the key never leaves the main process. */
   apiKey: string
   hasApiKey: boolean
-  theme: 'dark'
+  theme: 'dark' | 'light'
   maxConcurrentSessions: number
   uiMode: UiMode
   onboarded: boolean

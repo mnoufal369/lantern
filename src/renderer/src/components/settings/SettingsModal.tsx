@@ -100,6 +100,28 @@ export default function SettingsModal({ onClose }: { onClose: () => void }): Rea
         </div>
 
         <div>
+          <label className="mb-1 block text-xs font-medium text-zinc-400">Appearance</label>
+          <div className="flex rounded-lg border border-deck-border bg-deck-raised p-0.5">
+            {(
+              [
+                { value: 'dark', label: '🌙 Dark' },
+                { value: 'light', label: '☀️ Light' }
+              ] as const
+            ).map((theme) => (
+              <button
+                key={theme.value}
+                onClick={() => void update({ theme: theme.value })}
+                className={`flex-1 rounded-md py-1.5 text-xs ${
+                  settings?.theme === theme.value ? 'bg-deck-accent text-white' : 'text-zinc-400 hover:text-zinc-200'
+                }`}
+              >
+                {theme.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div>
           <label className="mb-1 block text-xs font-medium text-zinc-400">Interface mode</label>
           <div className="flex rounded-lg border border-deck-border bg-deck-raised p-0.5">
             {(

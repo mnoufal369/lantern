@@ -56,22 +56,13 @@ export default function BranchSwitcher({ sessionId }: { sessionId: string }): Re
     }
   }
 
-  if (!status.managed) {
-    return (
-      <span className="flex items-center gap-1 text-[11px] text-zinc-500">
-        <GitBranch size={11} />
-        {status.branch}
-      </span>
-    )
-  }
-
   const visibleBranches = branches?.filter((b) => b.toLowerCase().includes(search.toLowerCase())) ?? null
 
   return (
     <div ref={containerRef} className="relative">
       <button
         onClick={() => void toggle()}
-        title="Switch branch — Pilot refetches the code for you"
+        title={status.managed ? "Switch branch — Pilot refetches the code for you" : "Switch branch (blocked if you have uncommitted changes)"}
         className="flex items-center gap-1 rounded-md border border-deck-border px-1.5 py-0.5 text-[11px] text-zinc-400 hover:bg-deck-raised hover:text-zinc-200"
       >
         <GitBranch size={11} />

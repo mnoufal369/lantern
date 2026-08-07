@@ -24,7 +24,7 @@ const sessionStore = new Store<{ sessions: SessionMeta[] }>({
 interface PersistedSettings {
   /** API key encrypted with Electron safeStorage (keychain-backed), base64. */
   apiKeyEnc: string
-  theme: 'dark'
+  theme: 'dark' | 'light'
   maxConcurrentSessions: number
   uiMode: 'pro' | 'simple'
   onboarded: boolean
@@ -221,6 +221,9 @@ export const Settings = {
     }
     if (patch.uiMode !== undefined) {
       persisted.uiMode = patch.uiMode
+    }
+    if (patch.theme !== undefined) {
+      persisted.theme = patch.theme
     }
     if (patch.onboarded !== undefined) {
       persisted.onboarded = patch.onboarded
