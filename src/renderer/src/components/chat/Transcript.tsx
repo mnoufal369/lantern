@@ -16,7 +16,7 @@ const Block = memo(function Block({
     case 'user':
       return (
         <div className="my-3 flex justify-end">
-          <div className="max-w-[85%] rounded-2xl rounded-br-md bg-deck-accent/15 px-4 py-2.5 text-sm text-zinc-100">
+          <div className="max-w-[85%] rounded-2xl rounded-br-md border border-cyan-500/15 bg-gradient-to-br from-cyan-500/15 to-teal-500/10 px-4 py-2.5 text-sm text-zinc-100">
             {block.images && block.images.length > 0 && (
               <div className="mb-1.5 flex flex-wrap gap-1.5">
                 {block.images.map((src, i) => (
@@ -160,7 +160,7 @@ export default function Transcript({
         <div
           key={block.id}
           data-block-id={block.id}
-          className={block.id === highlightId ? 'rounded-lg ring-2 ring-amber-500/60' : undefined}
+          className={`block-in ${block.id === highlightId ? 'rounded-lg ring-2 ring-amber-500/60' : ''}`}
         >
           <Block block={block} simple={simple} />
         </div>

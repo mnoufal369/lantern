@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { KeyRound, Loader2, TerminalSquare, UserRound } from 'lucide-react'
 import type { AuthStatus, UiMode } from '@shared/types'
 import { useSettingsStore } from '@/stores/useSettingsStore'
+import PilotMark from '@/components/ui/PilotMark'
 
 const CHOICES: {
   mode: UiMode
@@ -49,10 +50,11 @@ export default function OnboardingModal(): React.JSX.Element {
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-deck-bg">
-      <div className="w-full max-w-xl px-8">
-        <div className="text-center">
-          <div className="text-5xl">🛰️</div>
-          <h1 className="mt-3 bg-gradient-to-r from-sky-300 via-zinc-100 to-cyan-300 bg-clip-text text-2xl font-bold text-transparent">
+      <div className="hero-glow" />
+      <div className="z-10 w-full max-w-xl px-8">
+        <div className="flex flex-col items-center text-center">
+          <PilotMark size={76} />
+          <h1 className="hero-title mt-4 bg-clip-text text-2xl font-extrabold tracking-tight text-transparent">
             Welcome aboard Pilot
           </h1>
           <p className="mt-2 text-sm text-zinc-400">

@@ -70,7 +70,7 @@ export default function BranchSwitcher({ sessionId }: { sessionId: string }): Re
         <ChevronDown size={10} />
       </button>
       {open && (
-        <div className="absolute left-0 top-6 z-30 flex max-h-72 w-60 flex-col rounded-lg border border-deck-border bg-deck-panel shadow-2xl">
+        <div className="menu-in absolute left-0 top-6 z-30 flex max-h-72 w-60 flex-col rounded-lg border border-deck-border bg-deck-panel shadow-2xl">
           <input
             autoFocus
             value={search}

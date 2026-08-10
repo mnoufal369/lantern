@@ -85,8 +85,8 @@ export default function PermissionDialog(): React.JSX.Element | null {
   )
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-      <div className="flex max-h-[80vh] w-full max-w-xl flex-col rounded-xl border border-amber-900/50 bg-deck-panel shadow-2xl">
+    <div className="overlay-in fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-[2px]">
+      <div className="modal-in flex max-h-[80vh] w-full max-w-xl flex-col rounded-xl border border-amber-900/50 bg-deck-panel shadow-[0_24px_80px_rgba(0,0,0,0.5),0_0_40px_rgba(245,158,11,0.08)]">
         <div className="flex items-center gap-2.5 border-b border-deck-border px-4 py-3">
           <ShieldAlert size={18} className="text-amber-500" />
           <div className="min-w-0">

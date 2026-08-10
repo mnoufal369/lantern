@@ -24,10 +24,14 @@ function statusLabel(status: SessionStatus): string {
 function StatusDot({ status, color }: { status: SessionStatus; color: string }): React.JSX.Element {
   const active = status.kind === 'thinking' || status.kind === 'running-tool'
   const waiting = status.kind === 'waiting-permission'
+  const dotColor = waiting ? '#f59e0b' : status.kind === 'error' ? '#ef4444' : color
   return (
     <span
       className={`inline-block h-2 w-2 shrink-0 rounded-full ${active ? 'status-pulse' : ''}`}
-      style={{ backgroundColor: waiting ? '#f59e0b' : status.kind === 'error' ? '#ef4444' : color }}
+      style={{
+        backgroundColor: dotColor,
+        boxShadow: active || waiting ? `0 0 8px ${dotColor}` : undefined
+      }}
     />
   )
 }
@@ -101,11 +105,12 @@ export default function Sidebar({
             <div
               key={id}
               onClick={() => setActive(id)}
-              className={`group mb-1 cursor-pointer rounded-lg border px-3 py-2 ${
+              className={`group mb-1 cursor-pointer rounded-lg border border-l-[3px] px-3 py-2 ${
                 id === activeId
                   ? 'border-deck-border bg-deck-raised'
                   : 'border-transparent hover:bg-deck-raised/60'
               }`}
+              style={{ borderLeftColor: id === activeId ? (profile?.color ?? '#29acc2') : 'transparent' }}
             >
               <div className="flex items-center gap-2">
                 <StatusDot status={meta.status} color={profile?.color ?? '#6366f1'} />

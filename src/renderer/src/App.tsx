@@ -14,6 +14,7 @@ import { useSessionsStore } from '@/stores/useSessionsStore'
 import { useProfilesStore } from '@/stores/useProfilesStore'
 import { usePermissionsStore } from '@/stores/usePermissionsStore'
 import { useSettingsStore } from '@/stores/useSettingsStore'
+import PilotMark from '@/components/ui/PilotMark'
 
 export default function App(): React.JSX.Element {
   const [settingsOpen, setSettingsOpen] = useState(false)
@@ -141,20 +142,37 @@ const MISSIONS = [
     emoji: '🌱',
     title: 'Build something new',
     text: 'A website, a script, a tiny app — describe it in plain words, your agent writes every line.',
-    gradient: 'from-emerald-500/15 to-teal-500/5'
+    gradient: 'from-emerald-500/20 via-teal-500/10 to-transparent',
+    border: 'border-emerald-500/30 hover:border-emerald-400/60',
+    chip: 'bg-emerald-500/20',
+    glow: 'hover:shadow-[0_12px_44px_rgba(16,185,129,0.18)]'
   },
   {
     emoji: '🔧',
     title: 'Fix or improve a project',
     text: 'Point it at a folder. It reads the code, proposes changes as diffs, and asks before touching anything.',
-    gradient: 'from-sky-500/15 to-violet-500/5'
+    gradient: 'from-sky-500/20 via-cyan-500/10 to-transparent',
+    border: 'border-sky-500/30 hover:border-sky-400/60',
+    chip: 'bg-sky-500/20',
+    glow: 'hover:shadow-[0_12px_44px_rgba(41,172,194,0.2)]'
   },
   {
     emoji: '📖',
     title: 'Understand anything',
     text: 'Drop it into an unfamiliar project and ask "explain this to me" — get a guided tour, no jargon.',
-    gradient: 'from-amber-500/15 to-orange-500/5'
+    gradient: 'from-amber-500/20 via-orange-500/10 to-transparent',
+    border: 'border-amber-500/30 hover:border-amber-400/60',
+    chip: 'bg-amber-500/20',
+    glow: 'hover:shadow-[0_12px_44px_rgba(245,158,11,0.16)]'
   }
+]
+
+const HINTS = [
+  { keys: '⌘N', label: 'new session' },
+  { keys: '⌘K', label: 'quick actions' },
+  { keys: '⌘F', label: 'search chat' },
+  { keys: '⌘V', label: 'paste a screenshot' },
+  { keys: 'esc', label: 'interrupt' }
 ]
 
 function EmptyState({
@@ -167,37 +185,53 @@ function EmptyState({
   onOpenSettings: () => void
 }): React.JSX.Element {
   return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-5 px-8">
-      <div className="text-5xl">🛰️</div>
+    <div className="relative flex flex-1 flex-col items-center justify-center gap-6 px-8">
+      <div className="hero-glow" />
+      <PilotMark size={84} />
       <div className="text-center">
-        <h1 className="bg-gradient-to-r from-sky-300 via-zinc-100 to-cyan-300 bg-clip-text text-2xl font-bold text-transparent">
+        <h1 className="hero-title bg-clip-text text-3xl font-extrabold tracking-tight text-transparent">
           You talk. Pilot builds.
         </h1>
-        <p className="mt-1.5 max-w-md text-sm text-zinc-400">
+        <p className="mt-2 max-w-md text-sm text-zinc-400">
           A whole team of AI agents at your command — and you approve every change.
         </p>
       </div>
-      <div className="grid w-full max-w-2xl grid-cols-3 gap-3">
+      <div className="z-10 grid w-full max-w-2xl grid-cols-3 gap-3">
         {MISSIONS.map((mission) => (
           <button
             key={mission.title}
             onClick={onNewSession}
-            className={`group rounded-xl border border-deck-border bg-gradient-to-b ${mission.gradient} p-4 text-left transition-transform hover:-translate-y-0.5 hover:border-zinc-600`}
+            className={`group rounded-2xl border ${mission.border} bg-gradient-to-b ${mission.gradient} p-4 text-left transition-all hover:-translate-y-1 ${mission.glow}`}
           >
-            <div className="text-2xl">{mission.emoji}</div>
-            <p className="mt-2 text-sm font-semibold text-zinc-100">{mission.title}</p>
+            <span className={`inline-flex h-10 w-10 items-center justify-center rounded-xl ${mission.chip} text-xl`}>
+              {mission.emoji}
+            </span>
+            <p className="mt-3 text-sm font-semibold text-zinc-100">{mission.title}</p>
             <p className="mt-1 text-[12px] leading-relaxed text-zinc-400">{mission.text}</p>
+            <p className="mt-2 text-[11px] font-medium text-deck-accent opacity-0 transition-opacity group-hover:opacity-100">
+              Start →
+            </p>
           </button>
         ))}
       </div>
       <button
         onClick={onNewSession}
-        className="rounded-lg bg-deck-accent px-5 py-2 text-sm font-medium text-white shadow-lg shadow-sky-950/40 hover:opacity-90"
+        className="btn-brand z-10 rounded-xl px-6 py-2.5 text-sm font-semibold text-white"
       >
         Start a session&ensp;⌘N
       </button>
+      <div className="z-10 flex flex-wrap items-center justify-center gap-2">
+        {HINTS.map((hint) => (
+          <span
+            key={hint.keys}
+            className="rounded-full border border-deck-border bg-deck-panel/60 px-2.5 py-1 text-[10.5px] text-zinc-500"
+          >
+            <span className="font-mono font-semibold text-zinc-300">{hint.keys}</span> {hint.label}
+          </span>
+        ))}
+      </div>
       {needsApiKey && (
-        <button onClick={onOpenSettings} className="text-xs text-zinc-500 underline-offset-2 hover:underline">
+        <button onClick={onOpenSettings} className="z-10 text-xs text-zinc-500 underline-offset-2 hover:underline">
           Using your Claude Code login — or add an API key in Settings
         </button>
       )}

@@ -114,7 +114,7 @@ export default function Composer({
           }}
         />
       )}
-      <div className="flex flex-col gap-2 rounded-xl border border-deck-border bg-deck-raised p-2">
+      <div className="flex flex-col gap-2 rounded-xl border border-deck-border bg-deck-raised p-2 transition-all duration-200 focus-within:border-deck-accent/60 focus-within:shadow-[0_0_0_3px_rgba(41,172,194,0.12),0_8px_30px_rgba(41,172,194,0.08)]">
         {attachments.length > 0 && (
           <div className="flex gap-2 px-1 pt-1">
             {attachments.map((att, index) => (
@@ -225,7 +225,7 @@ export default function Composer({
             onClick={submit}
             disabled={!text.trim() && attachments.length === 0}
             title="Send (⏎)"
-            className="flex h-8 w-8 items-center justify-center rounded-lg bg-deck-accent text-white disabled:opacity-30"
+            className="btn-brand flex h-8 w-8 items-center justify-center rounded-lg text-white disabled:opacity-30"
           >
             <SendHorizonal size={14} />
           </button>

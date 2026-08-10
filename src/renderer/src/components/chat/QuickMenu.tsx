@@ -163,7 +163,7 @@ export default function QuickMenu({
   }
 
   return (
-    <div className="absolute bottom-full left-0 right-0 z-40 mb-2 max-h-72 overflow-y-auto rounded-xl border border-deck-border bg-deck-panel shadow-2xl">
+    <div className="menu-in absolute bottom-full left-0 right-0 z-40 mb-2 max-h-72 overflow-y-auto rounded-xl border border-deck-border bg-deck-panel shadow-2xl">
       <p className="border-b border-deck-border px-3 py-1.5 text-[10.5px] uppercase tracking-wide text-zinc-600">
         Quick actions — ↑↓ navigate · ⏎ run · esc close
       </p>
