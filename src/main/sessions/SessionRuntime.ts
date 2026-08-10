@@ -1,6 +1,6 @@
 import { query, type Options, type PermissionUpdate, type Query, type SDKUserMessage } from '@anthropic-ai/claude-agent-sdk'
 import { app } from 'electron'
-import { existsSync } from 'node:fs'
+import { existsSync, mkdirSync, writeFileSync } from 'node:fs'
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import type { AgentProfile, PastedImage, SessionMeta, SessionStats, SessionStatus, UiEvent } from '@shared/types'
@@ -22,6 +22,19 @@ function transcriptPath(sessionId: string): string {
   return path.join(app.getPath('userData'), 'transcripts', `${sessionId}.json`)
 }
 
+/** Reads a persisted event log without spinning up a runtime. */
+export async function loadTranscriptEvents(sessionId: string): Promise<UiEvent[]> {
+  try {
+    const raw = await readFile(transcriptPath(sessionId), 'utf8')
+    return JSON.parse(raw) as UiEvent[]
+  } catch {
+    return []
+  }
+}
+
+/** Milliseconds of quiet before an in-turn transcript snapshot is written. */
+const TRANSCRIPT_SNAPSHOT_MS = 2000
+
 /**
  * Owns one long-lived SDK query stream: pushes user messages in via an
  * AsyncQueue, consumes normalized events out, coalesces streaming deltas,
@@ -38,8 +51,13 @@ export class SessionRuntime {
   private flushTimer: NodeJS.Timeout | null = null
   private messageCounter = 0
   private waitingPermission = false
-  private lastTotalCost = 0
+  /** Cumulative cost reported by the *current* agent process. */
+  private processCost = 0
+  /** Cost accumulated by earlier processes of this session (from disk). */
+  private baseCostUsd = 0
   private disposed = false
+  private streamEnded = false
+  private snapshotTimer: NodeJS.Timeout | null = null
 
   constructor(
     meta: SessionMeta,
@@ -47,6 +65,12 @@ export class SessionRuntime {
     private deps: RuntimeDeps
   ) {
     this.meta = meta
+    this.baseCostUsd = meta.stats.totalCostUsd
+  }
+
+  /** True once the SDK stream has ended — the runtime must be replaced, not reused. */
+  isDead(): boolean {
+    return this.streamEnded || this.disposed
   }
 
   start(): void {
@@ -80,13 +104,14 @@ export class SessionRuntime {
       env: {
         ...process.env,
         ...(this.deps.getApiKey().trim() !== '' ? { ANTHROPIC_API_KEY: this.deps.getApiKey() } : {}),
-        CLAUDE_AGENT_SDK_CLIENT_APP: 'pilot/0.1.0'
+        CLAUDE_AGENT_SDK_CLIENT_APP: `pilot/${app.getVersion()}`
       },
       canUseTool: (toolName, input, context) =>
         this.deps.broker.request(this.meta.id, toolName, input, {
           signal: context.signal,
           suggestions: context.suggestions as PermissionUpdate[] | undefined,
-          title: context.title
+          title: context.title,
+          toolUseId: context.toolUseID
         }),
       resume: this.meta.sdkSessionId,
       pathToClaudeCodeExecutable: resolvePackagedCli()
@@ -116,7 +141,14 @@ export class SessionRuntime {
         this.handleEvents([{ t: 'session-error', message: messageText }])
         this.setStatus({ kind: 'error', message: messageText })
       }
+    } finally {
+      this.streamEnded = true
     }
+  }
+
+  /** Records a permission verdict into the transcript against its tool block. */
+  recordDecision(toolUseId: string, decision: 'allowed' | 'denied'): void {
+    this.handleEvents([{ t: 'permission-decision', id: toolUseId, decision }])
   }
 
   private handleEvents(events: UiEvent[]): void {
@@ -150,11 +182,11 @@ export class SessionRuntime {
           this.deps.emitGitChanged(this.meta.id)
           break
         case 'turn-complete': {
-          const turnCost = Math.max(0, event.costUsd - this.lastTotalCost)
-          this.lastTotalCost = event.costUsd
+          const turnCost = Math.max(0, event.costUsd - this.processCost)
+          this.processCost = event.costUsd
           event.costUsd = turnCost
           this.meta.stats = {
-            totalCostUsd: this.lastTotalCost,
+            totalCostUsd: this.baseCostUsd + this.processCost,
             inputTokens: this.meta.stats.inputTokens + event.usage.inputTokens,
             outputTokens: this.meta.stats.outputTokens + event.usage.outputTokens,
             cacheReadTokens: this.meta.stats.cacheReadTokens + event.usage.cacheReadTokens,
@@ -183,6 +215,13 @@ export class SessionRuntime {
           this.deps.emitEvents(this.meta.id, batch)
         }
       }, STREAM_FLUSH_MS)
+    }
+    // Snapshot mid-turn too, so a crash loses at most a couple of seconds.
+    if (!this.snapshotTimer) {
+      this.snapshotTimer = setTimeout(() => {
+        this.snapshotTimer = null
+        void this.persistTranscript()
+      }, TRANSCRIPT_SNAPSHOT_MS)
     }
   }
 
@@ -278,6 +317,10 @@ export class SessionRuntime {
 
   dispose(): void {
     this.disposed = true
+    if (this.snapshotTimer) {
+      clearTimeout(this.snapshotTimer)
+      this.snapshotTimer = null
+    }
     this.queue.end()
     this.abort.abort()
     try {
@@ -285,7 +328,14 @@ export class SessionRuntime {
     } catch {
       // Already closed.
     }
-    void this.persistTranscript()
+    // Synchronous on purpose: dispose runs on quit, when async writes race the process exit.
+    try {
+      const file = transcriptPath(this.meta.id)
+      mkdirSync(path.dirname(file), { recursive: true })
+      writeFileSync(file, JSON.stringify(this.eventLog), 'utf8')
+    } catch (error) {
+      console.error('Failed to persist transcript on dispose', error)
+    }
   }
 }
 

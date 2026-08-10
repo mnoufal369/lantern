@@ -20,6 +20,7 @@ interface SessionsState {
   sendMessage: (sessionId: string, text: string, images?: PastedImage[]) => Promise<void>
   interrupt: (sessionId: string) => Promise<void>
   archive: (sessionId: string) => Promise<void>
+  deleteSession: (sessionId: string) => Promise<void>
   reopen: (sessionId: string) => Promise<void>
   rename: (sessionId: string, title: string) => Promise<void>
   setModel: (sessionId: string, model: string) => Promise<void>
@@ -116,6 +117,19 @@ export const useSessionsStore = create<SessionsState>((set, get) => ({
           ...state.sessions,
           [sessionId]: { ...entry, meta: { ...entry.meta, archived: true } }
         },
+        activeId: state.activeId === sessionId ? null : state.activeId
+      }
+    })
+  },
+
+  deleteSession: async (sessionId) => {
+    await window.api.invoke('sessions:delete', { sessionId })
+    set((state) => {
+      const sessions = { ...state.sessions }
+      delete sessions[sessionId]
+      return {
+        sessions,
+        order: state.order.filter((id) => id !== sessionId),
         activeId: state.activeId === sessionId ? null : state.activeId
       }
     })

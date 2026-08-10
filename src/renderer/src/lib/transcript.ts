@@ -22,29 +22,51 @@ export type TranscriptBlock =
 let blockCounter = 0
 const nextBlockId = (): string => `blk_${++blockCounter}`
 
-function findToolBlock(blocks: TranscriptBlock[], id: string): { block: TranscriptBlock & { kind: 'tool' } } | null {
-  for (const block of blocks) {
+type ToolBlock = TranscriptBlock & { kind: 'tool' }
+
+/**
+ * Returns a new array with the tool block `id` (at any nesting depth)
+ * replaced by `update(block)`, rebuilding every ancestor along the path so
+ * object identity changes and memoized components re-render. Null if absent.
+ */
+function updateToolBlock(
+  blocks: TranscriptBlock[],
+  id: string,
+  update: (block: ToolBlock) => ToolBlock
+): TranscriptBlock[] | null {
+  for (let i = 0; i < blocks.length; i++) {
+    const block = blocks[i]
     if (block.kind !== 'tool') {
       continue
     }
     if (block.id === id) {
-      return { block }
+      const next = [...blocks]
+      next[i] = update(block)
+      return next
     }
-    const nested = findToolBlock(block.children, id)
-    if (nested) {
-      return nested
+    const children = updateToolBlock(block.children, id, update)
+    if (children) {
+      const next = [...blocks]
+      next[i] = { ...block, children }
+      return next
     }
   }
   return null
 }
 
+/** Immutably appends a child to the tool block `parentId`; null if the parent is absent. */
+function appendToolChild(blocks: TranscriptBlock[], parentId: string, child: TranscriptBlock): TranscriptBlock[] | null {
+  return updateToolBlock(blocks, parentId, (parent) => ({ ...parent, children: [...parent.children, child] }))
+}
+
 /**
  * Applies a batch of normalized UiEvents to a transcript, returning a new
- * top-level array. Blocks are mutated in place where streaming appends occur;
- * the array identity change is what triggers a re-render of the tail.
+ * top-level array. Every touched block (and its ancestors) is replaced with
+ * a new object — components are memoized on block identity, so in-place
+ * mutation would leave them stale.
  */
 export function applyEvents(blocks: TranscriptBlock[], events: UiEvent[]): TranscriptBlock[] {
-  const next = [...blocks]
+  let next = [...blocks]
 
   for (const event of events) {
     switch (event.t) {
@@ -83,9 +105,9 @@ export function applyEvents(blocks: TranscriptBlock[], events: UiEvent[]): Trans
           input: event.input,
           children: []
         }
-        const parent = event.parentToolUseId ? findToolBlock(next, event.parentToolUseId) : null
-        if (parent) {
-          parent.block.children = [...parent.block.children, block]
+        const withChild = event.parentToolUseId ? appendToolChild(next, event.parentToolUseId, block) : null
+        if (withChild) {
+          next = withChild
         } else {
           next.push(block)
         }
@@ -93,19 +115,14 @@ export function applyEvents(blocks: TranscriptBlock[], events: UiEvent[]): Trans
       }
 
       case 'tool-result': {
-        const found = findToolBlock(next, event.id)
-        if (found) {
-          found.block.output = event.output
-          found.block.isError = event.isError
-        }
+        next =
+          updateToolBlock(next, event.id, (block) => ({ ...block, output: event.output, isError: event.isError })) ??
+          next
         break
       }
 
       case 'permission-decision': {
-        const found = findToolBlock(next, event.id)
-        if (found) {
-          found.block.permission = event.decision
-        }
+        next = updateToolBlock(next, event.id, (block) => ({ ...block, permission: event.decision })) ?? next
         break
       }
 

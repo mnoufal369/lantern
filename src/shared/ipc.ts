@@ -25,6 +25,7 @@ export interface IpcApi {
   'sessions:send': (req: { sessionId: string; text: string; images?: PastedImage[] }) => void
   'sessions:interrupt': (req: { sessionId: string }) => void
   'sessions:archive': (req: { sessionId: string }) => void
+  'sessions:delete': (req: { sessionId: string }) => void
   'sessions:reopen': (req: { sessionId: string }) => SessionMeta
   'sessions:list': (req?: undefined) => SessionMeta[]
   'sessions:history': (req: { sessionId: string }) => UiEvent[]
@@ -48,6 +49,7 @@ export interface IpcApi {
   'app:getSettings': (req?: undefined) => AppSettings
   'app:setSettings': (req: { settings: Partial<AppSettings> }) => AppSettings
   'app:getAuthStatus': (req?: undefined) => AuthStatus
+  'app:getVersion': (req?: undefined) => string
 }
 
 /**
@@ -59,6 +61,8 @@ export interface IpcEvents {
   'permission:request': PermissionRequest
   'permission:resolved': { requestId: string }
   'git:changed': { sessionId: string }
+  /** Sent when the user clicks a native notification for this session. */
+  'session:focus': { sessionId: string }
 }
 
 export type IpcChannel = keyof IpcApi

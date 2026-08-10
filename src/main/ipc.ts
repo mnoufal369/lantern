@@ -20,14 +20,18 @@ export function registerIpc(manager: SessionManager): void {
     return meta.cwd
   }
 
-  ipcMain.handle('sessions:create', (_e, req: { profileId: string; cwd: string }) =>
-    manager.create(req.profileId, req.cwd)
-  )
+  ipcMain.handle('sessions:create', (_e, req: { profileId: string; cwd: string }) => {
+    const meta = manager.create(req.profileId, req.cwd)
+    Settings.recordRecentFolder(req.cwd)
+    return meta
+  })
   ipcMain.handle(
     'sessions:createFromRepo',
     async (_e, req: { profileId: string; repoUrl: string; branch?: string }) => {
       const workspace = await prepareRepoWorkspace(req.repoUrl, req.branch)
-      return manager.create(req.profileId, workspace)
+      const meta = manager.create(req.profileId, workspace)
+      Settings.recordRecentRepo(req.repoUrl.trim(), req.branch?.trim() || undefined)
+      return meta
     }
   )
   ipcMain.handle('sessions:exportTranscript', async (_e, req: { sessionId: string; markdown: string }) => {
@@ -51,6 +55,7 @@ export function registerIpc(manager: SessionManager): void {
   )
   ipcMain.handle('sessions:interrupt', (_e, req: { sessionId: string }) => manager.interrupt(req.sessionId))
   ipcMain.handle('sessions:archive', (_e, req: { sessionId: string }) => manager.archive(req.sessionId))
+  ipcMain.handle('sessions:delete', (_e, req: { sessionId: string }) => manager.deleteSession(req.sessionId))
   ipcMain.handle('sessions:reopen', (_e, req: { sessionId: string }) => manager.reopen(req.sessionId))
   ipcMain.handle('sessions:list', () => manager.list())
   ipcMain.handle('sessions:history', (_e, req: { sessionId: string }) => manager.history(req.sessionId))
@@ -119,4 +124,5 @@ export function registerIpc(manager: SessionManager): void {
   ipcMain.handle('app:getSettings', () => Settings.get())
   ipcMain.handle('app:setSettings', (_e, req: { settings: Partial<AppSettings> }) => Settings.set(req.settings))
   ipcMain.handle('app:getAuthStatus', () => Settings.authStatus())
+  ipcMain.handle('app:getVersion', () => app.getVersion())
 }

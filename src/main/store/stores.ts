@@ -3,8 +3,8 @@ import { readFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
 import Store from 'electron-store'
-import type { AgentProfile, AppSettings, AuthStatus, SessionMeta } from '@shared/types'
-import { DEFAULT_MAX_CONCURRENT_SESSIONS, DEFAULT_MODEL } from '@shared/constants'
+import type { AgentProfile, AppSettings, AuthStatus, RecentRepo, SessionMeta } from '@shared/types'
+import { DEFAULT_MAX_CONCURRENT_SESSIONS, DEFAULT_MODEL, MAX_RECENTS } from '@shared/constants'
 
 const profileStore = new Store<{ profiles: AgentProfile[]; seedVersion: number }>({
   name: 'profiles',
@@ -29,6 +29,8 @@ interface PersistedSettings {
   uiMode: 'pro' | 'simple'
   onboarded: boolean
   customInstructions?: string
+  recentFolders?: string[]
+  recentRepos?: RecentRepo[]
 }
 
 const settingsStore = new Store<{ settings: PersistedSettings }>({
@@ -193,6 +195,15 @@ export const SessionStore = {
       sessions.unshift(meta)
     }
     sessionStore.set('sessions', sessions)
+  },
+  saveAll(metas: SessionMeta[]): void {
+    sessionStore.set('sessions', metas)
+  },
+  remove(sessionId: string): void {
+    sessionStore.set(
+      'sessions',
+      sessionStore.get('sessions').filter((s) => s.id !== sessionId)
+    )
   }
 }
 
@@ -204,10 +215,14 @@ export const Settings = {
       apiKey: '',
       hasApiKey: persisted.apiKeyEnc !== '',
       theme: persisted.theme,
-      maxConcurrentSessions: persisted.maxConcurrentSessions,
+      maxConcurrentSessions: Number.isFinite(persisted.maxConcurrentSessions)
+        ? persisted.maxConcurrentSessions
+        : DEFAULT_MAX_CONCURRENT_SESSIONS,
       customInstructions: persisted.customInstructions ?? '',
       uiMode: persisted.uiMode ?? 'pro',
-      onboarded: persisted.onboarded ?? false
+      onboarded: persisted.onboarded ?? false,
+      recentFolders: persisted.recentFolders ?? [],
+      recentRepos: persisted.recentRepos ?? []
     }
   },
   /** Decrypted key for the session runtime only. */
@@ -220,7 +235,10 @@ export const Settings = {
       persisted.apiKeyEnc = encryptKey(patch.apiKey.trim())
     }
     if (patch.maxConcurrentSessions !== undefined) {
-      persisted.maxConcurrentSessions = Math.max(1, Math.min(10, patch.maxConcurrentSessions))
+      const value = Number.isFinite(patch.maxConcurrentSessions)
+        ? patch.maxConcurrentSessions
+        : DEFAULT_MAX_CONCURRENT_SESSIONS
+      persisted.maxConcurrentSessions = Math.max(1, Math.min(10, value))
     }
     if (patch.uiMode !== undefined) {
       persisted.uiMode = patch.uiMode
@@ -236,6 +254,19 @@ export const Settings = {
     }
     settingsStore.set('settings', persisted)
     return Settings.get()
+  },
+  recordRecentFolder(folder: string): void {
+    const persisted = settingsStore.get('settings')
+    const next = [folder, ...(persisted.recentFolders ?? []).filter((f) => f !== folder)].slice(0, MAX_RECENTS)
+    settingsStore.set('settings', { ...persisted, recentFolders: next })
+  },
+  recordRecentRepo(url: string, branch?: string): void {
+    const persisted = settingsStore.get('settings')
+    const next = [
+      { url, branch },
+      ...(persisted.recentRepos ?? []).filter((r) => r.url !== url || r.branch !== branch)
+    ].slice(0, MAX_RECENTS)
+    settingsStore.set('settings', { ...persisted, recentRepos: next })
   },
   authStatus(): AuthStatus {
     if (settingsStore.get('settings').apiKeyEnc !== '') {

@@ -93,6 +93,20 @@ const Block = memo(function Block({
       )
 
     case 'error':
+      if (simple) {
+        return (
+          <div className="my-3 max-w-[95%] rounded-lg border border-red-900/60 bg-red-950/40 px-3 py-2 text-sm text-red-300">
+            <div className="flex items-start gap-2">
+              <CircleAlert size={15} className="mt-0.5 shrink-0" />
+              <span>Something went wrong on the agent's side. Just send your message again — it picks up where it left off.</span>
+            </div>
+            <details className="mt-1.5 pl-6">
+              <summary className="cursor-pointer text-[11px] text-red-400/70 hover:text-red-300">technical details</summary>
+              <p className="selectable mt-1 font-mono text-[11px] text-red-400/80">{block.message}</p>
+            </details>
+          </div>
+        )
+      }
       return (
         <div className="my-3 flex max-w-[95%] items-start gap-2 rounded-lg border border-red-900/60 bg-red-950/40 px-3 py-2 text-sm text-red-300">
           <CircleAlert size={15} className="mt-0.5 shrink-0" />
@@ -132,12 +146,24 @@ const Block = memo(function Block({
   }
 })
 
-export default function Transcript({ blocks }: { blocks: TranscriptBlock[] }): React.JSX.Element {
+export default function Transcript({
+  blocks,
+  highlightId
+}: {
+  blocks: TranscriptBlock[]
+  highlightId?: string | null
+}): React.JSX.Element {
   const simple = useSettingsStore((s) => s.settings?.uiMode === 'simple')
   return (
     <div className="mx-auto max-w-3xl">
       {blocks.map((block) => (
-        <Block key={block.id} block={block} simple={simple} />
+        <div
+          key={block.id}
+          data-block-id={block.id}
+          className={block.id === highlightId ? 'rounded-lg ring-2 ring-amber-500/60' : undefined}
+        >
+          <Block block={block} simple={simple} />
+        </div>
       ))}
     </div>
   )

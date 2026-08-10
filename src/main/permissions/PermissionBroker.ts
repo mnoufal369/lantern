@@ -6,6 +6,7 @@ interface PendingRequest {
   resolve: (result: PermissionResult) => void
   timeout: NodeJS.Timeout
   sessionId: string
+  toolUseId: string
   suggestions?: PermissionUpdate[]
   toolName: string
   input: Record<string, unknown>
@@ -16,20 +17,65 @@ interface BrokerDeps {
   notifyResolved: (requestId: string) => void
   onWaitingChanged: (sessionId: string, waiting: boolean) => void
   persistAlwaysAllow: (sessionId: string, rule: string) => void
+  recordDecision: (sessionId: string, toolUseId: string, decision: 'allowed' | 'denied') => void
 }
 
-/** Derives a human-readable always-allow rule in Claude Code rule syntax. */
+/**
+ * Shell control characters that make a command compound (chaining,
+ * substitution, redirection). Commands containing any of these never match a
+ * prefix rule and never produce one — they must be approved one by one.
+ */
+const SHELL_CONTROL = /[;&|`$<>\n]/
+
+/** First words whose prefix would grant far more than the user saw approved. */
+const RISKY_FIRST_WORDS = new Set([
+  'rm', 'rmdir', 'mv', 'dd', 'mkfs', 'shred',
+  'sudo', 'su', 'doas',
+  'chmod', 'chown', 'chgrp',
+  'kill', 'killall', 'pkill', 'shutdown', 'reboot', 'halt',
+  'curl', 'wget', 'nc', 'ncat',
+  'sh', 'bash', 'zsh', 'fish', 'eval', 'exec', 'source', 'osascript',
+  'crontab', 'launchctl', 'systemctl'
+])
+
+/**
+ * Derives the rule an "always allow" click will remember, in Claude Code
+ * rule syntax. Safe commands get a two-word prefix rule (`Bash(git status:*)`);
+ * risky or compound commands get an exact-match rule for that one command.
+ */
 export function deriveAlwaysAllowRule(toolName: string, input: Record<string, unknown>): string {
   if (toolName === 'Bash' && typeof input.command === 'string') {
-    const words = input.command.trim().split(/\s+/).slice(0, 2).join(' ')
+    const command = input.command.trim()
+    const firstWord = command.split(/\s+/)[0] ?? ''
+    if (SHELL_CONTROL.test(command) || RISKY_FIRST_WORDS.has(firstWord)) {
+      return `Bash(${command})`
+    }
+    const words = command.split(/\s+/).slice(0, 2).join(' ')
     return `Bash(${words}:*)`
   }
   return toolName
 }
 
-function bashPrefixOf(rule: string): string | null {
-  const match = /^Bash\((.+):\*\)$/.exec(rule)
-  return match ? match[1] : null
+/**
+ * Whether a Bash command is covered by a remembered rule. Prefix rules only
+ * match on a word boundary ("git status" does not cover "git statusx") and
+ * never match compound commands ("git status; rm -rf ~" always re-prompts).
+ */
+export function commandMatchesRule(command: string, rule: string): boolean {
+  const trimmed = command.trim()
+  const prefixRule = /^Bash\((.+):\*\)$/.exec(rule)
+  if (prefixRule) {
+    if (SHELL_CONTROL.test(trimmed)) {
+      return false
+    }
+    const prefix = prefixRule[1]
+    return trimmed === prefix || trimmed.startsWith(`${prefix} `)
+  }
+  const exactRule = /^Bash\((.+)\)$/.exec(rule)
+  if (exactRule) {
+    return trimmed === exactRule[1]
+  }
+  return false
 }
 
 /**
@@ -49,14 +95,12 @@ export class PermissionBroker {
     if (!rules) {
       return false
     }
-    if (rules.has(toolName)) {
+    if (rules.has(toolName) && toolName !== 'Bash') {
       return true
     }
     if (toolName === 'Bash' && typeof input.command === 'string') {
-      const command = input.command.trim()
       for (const rule of rules) {
-        const prefix = bashPrefixOf(rule)
-        if (prefix && command.startsWith(prefix)) {
+        if (commandMatchesRule(input.command, rule)) {
           return true
         }
       }
@@ -68,9 +112,15 @@ export class PermissionBroker {
     sessionId: string,
     toolName: string,
     input: Record<string, unknown>,
-    context: { signal: AbortSignal; suggestions?: PermissionUpdate[]; title?: string }
+    context: {
+      signal: AbortSignal
+      suggestions?: PermissionUpdate[]
+      title?: string
+      toolUseId: string
+    }
   ): Promise<PermissionResult> {
     if (this.matchesAlwaysAllow(sessionId, toolName, input)) {
+      this.deps.recordDecision(sessionId, context.toolUseId, 'allowed')
       return Promise.resolve({ behavior: 'allow', updatedInput: input })
     }
 
@@ -84,7 +134,15 @@ export class PermissionBroker {
         })
       }, PERMISSION_TIMEOUT_MS)
 
-      this.pending.set(requestId, { resolve, timeout, sessionId, suggestions: context.suggestions, toolName, input })
+      this.pending.set(requestId, {
+        resolve,
+        timeout,
+        sessionId,
+        toolUseId: context.toolUseId,
+        suggestions: context.suggestions,
+        toolName,
+        input
+      })
       this.deps.onWaitingChanged(sessionId, true)
 
       context.signal.addEventListener('abort', () => {
@@ -148,15 +206,21 @@ export class PermissionBroker {
       this.deps.onWaitingChanged(entry.sessionId, false)
     }
     this.deps.notifyResolved(requestId)
+    this.deps.recordDecision(entry.sessionId, entry.toolUseId, result.behavior === 'allow' ? 'allowed' : 'denied')
     entry.resolve(result)
   }
 
-  disposeSession(sessionId: string): void {
+  /** Denies every pending request for a session without touching its remembered rules. */
+  cancelPending(sessionId: string, reason: string): void {
     for (const [requestId, entry] of this.pending) {
       if (entry.sessionId === sessionId) {
-        this.finish(requestId, { behavior: 'deny', message: 'Session closed' })
+        this.finish(requestId, { behavior: 'deny', message: reason })
       }
     }
+  }
+
+  disposeSession(sessionId: string): void {
+    this.cancelPending(sessionId, 'Session closed')
     this.sessionAlwaysAllow.delete(sessionId)
   }
 }

@@ -14,6 +14,10 @@ Pilot is what GitHub Desktop was to the git terminal — a native, interactive c
 - **Permission control** — tool calls surface as native dialogs with rich previews (the diff it wants to apply, the command it wants to run): Deny / Allow once / Always allow. Flip between Plan / Ask / Auto-edit / Full-auto mid-session.
 - **Git awareness** — per-session branch info, changed files with inline diffs, one-click revert, and a "files touched this session" tracker.
 - **Keep talking while it works** — the composer stays live during a run; messages queue into the running turn. Interrupt any time with Esc.
+- **Calls you back** — native notifications when an agent finishes, errors, or needs your approval while Pilot is in the background; click to jump to the session.
+- **Cost control** — per-profile session budgets with a live budget bar, plus a usage view in Settings (7-day and all-time spend, per profile).
+- **Safe "always allow"** — remembered Bash rules only match on word boundaries and never cover chained commands (`git status; rm -rf ~` always re-prompts); risky commands (`rm`, `curl`, `sudo`, …) are only ever remembered as exact matches.
+- **QA niceties** — paste a PR number (`#123`) instead of a branch when fetching a repo, search inside a conversation (⌘F), copy the whole session as Markdown, recent folders/repos one click away, archived sessions restorable (or deletable with full cleanup).
 
 ## Auth
 
@@ -50,6 +54,7 @@ Requirements on the Windows machine: [Git for Windows](https://git-scm.com/downl
 yarn install          # Node 20+, engines are advisory (.yarnrc has --ignore-engines)
 yarn dev              # run with HMR
 yarn typecheck        # TS across main/preload/renderer
+yarn test             # vitest unit tests (permission rules, normalizer, transcript reducer)
 yarn dist             # build release/Pilot-<version>-arm64.dmg (unsigned)
 ```
 

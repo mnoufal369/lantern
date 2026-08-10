@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Plus, Archive, CircleStop, History, Search } from 'lucide-react'
+import { Plus, Archive, ArchiveRestore, ChevronDown, ChevronRight, CircleStop, History, Search, Trash2 } from 'lucide-react'
 import { useSessionsStore } from '@/stores/useSessionsStore'
 import { useProfilesStore } from '@/stores/useProfilesStore'
 import type { SessionStatus } from '@shared/types'
@@ -45,23 +45,26 @@ export default function Sidebar({
   const setActive = useSessionsStore((s) => s.setActive)
   const interrupt = useSessionsStore((s) => s.interrupt)
   const archive = useSessionsStore((s) => s.archive)
+  const reopen = useSessionsStore((s) => s.reopen)
+  const deleteSession = useSessionsStore((s) => s.deleteSession)
   const rename = useSessionsStore((s) => s.rename)
   const profiles = useProfilesStore((s) => s.profiles)
   const [search, setSearch] = useState('')
   const [renamingId, setRenamingId] = useState<string | null>(null)
   const [renameDraft, setRenameDraft] = useState('')
+  const [archivedOpen, setArchivedOpen] = useState(false)
 
-  const visible = order.filter((id) => {
-    const meta = sessions[id].meta
-    if (meta.archived) {
-      return false
-    }
+  const matchesSearch = (id: string): boolean => {
     if (search.trim() === '') {
       return true
     }
+    const meta = sessions[id].meta
     const needle = search.toLowerCase()
     return meta.title.toLowerCase().includes(needle) || meta.cwd.toLowerCase().includes(needle)
-  })
+  }
+
+  const visible = order.filter((id) => !sessions[id].meta.archived && matchesSearch(id))
+  const archived = order.filter((id) => sessions[id].meta.archived && matchesSearch(id))
 
   const commitRename = (id: string): void => {
     if (renameDraft.trim()) {
@@ -183,6 +186,57 @@ export default function Sidebar({
             </div>
           )
         })}
+
+        {archived.length > 0 && (
+          <div className="mt-3">
+            <button
+              onClick={() => setArchivedOpen(!archivedOpen)}
+              className="flex w-full items-center gap-1 px-2 py-1 text-[11px] font-medium uppercase tracking-wide text-zinc-600 hover:text-zinc-400"
+            >
+              {archivedOpen ? <ChevronDown size={11} /> : <ChevronRight size={11} />}
+              Archived ({archived.length})
+            </button>
+            {archivedOpen &&
+              archived.map((id) => {
+                const { meta } = sessions[id]
+                return (
+                  <div
+                    key={id}
+                    className="group mb-0.5 flex items-center gap-2 rounded-lg px-3 py-1.5 hover:bg-deck-raised/60"
+                  >
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-[12.5px] text-zinc-500">{meta.title || 'New session'}</span>
+                      <span className="block truncate text-[10.5px] text-zinc-600">
+                        {meta.cwd.replace(/^\/Users\/[^/]+/, '~')}
+                      </span>
+                    </span>
+                    <button
+                      title="Restore session"
+                      onClick={() => void reopen(id)}
+                      className="hidden text-zinc-500 hover:text-zinc-200 group-hover:block"
+                    >
+                      <ArchiveRestore size={13} />
+                    </button>
+                    <button
+                      title="Delete permanently (removes transcript and fetched workspace)"
+                      onClick={() => {
+                        if (
+                          window.confirm(
+                            `Delete "${meta.title || 'this session'}" permanently? The transcript is removed too — this cannot be undone.`
+                          )
+                        ) {
+                          void deleteSession(id)
+                        }
+                      }}
+                      className="hidden text-zinc-500 hover:text-red-400 group-hover:block"
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
+                )
+              })}
+          </div>
+        )}
       </div>
       <div className="m-2 flex flex-col gap-1.5">
         <button

@@ -7,6 +7,7 @@ import PermissionDialog from '@/components/permissions/PermissionDialog'
 import SettingsModal from '@/components/settings/SettingsModal'
 import NewSessionModal from '@/components/sessions/NewSessionModal'
 import TerminalHistoryModal from '@/components/sessions/TerminalHistoryModal'
+import RenameModal from '@/components/sessions/RenameModal'
 import AgentBuilder from '@/components/agents/AgentBuilder'
 import OnboardingModal from '@/components/onboarding/OnboardingModal'
 import { useSessionsStore } from '@/stores/useSessionsStore'
@@ -41,12 +42,16 @@ export default function App(): React.JSX.Element {
     const offResolved = window.api.on('permission:resolved', ({ requestId }) => {
       usePermissionsStore.getState().removeResolved(requestId)
     })
+    const offFocus = window.api.on('session:focus', ({ sessionId }) => {
+      useSessionsStore.getState().setActive(sessionId)
+    })
 
     return () => {
       offEvents()
       offStatus()
       offPermission()
       offResolved()
+      offFocus()
     }
   }, [])
 
@@ -113,6 +118,7 @@ export default function App(): React.JSX.Element {
       </div>
 
       <PermissionDialog />
+      <RenameModal />
       {settingsOpen && <SettingsModal onClose={() => setSettingsOpen(false)} />}
       {newSessionOpen && (
         <NewSessionModal

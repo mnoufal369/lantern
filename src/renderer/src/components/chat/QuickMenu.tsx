@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useSessionsStore } from '@/stores/useSessionsStore'
+import { useUiStore } from '@/stores/useUiStore'
 import { FALLBACK_MODELS } from '@shared/constants'
 import type { PermissionMode } from '@shared/types'
 import { transcriptToMarkdown } from '@/lib/exportMarkdown'
@@ -42,7 +43,6 @@ export default function QuickMenu({
   const setModel = useSessionsStore((s) => s.setModel)
   const setPermissionMode = useSessionsStore((s) => s.setPermissionMode)
   const interrupt = useSessionsStore((s) => s.interrupt)
-  const rename = useSessionsStore((s) => s.rename)
   const [branches, setBranches] = useState<string[]>([])
 
   useEffect(() => {
@@ -123,12 +123,8 @@ export default function QuickMenu({
       icon: '✏️',
       label: 'Rename session',
       keywords: 'rename title name session thread',
-      run: () => {
-        const title = window.prompt('Session name', meta.title)
-        if (title?.trim()) {
-          void rename(sessionId, title.trim())
-        }
-      }
+      // window.prompt is not implemented in Electron — use our own dialog.
+      run: () => useUiStore.getState().openRename(sessionId)
     })
 
     const busy = meta.status.kind === 'thinking' || meta.status.kind === 'running-tool'
@@ -143,7 +139,7 @@ export default function QuickMenu({
     }
 
     return all
-  }, [meta, branches, blocks, sessionId, setModel, setPermissionMode, interrupt, rename])
+  }, [meta, branches, blocks, sessionId, setModel, setPermissionMode, interrupt])
 
   const filtered = useMemo(() => {
     const needle = query.trim().toLowerCase()

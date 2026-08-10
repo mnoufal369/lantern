@@ -1,8 +1,64 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { KeyRound, ShieldCheck, TerminalSquare, UserRound } from 'lucide-react'
 import Modal from '@/components/ui/Modal'
 import { useSettingsStore } from '@/stores/useSettingsStore'
+import { useSessionsStore } from '@/stores/useSessionsStore'
+import { useProfilesStore } from '@/stores/useProfilesStore'
 import type { AuthStatus } from '@shared/types'
+
+const WEEK_MS = 7 * 24 * 60 * 60 * 1000
+
+/** Spend summary computed from persisted session stats — no extra bookkeeping. */
+function UsageSection(): React.JSX.Element {
+  const sessions = useSessionsStore((s) => s.sessions)
+  const profiles = useProfilesStore((s) => s.profiles)
+
+  const usage = useMemo(() => {
+    const metas = Object.values(sessions).map((entry) => entry.meta)
+    const total = metas.reduce((sum, m) => sum + m.stats.totalCostUsd, 0)
+    const week = metas
+      .filter((m) => Date.now() - m.lastActiveAt < WEEK_MS)
+      .reduce((sum, m) => sum + m.stats.totalCostUsd, 0)
+    const byProfile = new Map<string, number>()
+    for (const m of metas) {
+      byProfile.set(m.profileId, (byProfile.get(m.profileId) ?? 0) + m.stats.totalCostUsd)
+    }
+    const perProfile = [...byProfile.entries()]
+      .map(([profileId, cost]) => ({
+        name: profiles.find((p) => p.id === profileId)?.name ?? 'Deleted profile',
+        cost
+      }))
+      .filter((row) => row.cost > 0.005)
+      .sort((a, b) => b.cost - a.cost)
+      .slice(0, 5)
+    return { total, week, perProfile, count: metas.length }
+  }, [sessions, profiles])
+
+  return (
+    <div className="rounded-lg border border-deck-border bg-deck-raised p-3">
+      <div className="flex gap-6">
+        <div>
+          <p className="text-lg font-semibold tabular-nums text-zinc-100">${usage.week.toFixed(2)}</p>
+          <p className="text-[11px] text-zinc-500">last 7 days</p>
+        </div>
+        <div>
+          <p className="text-lg font-semibold tabular-nums text-zinc-100">${usage.total.toFixed(2)}</p>
+          <p className="text-[11px] text-zinc-500">all sessions on this Mac ({usage.count})</p>
+        </div>
+      </div>
+      {usage.perProfile.length > 0 && (
+        <div className="mt-2 space-y-0.5 border-t border-deck-border pt-2">
+          {usage.perProfile.map((row) => (
+            <div key={row.name} className="flex justify-between text-[11.5px]">
+              <span className="text-zinc-400">{row.name}</span>
+              <span className="tabular-nums text-zinc-500">${row.cost.toFixed(2)}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
 
 function AuthStatusLine({ status }: { status: AuthStatus | null }): React.JSX.Element {
   if (!status) {
@@ -50,9 +106,11 @@ export default function SettingsModal({ onClose }: { onClose: () => void }): Rea
   const [customInstructions, setCustomInstructions] = useState(settings?.customInstructions ?? '')
   const [saving, setSaving] = useState(false)
   const [authStatus, setAuthStatus] = useState<AuthStatus | null>(null)
+  const [version, setVersion] = useState('')
 
   useEffect(() => {
     void window.api.invoke('app:getAuthStatus').then(setAuthStatus)
+    void window.api.invoke('app:getVersion').then(setVersion)
   }, [])
 
   const save = async (): Promise<void> => {
@@ -172,13 +230,23 @@ export default function SettingsModal({ onClose }: { onClose: () => void }): Rea
             min={1}
             max={10}
             value={maxSessions}
-            onChange={(e) => setMaxSessions(Number(e.target.value))}
+            onChange={(e) => {
+              const value = Number(e.target.value)
+              setMaxSessions(Number.isFinite(value) && e.target.value !== '' ? value : 5)
+            }}
             className="w-24 rounded-lg border border-deck-border bg-deck-raised px-3 py-2 text-sm text-zinc-100 outline-none focus:border-deck-accent"
           />
           <p className="mt-1 text-[11px] text-zinc-600">
             Each running session is its own agent process — keep this modest.
           </p>
         </div>
+
+        <div>
+          <label className="mb-1 block text-xs font-medium text-zinc-400">Usage</label>
+          <UsageSection />
+        </div>
+
+        {version && <p className="text-center text-[11px] text-zinc-600">Pilot v{version} · by Salesdock</p>}
 
         <div className="flex justify-end gap-2 pt-2">
           <button

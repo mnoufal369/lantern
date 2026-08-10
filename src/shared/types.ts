@@ -126,6 +126,11 @@ export type UiMode = 'pro' | 'simple'
 
 export type Persona = 'developer' | 'qa' | 'consultant' | 'curious'
 
+export interface RecentRepo {
+  url: string
+  branch?: string
+}
+
 export interface AppSettings {
   /** Always empty when sent to the renderer — the key never leaves the main process. */
   apiKey: string
@@ -136,6 +141,8 @@ export interface AppSettings {
   onboarded: boolean
   /** Global style/behaviour instructions appended to every agent's system prompt. */
   customInstructions: string
+  recentFolders: string[]
+  recentRepos: RecentRepo[]
 }
 
 export interface AuthStatus {

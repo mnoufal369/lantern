@@ -1,9 +1,13 @@
 import { useState } from 'react'
-import { FolderOpen, Globe, HardDrive, Loader2, Plus } from 'lucide-react'
+import { Clock, FolderOpen, Globe, HardDrive, Loader2, Plus } from 'lucide-react'
 import Modal from '@/components/ui/Modal'
 import { useProfilesStore } from '@/stores/useProfilesStore'
 import { useSessionsStore } from '@/stores/useSessionsStore'
 import { useSettingsStore } from '@/stores/useSettingsStore'
+
+function shortPath(p: string): string {
+  return p.replace(/^\/Users\/[^/]+/, '~')
+}
 
 interface Props {
   onClose: () => void
@@ -15,6 +19,8 @@ export default function NewSessionModal({ onClose, onOpenBuilder, initialCwd }: 
   const profiles = useProfilesStore((s) => s.profiles)
   const createSession = useSessionsStore((s) => s.createSession)
   const simple = useSettingsStore((s) => s.settings?.uiMode === 'simple')
+  const recentFolders = useSettingsStore((s) => s.settings?.recentFolders ?? [])
+  const recentRepos = useSettingsStore((s) => s.settings?.recentRepos ?? [])
   const [profileId, setProfileId] = useState(
     simple ? (profiles.find((p) => p.id === 'prof_default_explainer')?.id ?? profiles[0]?.id ?? '') : (profiles[0]?.id ?? '')
   )
@@ -136,19 +142,36 @@ export default function NewSessionModal({ onClose, onOpenBuilder, initialCwd }: 
           </div>
 
           {source === 'local' ? (
-            <div className="flex gap-2">
-              <input
-                value={cwd}
-                onChange={(e) => setCwd(e.target.value)}
-                placeholder="/path/to/project"
-                className="selectable flex-1 rounded-lg border border-deck-border bg-deck-raised px-3 py-2 font-mono text-xs text-zinc-100 outline-none focus:border-deck-accent"
-              />
-              <button
-                onClick={() => void pickFolder()}
-                className="flex items-center gap-1.5 rounded-lg border border-deck-border px-3 py-2 text-xs text-zinc-300 hover:bg-deck-raised"
-              >
-                <FolderOpen size={13} /> Browse
-              </button>
+            <div>
+              <div className="flex gap-2">
+                <input
+                  value={cwd}
+                  onChange={(e) => setCwd(e.target.value)}
+                  placeholder="/path/to/project"
+                  className="selectable flex-1 rounded-lg border border-deck-border bg-deck-raised px-3 py-2 font-mono text-xs text-zinc-100 outline-none focus:border-deck-accent"
+                />
+                <button
+                  onClick={() => void pickFolder()}
+                  className="flex items-center gap-1.5 rounded-lg border border-deck-border px-3 py-2 text-xs text-zinc-300 hover:bg-deck-raised"
+                >
+                  <FolderOpen size={13} /> Browse
+                </button>
+              </div>
+              {recentFolders.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {recentFolders.map((folder) => (
+                    <button
+                      key={folder}
+                      onClick={() => setCwd(folder)}
+                      title={folder}
+                      className="flex items-center gap-1 rounded-full border border-deck-border px-2.5 py-1 font-mono text-[10.5px] text-zinc-400 hover:border-deck-accent/60 hover:text-zinc-200"
+                    >
+                      <Clock size={10} />
+                      {shortPath(folder).split('/').slice(-2).join('/')}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           ) : (
             <div>
@@ -164,15 +187,35 @@ export default function NewSessionModal({ onClose, onOpenBuilder, initialCwd }: 
                   value={branch}
                   onChange={(e) => setBranch(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && void start()}
-                  placeholder="branch (optional)"
-                  title="Land on a specific branch, e.g. develop or release/2.4"
+                  placeholder="branch or #PR"
+                  title="Land on a branch (release/2.4) or a pull request (#123 or pr/123)"
                   className="selectable w-36 rounded-lg border border-deck-border bg-deck-raised px-3 py-2 font-mono text-xs text-zinc-100 outline-none focus:border-deck-accent"
                 />
               </div>
               <p className="mt-1.5 text-[11px] text-zinc-600">
-                Pilot fetches it for you — no cloning, no terminal, no running the app. Leave branch empty for the
-                default. Private repos use the git access already on this machine.
+                Pilot fetches it for you — no cloning, no terminal, no running the app. Leave the second field empty
+                for the default branch, or paste a branch name or PR number (#123). Private repos use the git access
+                already on this machine.
               </p>
+              {recentRepos.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {recentRepos.map((repo) => (
+                    <button
+                      key={`${repo.url}@${repo.branch ?? ''}`}
+                      onClick={() => {
+                        setRepoUrl(repo.url)
+                        setBranch(repo.branch ?? '')
+                      }}
+                      title={repo.url}
+                      className="flex items-center gap-1 rounded-full border border-deck-border px-2.5 py-1 font-mono text-[10.5px] text-zinc-400 hover:border-deck-accent/60 hover:text-zinc-200"
+                    >
+                      <Clock size={10} />
+                      {repo.url.replace(/^https?:\/\/(www\.)?/, '').replace(/\.git$/, '')}
+                      {repo.branch ? ` @ ${repo.branch}` : ''}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>

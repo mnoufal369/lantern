@@ -1,22 +1,31 @@
-import { app, type BrowserWindow } from 'electron'
-import { mkdir, writeFile } from 'node:fs/promises'
+import { app, Notification, shell, type BrowserWindow } from 'electron'
+import { existsSync } from 'node:fs'
+import { mkdir, rm, writeFile } from 'node:fs/promises'
 import path from 'node:path'
-import type { ClaudeHistoryItem, PastedImage, SessionMeta, UiEvent } from '@shared/types'
+import type { ClaudeHistoryItem, PastedImage, SessionMeta, SessionStatus, UiEvent } from '@shared/types'
+import { IDLE_RUNTIME_TIMEOUT_MS, META_SAVE_DEBOUNCE_MS } from '@shared/constants'
 import { PermissionBroker } from '../permissions/PermissionBroker'
 import { ProfileStore, SessionStore, Settings } from '../store/stores'
 import { importClaudeTranscript, listClaudeSessions } from './ClaudeHistory'
-import { SessionRuntime } from './SessionRuntime'
+import { loadTranscriptEvents, SessionRuntime } from './SessionRuntime'
+
+const BUSY_KINDS: SessionStatus['kind'][] = ['thinking', 'running-tool', 'waiting-permission']
 
 /**
  * Owns all live SessionRuntimes and their persistence. Sessions restored
  * from disk stay cold until the user sends a message, at which point a
- * runtime is started with `resume` pointing at the SDK session.
+ * runtime is started with `resume` pointing at the SDK session. Runtimes
+ * that error out are replaced transparently on the next message, and idle
+ * runtimes are reaped so child processes don't accumulate.
  */
 export class SessionManager {
   private runtimes = new Map<string, SessionRuntime>()
   private metas = new Map<string, SessionMeta>()
   readonly broker: PermissionBroker
   private counter = 0
+  private saveTimers = new Map<string, NodeJS.Timeout>()
+  private prevStatusKind = new Map<string, SessionStatus['kind']>()
+  private reaper: NodeJS.Timeout
 
   constructor(private getWindow: () => BrowserWindow | null) {
     this.broker = new PermissionBroker({
@@ -36,6 +45,9 @@ export class SessionManager {
         if (meta) {
           ProfileStore.addAllowedTool(meta.profileId, rule)
         }
+      },
+      recordDecision: (sessionId, toolUseId, decision) => {
+        this.runtimes.get(sessionId)?.recordDecision(toolUseId, decision)
       }
     })
 
@@ -43,6 +55,8 @@ export class SessionManager {
       meta.status = { kind: 'idle' }
       this.metas.set(meta.id, meta)
     }
+
+    this.reaper = setInterval(() => this.reapIdleRuntimes(), 60_000)
   }
 
   private send(channel: string, payload: unknown): void {
@@ -52,12 +66,62 @@ export class SessionManager {
   private runningCount(): number {
     let count = 0
     for (const runtime of this.runtimes.values()) {
-      const kind = runtime.meta.status.kind
-      if (kind === 'thinking' || kind === 'running-tool' || kind === 'waiting-permission') {
+      if (BUSY_KINDS.includes(runtime.meta.status.kind)) {
         count++
       }
     }
     return count
+  }
+
+  /** Debounced disk write — status flips several times per tool call. */
+  private persistMeta(meta: SessionMeta, immediate = false): void {
+    const existing = this.saveTimers.get(meta.id)
+    if (existing) {
+      clearTimeout(existing)
+      this.saveTimers.delete(meta.id)
+    }
+    if (immediate) {
+      SessionStore.save(meta)
+      return
+    }
+    this.saveTimers.set(
+      meta.id,
+      setTimeout(() => {
+        this.saveTimers.delete(meta.id)
+        SessionStore.save(meta)
+      }, META_SAVE_DEBOUNCE_MS)
+    )
+  }
+
+  /** Native notification when the app is in the background and an agent needs the user. */
+  private maybeNotify(meta: SessionMeta, status: SessionStatus): void {
+    const window = this.getWindow()
+    if (window?.isFocused() || !Notification.isSupported()) {
+      return
+    }
+    const prev = this.prevStatusKind.get(meta.id)
+    const title = meta.title || 'Pilot session'
+    let body: string | null = null
+    if (status.kind === 'waiting-permission' && prev !== 'waiting-permission') {
+      body = 'The agent needs your approval to continue.'
+    } else if (
+      (status.kind === 'idle' || status.kind === 'done') &&
+      (prev === 'thinking' || prev === 'running-tool')
+    ) {
+      body = `Finished — $${meta.stats.totalCostUsd.toFixed(2)} total this session.`
+    } else if (status.kind === 'error' && prev !== 'error') {
+      body = 'The agent hit an error and stopped.'
+    }
+    if (!body) {
+      return
+    }
+    const notification = new Notification({ title, body, silent: false })
+    notification.on('click', () => {
+      window?.show()
+      window?.focus()
+      this.send('session:focus', { sessionId: meta.id })
+    })
+    notification.show()
   }
 
   list(): SessionMeta[] {
@@ -91,12 +155,12 @@ export class SessionManager {
     }
     this.metas.set(meta.id, meta)
     this.startRuntime(meta)
-    SessionStore.save(meta)
+    this.persistMeta(meta, true)
     return meta
   }
 
   private startRuntime(meta: SessionMeta): SessionRuntime {
-    const profile = ProfileStore.list().find((p) => p.id === meta.profileId)
+    const profile = ProfileStore.list().find((p) => p.id === meta.profileId) ?? ProfileStore.list()[0]
     if (!profile) {
       throw new Error('Agent profile not found')
     }
@@ -110,7 +174,9 @@ export class SessionManager {
           stats: sessionMeta.stats,
           filesTouched: sessionMeta.filesTouched
         })
-        SessionStore.save(sessionMeta)
+        this.maybeNotify(sessionMeta, sessionMeta.status)
+        this.prevStatusKind.set(sessionMeta.id, sessionMeta.status.kind)
+        this.persistMeta(sessionMeta)
       },
       emitGitChanged: (sessionId) => this.send('git:changed', { sessionId }),
       getApiKey: () => Settings.getApiKey(),
@@ -127,9 +193,18 @@ export class SessionManager {
       throw new Error('Session not found')
     }
     let runtime = this.runtimes.get(sessionId)
+    // A runtime whose stream ended (error or otherwise) can't accept input —
+    // replace it and resume the SDK session in a fresh process.
+    if (runtime?.isDead()) {
+      runtime.dispose()
+      this.runtimes.delete(sessionId)
+      runtime = undefined
+    }
     if (!runtime) {
       if (this.runningCount() >= Settings.get().maxConcurrentSessions) {
-        throw new Error('Concurrent session limit reached')
+        throw new Error(
+          `Concurrent session limit reached (${Settings.get().maxConcurrentSessions}). Interrupt or archive a running session first.`
+        )
       }
       runtime = this.startRuntime(meta)
       await runtime.loadTranscript()
@@ -138,6 +213,7 @@ export class SessionManager {
   }
 
   async interrupt(sessionId: string): Promise<void> {
+    this.broker.cancelPending(sessionId, 'Interrupted by user')
     await this.runtimes.get(sessionId)?.interrupt()
   }
 
@@ -154,7 +230,33 @@ export class SessionManager {
     this.broker.disposeSession(sessionId)
     meta.archived = true
     meta.status = { kind: 'idle' }
-    SessionStore.save(meta)
+    this.persistMeta(meta, true)
+  }
+
+  /** Permanently removes a session: meta, transcript, and its managed workspace if unused. */
+  async deleteSession(sessionId: string): Promise<void> {
+    const meta = this.metas.get(sessionId)
+    if (!meta) {
+      return
+    }
+    const runtime = this.runtimes.get(sessionId)
+    if (runtime) {
+      runtime.dispose()
+      this.runtimes.delete(sessionId)
+    }
+    this.broker.disposeSession(sessionId)
+    this.metas.delete(sessionId)
+    SessionStore.remove(sessionId)
+
+    const transcript = path.join(app.getPath('userData'), 'transcripts', `${sessionId}.json`)
+    await rm(transcript, { force: true }).catch(() => undefined)
+
+    const workspacesRoot = path.join(app.getPath('userData'), 'workspaces')
+    const isManaged = meta.cwd.startsWith(workspacesRoot + path.sep)
+    const stillUsed = [...this.metas.values()].some((m) => m.cwd === meta.cwd)
+    if (isManaged && !stillUsed && existsSync(meta.cwd)) {
+      await shell.trashItem(meta.cwd).catch(() => undefined)
+    }
   }
 
   reopen(sessionId: string): SessionMeta {
@@ -163,7 +265,7 @@ export class SessionManager {
       throw new Error('Session not found')
     }
     meta.archived = false
-    SessionStore.save(meta)
+    this.persistMeta(meta, true)
     return meta
   }
 
@@ -172,27 +274,14 @@ export class SessionManager {
     if (runtime) {
       return runtime.getEventLog()
     }
-    const meta = this.metas.get(sessionId)
-    if (!meta) {
-      return []
-    }
-    const probe = new SessionRuntime(meta, ProfileStore.list()[0], {
-      broker: this.broker,
-      emitEvents: () => undefined,
-      emitStatus: () => undefined,
-      emitGitChanged: () => undefined,
-      getApiKey: () => '',
-      getCustomInstructions: () => ''
-    })
-    await probe.loadTranscript()
-    return probe.getEventLog()
+    return this.metas.has(sessionId) ? loadTranscriptEvents(sessionId) : []
   }
 
   async setModel(sessionId: string, model: string): Promise<void> {
     const meta = this.metas.get(sessionId)
     if (meta) {
       meta.model = model
-      SessionStore.save(meta)
+      this.persistMeta(meta, true)
     }
     await this.runtimes.get(sessionId)?.setModel(model)
   }
@@ -201,7 +290,7 @@ export class SessionManager {
     const meta = this.metas.get(sessionId)
     if (meta) {
       meta.permissionMode = mode as SessionMeta['permissionMode']
-      SessionStore.save(meta)
+      this.persistMeta(meta, true)
     }
     await this.runtimes.get(sessionId)?.setPermissionMode(mode)
   }
@@ -210,7 +299,7 @@ export class SessionManager {
     const meta = this.metas.get(sessionId)
     if (meta) {
       meta.title = title.trim() || meta.title
-      SessionStore.save(meta)
+      this.persistMeta(meta, true)
     }
   }
 
@@ -254,11 +343,29 @@ export class SessionManager {
     await writeFile(path.join(transcriptDir, `${meta.id}.json`), JSON.stringify(events), 'utf8')
 
     this.metas.set(meta.id, meta)
-    SessionStore.save(meta)
+    this.persistMeta(meta, true)
     return meta
   }
 
+  /** Disposes runtimes that have sat idle past the timeout — they resume on the next message. */
+  private reapIdleRuntimes(): void {
+    const now = Date.now()
+    for (const [sessionId, runtime] of this.runtimes) {
+      const { status, lastActiveAt } = runtime.meta
+      const idle = !BUSY_KINDS.includes(status.kind)
+      if (idle && now - lastActiveAt > IDLE_RUNTIME_TIMEOUT_MS) {
+        runtime.dispose()
+        this.runtimes.delete(sessionId)
+      }
+    }
+  }
+
   disposeAll(): void {
+    clearInterval(this.reaper)
+    for (const timer of this.saveTimers.values()) {
+      clearTimeout(timer)
+    }
+    SessionStore.saveAll([...this.metas.values()])
     for (const runtime of this.runtimes.values()) {
       runtime.dispose()
     }

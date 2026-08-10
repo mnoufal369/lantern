@@ -1,15 +1,16 @@
 import { useEffect, useRef, useState } from 'react'
 import { SendHorizonal, Square, Zap } from 'lucide-react'
 import { useSessionsStore } from '@/stores/useSessionsStore'
+import { useSettingsStore } from '@/stores/useSettingsStore'
 import { FALLBACK_MODELS } from '@shared/constants'
 import type { PermissionMode, SessionStatus } from '@shared/types'
 import QuickMenu, { MODE_SEQUENCE, type QuickCommand } from './QuickMenu'
 
-const MODE_OPTIONS: { value: PermissionMode; label: string; hint: string }[] = [
+const MODE_OPTIONS: { value: PermissionMode; label: string; hint: string; proOnly?: boolean }[] = [
   { value: 'plan', label: 'Plan', hint: 'Plans before acting' },
   { value: 'default', label: 'Ask', hint: 'Asks before risky tools' },
   { value: 'acceptEdits', label: 'Auto-edit', hint: 'Auto-approves file edits' },
-  { value: 'bypassPermissions', label: 'Full auto', hint: 'Never asks — careful!' }
+  { value: 'bypassPermissions', label: 'Full auto', hint: 'Never asks — careful!', proOnly: true }
 ]
 
 export default function Composer({
@@ -24,8 +25,10 @@ export default function Composer({
   const [text, setText] = useState('')
   const [attachments, setAttachments] = useState<{ dataUrl: string; mediaType: string }[]>([])
   const [menuIndex, setMenuIndex] = useState(0)
+  const [sendError, setSendError] = useState('')
   const menuCommands = useRef<QuickCommand[]>([])
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const simple = useSettingsStore((s) => s.settings?.uiMode === 'simple')
 
   const menuOpen = text.startsWith('/')
   const menuQuery = menuOpen ? text.slice(1) : ''
@@ -84,9 +87,17 @@ export default function Composer({
       return
     }
     const images = attachments.map((a) => ({ mediaType: a.mediaType, base64: a.dataUrl.split(',')[1] }))
-    void sendMessage(sessionId, trimmed, images.length > 0 ? images : undefined)
+    const sentAttachments = attachments
+    setSendError('')
     setText('')
     setAttachments([])
+    sendMessage(sessionId, trimmed, images.length > 0 ? images : undefined).catch((e: unknown) => {
+      // Give the draft back — a failed send must never eat the message.
+      setText(trimmed)
+      setAttachments(sentAttachments)
+      const raw = e instanceof Error ? e.message : 'Could not send the message'
+      setSendError(raw.replace(/^Error invoking remote method '[^']+': Error: /, ''))
+    })
   }
 
   return (
@@ -165,12 +176,16 @@ export default function Composer({
             }
             if (e.key === 'Tab' && e.shiftKey && meta) {
               e.preventDefault()
-              const currentIndex = MODE_SEQUENCE.findIndex((m) => m.value === meta.permissionMode)
-              const next = MODE_SEQUENCE[(currentIndex + 1) % MODE_SEQUENCE.length]
+              const sequence = simple ? MODE_SEQUENCE.filter((m) => m.value !== 'bypassPermissions') : MODE_SEQUENCE
+              const currentIndex = sequence.findIndex((m) => m.value === meta.permissionMode)
+              const next = sequence[(currentIndex + 1) % sequence.length]
               void setPermissionMode(sessionId, next.value)
               return
             }
             if (e.key === 'Enter' && (e.metaKey || !e.shiftKey)) {
+              if (e.nativeEvent.isComposing) {
+                return
+              }
               e.preventDefault()
               submit()
             }
@@ -217,40 +232,49 @@ export default function Composer({
         )}
         </div>
       </div>
+      {sendError && (
+        <p className="mt-2 px-1 text-[11.5px] text-red-400">
+          {sendError} <span className="text-zinc-500">— your message is back in the box.</span>
+        </p>
+      )}
       {meta && (
         <div className="mt-2 flex items-center gap-2 px-1">
-          <select
-            value={meta.model}
-            onChange={(e) => void setModel(sessionId, e.target.value)}
-            title="Model for this session"
-            className="rounded-md border border-deck-border bg-deck-raised px-1.5 py-0.5 text-[11px] text-zinc-400 outline-none hover:text-zinc-200"
-          >
-            {FALLBACK_MODELS.map((m) => (
-              <option key={m.id} value={m.id}>
-                {m.displayName}
-              </option>
-            ))}
-            {!FALLBACK_MODELS.some((m) => m.id === meta.model) && (
-              <option value={meta.model}>{meta.model}</option>
-            )}
-          </select>
+          {!simple && (
+            <select
+              value={meta.model}
+              onChange={(e) => void setModel(sessionId, e.target.value)}
+              title="Model for this session"
+              className="rounded-md border border-deck-border bg-deck-raised px-1.5 py-0.5 text-[11px] text-zinc-400 outline-none hover:text-zinc-200"
+            >
+              {FALLBACK_MODELS.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.displayName}
+                </option>
+              ))}
+              {!FALLBACK_MODELS.some((m) => m.id === meta.model) && (
+                <option value={meta.model}>{meta.model}</option>
+              )}
+            </select>
+          )}
           <div className="flex rounded-md border border-deck-border bg-deck-raised p-0.5">
-            {MODE_OPTIONS.map((mode) => (
-              <button
-                key={mode.value}
-                onClick={() => void setPermissionMode(sessionId, mode.value)}
-                title={mode.hint}
-                className={`rounded px-2 py-0.5 text-[11px] ${
-                  meta.permissionMode === mode.value
-                    ? mode.value === 'bypassPermissions'
-                      ? 'bg-red-700/80 text-white'
-                      : 'bg-deck-accent text-white'
-                    : 'text-zinc-500 hover:text-zinc-300'
-                }`}
-              >
-                {mode.label}
-              </button>
-            ))}
+            {MODE_OPTIONS.filter((mode) => !(simple && mode.proOnly && meta.permissionMode !== mode.value)).map(
+              (mode) => (
+                <button
+                  key={mode.value}
+                  onClick={() => void setPermissionMode(sessionId, mode.value)}
+                  title={mode.hint}
+                  className={`rounded px-2 py-0.5 text-[11px] ${
+                    meta.permissionMode === mode.value
+                      ? mode.value === 'bypassPermissions'
+                        ? 'bg-red-700/80 text-white'
+                        : 'bg-deck-accent text-white'
+                      : 'text-zinc-500 hover:text-zinc-300'
+                  }`}
+                >
+                  {mode.label}
+                </button>
+              )
+            )}
           </div>
           {meta.permissionMode === 'bypassPermissions' && (
             <span className="text-[11px] text-red-400">agent acts without asking</span>

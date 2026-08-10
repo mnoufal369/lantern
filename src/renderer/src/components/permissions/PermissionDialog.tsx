@@ -1,6 +1,8 @@
+import { useState } from 'react'
 import { ShieldAlert } from 'lucide-react'
 import { usePermissionsStore } from '@/stores/usePermissionsStore'
 import { useSessionsStore } from '@/stores/useSessionsStore'
+import { useSettingsStore } from '@/stores/useSettingsStore'
 import EditDiffView from '@/components/tools/EditDiffView'
 
 function asRecord(input: unknown): Record<string, unknown> {
@@ -11,21 +13,76 @@ function str(value: unknown): string {
   return typeof value === 'string' ? value : ''
 }
 
+function basename(p: string): string {
+  return p.split('/').pop() ?? p
+}
+
+/** One plain sentence describing what the agent wants, for Simple mode. */
+function plainSentence(toolName: string, input: Record<string, unknown>): string {
+  if (toolName === 'Bash') {
+    return str(input.description) || 'The agent wants to run a command on your Mac.'
+  }
+  if (toolName === 'Write') {
+    return `The agent wants to create the file ${basename(str(input.file_path))}.`
+  }
+  if (toolName === 'Edit' || toolName === 'MultiEdit') {
+    return `The agent wants to change the file ${basename(str(input.file_path))}.`
+  }
+  if (toolName === 'WebFetch' || toolName === 'WebSearch') {
+    return 'The agent wants to look something up on the internet.'
+  }
+  return `The agent wants to use ${toolName.replace(/^mcp__\w+__/, '')}.`
+}
+
 export default function PermissionDialog(): React.JSX.Element | null {
   const pending = usePermissionsStore((s) => s.pending)
   const resolve = usePermissionsStore((s) => s.resolve)
   const sessions = useSessionsStore((s) => s.sessions)
+  const simple = useSettingsStore((s) => s.settings?.uiMode === 'simple')
+  // Keyed by requestId so the toggle resets for each new request.
+  const [detailsFor, setDetailsFor] = useState('')
 
   const request = pending[0]
   if (!request) {
     return null
   }
+  const showDetails = detailsFor === request.requestId
+  const setShowDetails = (open: boolean): void => setDetailsFor(open ? request.requestId : '')
 
   const session = sessions[request.sessionId]
   const input = asRecord(request.input)
   const isBash = request.toolName === 'Bash'
   const isEdit = request.toolName === 'Edit' || request.toolName === 'MultiEdit'
   const isWrite = request.toolName === 'Write'
+  const detailsVisible = !simple || showDetails
+
+  const detail = (
+    <>
+      {isBash && (
+        <pre className="selectable overflow-x-auto rounded-lg bg-[#0d0d10] p-3 font-mono text-[12.5px] text-zinc-200">
+          <span className="select-none text-green-500">❯ </span>
+          {str(input.command)}
+        </pre>
+      )}
+      {isEdit && (
+        <div>
+          <p className="mb-1.5 font-mono text-[12px] text-zinc-400">{str(input.file_path)}</p>
+          <EditDiffView oldText={str(input.old_string)} newText={str(input.new_string)} />
+        </div>
+      )}
+      {isWrite && (
+        <div>
+          <p className="mb-1.5 font-mono text-[12px] text-zinc-400">{str(input.file_path)} (new file)</p>
+          <EditDiffView oldText="" newText={str(input.content)} />
+        </div>
+      )}
+      {!isBash && !isEdit && !isWrite && (
+        <pre className="selectable overflow-x-auto rounded-lg bg-[#0d0d10] p-3 font-mono text-[12px] text-zinc-300">
+          {JSON.stringify(request.input, null, 2)}
+        </pre>
+      )}
+    </>
+  )
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
@@ -34,7 +91,13 @@ export default function PermissionDialog(): React.JSX.Element | null {
           <ShieldAlert size={18} className="text-amber-500" />
           <div className="min-w-0">
             <h2 className="text-sm font-semibold text-zinc-100">
-              Agent wants to use <span className="text-amber-400">{request.toolName}</span>
+              {simple ? (
+                'Your approval needed'
+              ) : (
+                <>
+                  Agent wants to use <span className="text-amber-400">{request.toolName}</span>
+                </>
+              )}
             </h2>
             {session && (
               <p className="truncate text-[11px] text-zinc-500">
@@ -45,41 +108,39 @@ export default function PermissionDialog(): React.JSX.Element | null {
         </div>
 
         <div className="min-h-0 overflow-y-auto p-4">
-          {isBash && (
-            <pre className="selectable overflow-x-auto rounded-lg bg-[#0d0d10] p-3 font-mono text-[12.5px] text-zinc-200">
-              <span className="select-none text-green-500">❯ </span>
-              {str(input.command)}
-            </pre>
-          )}
-          {isEdit && (
-            <div>
-              <p className="mb-1.5 font-mono text-[12px] text-zinc-400">{str(input.file_path)}</p>
-              <EditDiffView oldText={str(input.old_string)} newText={str(input.new_string)} />
+          {simple && (
+            <div className="mb-3">
+              <p className="text-sm text-zinc-200">{plainSentence(request.toolName, input)}</p>
+              <p className="mt-1 text-[12px] text-zinc-500">
+                Nothing happens until you decide.{' '}
+                <button
+                  onClick={() => setShowDetails(!showDetails)}
+                  className="text-sky-400/90 underline-offset-2 hover:underline"
+                >
+                  {showDetails ? 'Hide the technical details' : 'Show me exactly what it will do'}
+                </button>
+              </p>
             </div>
           )}
-          {isWrite && (
-            <div>
-              <p className="mb-1.5 font-mono text-[12px] text-zinc-400">{str(input.file_path)} (new file)</p>
-              <EditDiffView oldText="" newText={str(input.content)} />
-            </div>
-          )}
-          {!isBash && !isEdit && !isWrite && (
-            <pre className="selectable overflow-x-auto rounded-lg bg-[#0d0d10] p-3 font-mono text-[12px] text-zinc-300">
-              {JSON.stringify(request.input, null, 2)}
-            </pre>
-          )}
+          {detailsVisible && detail}
         </div>
 
         <div className="flex items-center gap-2 border-t border-deck-border px-4 py-3">
           <p className="mr-auto text-[11px] text-zinc-600">
-            Always allow saves <span className="font-mono text-zinc-500">{request.alwaysAllowRule}</span> to this
-            agent profile
+            {simple ? (
+              '“Always allow” stops it asking again for this kind of action'
+            ) : (
+              <>
+                Always allow saves <span className="font-mono text-zinc-500">{request.alwaysAllowRule}</span> to this
+                agent profile
+              </>
+            )}
           </p>
           <button
             onClick={() => void resolve(request.requestId, { kind: 'deny', reason: 'User denied this action' })}
             className="rounded-lg border border-deck-border px-3 py-1.5 text-xs text-zinc-300 hover:bg-deck-raised"
           >
-            Deny
+            {simple ? 'Not now' : 'Deny'}
           </button>
           <button
             onClick={() => void resolve(request.requestId, { kind: 'allow-once' })}
