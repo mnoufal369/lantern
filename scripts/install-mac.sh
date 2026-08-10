@@ -21,6 +21,8 @@ if ! command -v yarn >/dev/null 2>&1; then
 fi
 
 echo "· Installing dependencies (first run takes a few minutes)…"
+# A cancelled install leaves the Electron downloader orphaned, still pulling 110MB.
+pkill -f "electron/install.js" >/dev/null 2>&1 || true
 yarn install --ignore-engines --silent
 
 echo "· Building Pilot…"
@@ -31,6 +33,16 @@ echo "· Installing to /Applications…"
 osascript -e 'quit app "Pilot"' >/dev/null 2>&1 || true
 rm -rf /Applications/Pilot.app
 ditto release/mac-arm64/Pilot.app /Applications/Pilot.app
+
+# Ad-hoc signature is enough for a self-built app, but macOS refuses to launch
+# anything still flagged as downloaded.
+xattr -dr com.apple.quarantine /Applications/Pilot.app 2>/dev/null || true
+
+if ! codesign --verify --deep --strict /Applications/Pilot.app 2>/dev/null; then
+  echo "✗ Signature check failed — macOS will refuse to open Pilot."
+  echo "  Re-sign with:  codesign --force --deep --sign - /Applications/Pilot.app"
+  exit 1
+fi
 
 open /Applications/Pilot.app
 echo ""

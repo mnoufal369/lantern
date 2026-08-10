@@ -70,14 +70,65 @@ yarn dev              # run with HMR
 yarn typecheck        # TS across main/preload/renderer
 yarn test             # vitest unit tests (permission rules, normalizer, transcript reducer)
 yarn dist             # build release/Pilot-<version>-arm64.dmg (unsigned)
+yarn dist:share            # Apple Silicon  (~190 MB)
+yarn dist:share:x64        # Intel only     (~190 MB)
+yarn dist:share:universal  # runs on both   (~350 MB)
 ```
 
-The dmg is unsigned (local distribution). On another Mac, anything AirDropped or downloaded is
-quarantined and Gatekeeper reports the app as "damaged". Distribute the self-installing zip
-instead: bundle `Pilot.app` with `scripts/Install Pilot.command` and `scripts/Read me first.txt`;
-the recipient right-clicks the command → Open, and it installs, de-quarantines and launches.
-Manual fallback: `xattr -cr "/Applications/Pilot.app"`. The real fix is Developer ID signing +
-notarization — see SIGNING.md.
+## Sharing a build with someone else
+
+Each produces `release/Pilot-<version>-mac-<arch>.zip` containing `Pilot.app`,
+`scripts/Install Pilot.command` and `scripts/Read me first.txt`.
+
+Pick by who's receiving it. An arm64 zip will not launch on an Intel Mac at all, and vice versa.
+The universal zip runs anywhere but carries both architectures of Electron *and* both ~270 MB agent
+runtimes, so it's nearly twice the download — prefer a per-arch zip when you know the recipient's
+Mac, and keep `universal` for when you don't.
+
+Packaging refuses to ship a bundle whose signature doesn't verify.
+
+### Cross-architecture notes
+
+Yarn only installs the agent runtime for the machine you're on, so `scripts/fetch-agent-runtime.sh`
+pulls the others from npm. The app chooses one at launch from `process.arch` (`resolvePackagedCli`
+in `src/main/sessions/SessionRuntime.ts`), so every architecture the bundle can boot on needs its
+own copy present and outside the asar — packaging fails the build if one is missing, since
+otherwise sessions only break once a colleague on that architecture starts one. Conversely,
+electron-builder bundles *every* runtime it finds in `node_modules`, so packaging prunes the ones a
+build can't execute and re-signs afterwards (removing files invalidates the signature).
+
+Two things to know if you touch the universal target:
+
+- `mac.x64ArchFiles` must cover the agent runtimes. They're per-arch binaries that are byte-identical
+  across both sub-builds, and `@electron/universal` aborts on such files unless told to leave them
+  alone rather than `lipo` them together.
+- `scripts/prefetch-electron.sh` downloads Electron's zips before electron-builder can. Its
+  downloader gives up after 10 minutes, which a ~110 MB zip can't beat on a slow link, so a
+  universal build would otherwise fail every time. It tries an npm mirror first and verifies
+  against Electron's published `SHASUMS256.txt`, so a mirror can only serve the identical file or
+  be rejected.
+
+Two failure modes look similar but are not:
+
+- **"Pilot is damaged and can't be opened"** — the *bundle signature is invalid*, and there is no
+  "Open Anyway" override. This is what `mac.identity: null` produces: only the inner binary carries
+  the linker's ad-hoc signature, so the bundle fails `codesign --verify` with *"code has no
+  resources but signature indicates they must be present"*. Fixed by `mac.identity: "-"`, which
+  ad-hoc signs the whole bundle. Check with `codesign --verify --deep --strict Pilot.app` — it must
+  be silent. (`syspolicy_check distribution` is not the test to use here: it reports Fatal
+  "Notary Ticket Missing" for *any* un-notarized build, good or broken.)
+- **"macOS cannot verify the developer"** — merely unnotarized. Recoverable by the recipient via
+  System Settings → Privacy & Security → **Open Anyway**.
+
+So an ad-hoc signature doesn't remove the warning, but it *does* keep the recipient's approval
+route available. The installer skips the warning entirely by clearing quarantine; it must be run
+from Terminal (`bash "Install Pilot.command"`), since macOS 15+ removed the right-click → Open
+bypass for double-clicked scripts. Interpreter-invoked scripts aren't gated.
+
+Use `xattr -dr com.apple.quarantine`, never `xattr -cr` — the latter strips the `com.apple.cs.*`
+attributes that hold signatures for non-Mach-O files, invalidating the bundle.
+
+Removing the warning altogether needs Developer ID signing + notarization — see SIGNING.md.
 
 ## Architecture
 

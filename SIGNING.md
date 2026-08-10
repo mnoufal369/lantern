@@ -4,6 +4,42 @@ Unsigned builds trigger SmartScreen on Windows ("Unknown publisher") and Gatekee
 (right-click → Open). Fixing both requires a verified company identity — one-time company
 setup, then builds sign automatically.
 
+**Just running Pilot on your own Mac? You need none of this — see below.**
+
+## macOS, personal use only (free, no Apple account)
+
+An Apple Developer ID is only needed to hand the app to *other* people. For your own machine,
+`identity: "-"` in `electron-builder.yml` ad-hoc signs the bundle, which is all macOS asks of
+a locally built app. `yarn setup:mac` does this for you.
+
+Two things make macOS say "damaged" or refuse to open, and neither is really about signing:
+
+1. **A broken bundle signature.** With `identity: null` the bundle is never signed as a bundle —
+   only the inner binary carries the linker's ad-hoc signature (`Identifier=Electron`,
+   `Info.plist=not bound`). On Apple Silicon that inconsistency is fatal. Check with:
+
+   ```bash
+   codesign --verify --deep --strict /Applications/Pilot.app
+   # bad: "code has no resources but signature indicates they must be present"
+   ```
+
+   Fix by rebuilding, or re-sign in place: `codesign --force --deep --sign - /Applications/Pilot.app`
+
+2. **The quarantine flag.** Anything *downloaded* (dmg, zip, AirDrop) gets
+   `com.apple.quarantine`. An ad-hoc signature is not notarized, so Gatekeeper blocks it — and
+   on macOS 15+ the old right-click → Open bypass is gone. Strip it:
+
+   ```bash
+   xattr -dr com.apple.quarantine /Applications/Pilot.app
+   ```
+
+   Apps you build locally are never quarantined, so building from source sidesteps this entirely.
+
+Caveat: an ad-hoc signature's hash changes on every rebuild, so macOS treats each build as a new
+app and re-asks for permissions (Files, Screen Recording, …). If that gets annoying, create a
+self-signed **Code Signing** certificate in Keychain Access, trust it, and set
+`identity: "Your Name"` — a stable identity keeps those grants. Still free, still local-only.
+
 ## Windows — recommended: Azure Trusted Signing (~$10/month)
 
 1. **Azure setup (IT / admin, one-time):**
