@@ -58,8 +58,12 @@ yarn test             # vitest unit tests (permission rules, normalizer, transcr
 yarn dist             # build release/Pilot-<version>-arm64.dmg (unsigned)
 ```
 
-The dmg is unsigned (local distribution). If macOS complains after copying to another machine:
-`xattr -d com.apple.quarantine "/Applications/Pilot.app"` or right-click → Open.
+The dmg is unsigned (local distribution). On another Mac, anything AirDropped or downloaded is
+quarantined and Gatekeeper reports the app as "damaged". Distribute the self-installing zip
+instead: bundle `Pilot.app` with `scripts/Install Pilot.command` and `scripts/Read me first.txt`;
+the recipient right-clicks the command → Open, and it installs, de-quarantines and launches.
+Manual fallback: `xattr -cr "/Applications/Pilot.app"`. The real fix is Developer ID signing +
+notarization — see SIGNING.md.
 
 ## Architecture
 

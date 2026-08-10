@@ -1,0 +1,15 @@
+Installing Pilot on your Mac
+============================
+
+1. Unzip this file (double-click it).
+2. RIGHT-CLICK "Install Pilot.command" and choose Open, then Open again.
+   (Don't double-click it the first time — macOS blocks unknown scripts.)
+3. That's it. Pilot installs itself into Applications and starts.
+
+If macOS still refuses: System Settings -> Privacy & Security ->
+scroll down -> "Open Anyway".
+
+Why the extra step? Pilot is an internal build without an Apple
+Developer signature, so macOS quarantines anything AirDropped or
+downloaded. The installer clears that flag for you. Never do this for
+apps you don't trust.
