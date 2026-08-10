@@ -1,4 +1,4 @@
-appId: nl.salesdock.pilot
+appId: app.pilot.desktop
 productName: Pilot
 directories:
   output: release

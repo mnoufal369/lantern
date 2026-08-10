@@ -14,8 +14,7 @@ export default function TopBar({ onNewSession, onOpenSettings, onOpenBuilder }: 
   return (
     <header className="drag-region flex h-11 shrink-0 items-center border-b border-deck-border bg-deck-panel pl-20 pr-3">
       <span className="text-[13px] font-semibold tracking-wide">
-        <span className="wordmark-app bg-clip-text text-transparent">Pilot</span>{' '}
-        <span className="text-[10px] font-normal text-zinc-600">by Salesdock</span>
+        <span className="wordmark-app bg-clip-text text-transparent">Pilot</span>
       </span>
       <div className="flex-1" />
       <div className="no-drag flex items-center gap-1">

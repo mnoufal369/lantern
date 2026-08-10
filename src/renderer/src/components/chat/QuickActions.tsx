@@ -45,7 +45,7 @@ const GITHUB_ACTIONS: QuickAction[] = [
   {
     label: '🔍 Review a PR…',
     prefill:
-      'Review this PR the way we do at Salesdock: fetch it with gh, check security, ACL/tenant scoping, correctness, conventions, tests and translations, and report findings by severity with file references. PR #'
+      'Review this PR thoroughly: fetch it with gh, check security, ACL/tenant scoping, correctness, conventions, tests and translations, and report findings by severity with file references. PR #'
   },
   {
     label: '🎫 Compose a ticket…',

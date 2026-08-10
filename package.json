@@ -1,9 +1,9 @@
 {
   "name": "pilot",
   "productName": "Pilot",
-  "version": "0.2.0",
-  "description": "Pilot by Salesdock — you talk, Pilot builds. A desktop cockpit for AI agents.",
-  "author": "Salesdock",
+  "version": "0.2.1",
+  "description": "Pilot — you talk, Pilot builds. A desktop cockpit for AI agents.",
+  "author": "Pilot",
   "license": "MIT",
   "private": true,
   "type": "module",

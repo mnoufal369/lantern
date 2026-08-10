@@ -246,7 +246,7 @@ export default function SettingsModal({ onClose }: { onClose: () => void }): Rea
           <UsageSection />
         </div>
 
-        {version && <p className="text-center text-[11px] text-zinc-600">Pilot v{version} · by Salesdock</p>}
+        {version && <p className="text-center text-[11px] text-zinc-600">Pilot v{version}</p>}
 
         <div className="flex justify-end gap-2 pt-2">
           <button

@@ -1,15 +1,15 @@
 # Making Pilot a trusted app (code signing)
 
 Unsigned builds trigger SmartScreen on Windows ("Unknown publisher") and Gatekeeper on macOS
-(right-click → Open). Fixing both requires a verified Salesdock identity — one-time company
+(right-click → Open). Fixing both requires a verified company identity — one-time company
 setup, then builds sign automatically.
 
 ## Windows — recommended: Azure Trusted Signing (~$10/month)
 
 1. **Azure setup (IT / admin, one-time):**
-   - In the Azure portal, create a **Trusted Signing** account (e.g. `salesdock-signing`,
+   - In the Azure portal, create a **Trusted Signing** account (e.g. `pilot-signing`,
      region West Europe → endpoint `https://weu.codesigning.azure.net`).
-   - Complete organization identity validation for Salesdock (needs 3+ years of verifiable
+   - Complete organization identity validation for your company (needs 3+ years of verifiable
      business history — company registration data).
    - Create a **certificate profile** (e.g. `pilot`, type: Public Trust).
    - Create an Entra app registration ("pilot-signer") with the
@@ -21,9 +21,9 @@ setup, then builds sign automatically.
    ```yaml
    win:
      azureSignOptions:
-       publisherName: Salesdock B.V.
+       publisherName: Your Company B.V.
        endpoint: https://weu.codesigning.azure.net
-       codeSigningAccountName: salesdock-signing
+       codeSigningAccountName: pilot-signing
        certificateProfileName: pilot
    ```
 
@@ -39,7 +39,7 @@ setup, then builds sign automatically.
    Windows machine or CI runner (GitHub Actions `windows-latest` works well with the
    `azure/trusted-signing-action`).
 
-3. Result: installer and app show **Publisher: Salesdock B.V.**; SmartScreen reputation is
+3. Result: installer and app show **Publisher: Your Company B.V.**; SmartScreen reputation is
    Microsoft-managed and warnings stop almost immediately.
 
 ### Alternative A: EV code-signing certificate (~$300–500/yr)
@@ -53,18 +53,18 @@ Pilot is an internal asset — company-managed Windows machines can trust it wit
   Intune/Group Policy, or
 - IT distributes Pilot as a **managed app** through Intune/Endpoint Manager — managed
   installs bypass SmartScreen entirely.
-No public trust, but zero warnings inside Salesdock.
+No public trust, but zero warnings inside your organisation.
 
 ## macOS — Apple Developer Program ($99/yr)
 
-1. Enroll Salesdock in the Apple Developer Program (organization enrollment, needs a D-U-N-S number).
+1. Enroll your company in the Apple Developer Program (organization enrollment, needs a D-U-N-S number).
 2. Create a **Developer ID Application** certificate in the developer portal; install it in
    the build Mac's keychain.
 3. Update `electron-builder.yml`:
 
    ```yaml
    mac:
-     identity: "Developer ID Application: Salesdock B.V. (TEAMID)"
+     identity: "Developer ID Application: Your Company B.V. (TEAMID)"
      hardenedRuntime: true
      notarize: true   # electron-builder notarizes when APPLE_* env vars are present
    ```

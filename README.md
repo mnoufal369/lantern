@@ -1,8 +1,8 @@
-# Pilot · by Salesdock
+# Pilot
 
 **You talk. Pilot builds.**
 
-Internal Salesdock asset — not for external distribution or sale.
+Internal asset — not for external distribution or sale.
 
 Pilot is what GitHub Desktop was to the git terminal — a native, interactive cockpit for terminal AI coding agents, powered by the same engine as Claude Code (the official Claude Agent SDK).
 
