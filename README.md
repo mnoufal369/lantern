@@ -4,6 +4,20 @@
 
 Internal asset — not for external distribution or sale.
 
+## Install on your Mac (recommended: build it yourself)
+
+Apps you build locally are fully trusted by macOS — no "damaged" warnings, no Gatekeeper
+fights. One-time requirements: [Git](https://git-scm.com) and [Node 20+](https://nodejs.org)
+(`brew install node git`), plus access to this repository.
+
+```bash
+git clone https://github.com/mnoufal369/ai-pilot.git
+cd ai-pilot
+yarn setup:mac       # installs deps, builds, installs to /Applications, launches
+```
+
+Updating later: `git pull && yarn setup:mac`.
+
 Pilot is what GitHub Desktop was to the git terminal — a native, interactive cockpit for terminal AI coding agents, powered by the same engine as Claude Code (the official Claude Agent SDK).
 
 ## Features
