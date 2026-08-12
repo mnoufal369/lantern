@@ -1,5 +1,10 @@
 # Release notes
 
+## 0.5.6 — Downloads, simplified
+- Self-update now installs straight from the **dmg** — releases need only the
+  dmg (macOS) and Setup exe (Windows). This release carries the mac zip one
+  last time so older installs can hop over; future releases drop it.
+
 ## 0.5.5 — Fresh public start
 - Downloads now live exclusively on [GitHub Releases](https://github.com/mnoufal369/ai-pilot/releases):
   the `.dmg` for macOS, the Setup `.exe` for Windows. (The mac zip asset stays —

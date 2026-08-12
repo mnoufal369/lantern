@@ -141,18 +141,21 @@ export async function selfUpdateFromRelease(): Promise<{ started: boolean; reaso
     }
   }
 
+  // Prefer the dmg (the only mac asset going forward); fall back to the zip
+  // that older releases carried.
   const assets = release.assets ?? []
   const asset =
-    assets.find((a) => a.name.endsWith(`mac-${process.arch}.zip`)) ??
+    assets.find((a) => a.name.endsWith(`${process.arch}.dmg`)) ??
+    assets.find((a) => a.name.endsWith('.dmg')) ??
     assets.find((a) => a.name.includes('mac-') && a.name.endsWith('.zip'))
   if (!asset) {
     return { started: false, reason: 'The latest release has no downloadable Mac build yet — try again later.' }
   }
 
   const dir = mkdtempSync(path.join(os.tmpdir(), 'pilot-update-'))
-  const zipPath = path.join(dir, asset.name)
+  const filePath = path.join(dir, asset.name)
   try {
-    await downloadAsset(`https://api.github.com/repos/${REPO_SLUG}/releases/assets/${asset.id}`, token, zipPath)
+    await downloadAsset(`https://api.github.com/repos/${REPO_SLUG}/releases/assets/${asset.id}`, token, filePath)
   } catch (error) {
     return {
       started: false,
@@ -160,11 +163,25 @@ export async function selfUpdateFromRelease(): Promise<{ started: boolean; reaso
     }
   }
 
-  // The zip carries its own installer (quit → swap /Applications/Pilot.app →
-  // de-quarantine → verify signature → relaunch). Run detached so it survives
-  // this process quitting mid-way.
+  // Install detached so it survives this process quitting mid-way. The dmg
+  // path mounts, swaps /Applications/Pilot.app, de-quarantines and relaunches;
+  // the zip path defers to the installer script older zips carry.
+  const script = asset.name.endsWith('.dmg')
+    ? `echo "── dmg self-update ${release.tag_name ?? ''} $(date) ──"
+VOL=$(hdiutil attach -nobrowse -readonly "${filePath}" | awk -F'\\t' '/\\/Volumes\\//{print $NF; exit}')
+[ -d "$VOL/Pilot.app" ] || { echo "✗ No Pilot.app in the dmg"; hdiutil detach "$VOL" >/dev/null 2>&1; rm -rf "${dir}"; exit 1; }
+osascript -e 'quit app "Pilot"' >/dev/null 2>&1 || true
+sleep 1
+rm -rf /Applications/Pilot.app
+ditto "$VOL/Pilot.app" /Applications/Pilot.app
+hdiutil detach "$VOL" >/dev/null 2>&1 || true
+xattr -dr com.apple.quarantine /Applications/Pilot.app 2>/dev/null || true
+codesign --verify --deep --strict /Applications/Pilot.app || { echo "✗ Signature check failed after install"; rm -rf "${dir}"; exit 1; }
+open /Applications/Pilot.app
+echo "✓ updated"
+rm -rf "${dir}"`
+    : `echo "── zip self-update ${release.tag_name ?? ''} $(date) ──" && cd "${dir}" && ditto -x -k "${filePath}" . && INSTALLER=$(find . -maxdepth 2 -name "Install Pilot.command" | head -1) && [ -n "$INSTALLER" ] && bash "$INSTALLER"; STATUS=$?; rm -rf "${dir}"; exit $STATUS`
   const logFile = openSync(path.join(app.getPath('userData'), 'self-update.log'), 'a')
-  const script = `echo "── zip self-update ${release.tag_name ?? ''} $(date) ──" && cd "${dir}" && ditto -x -k "${zipPath}" . && INSTALLER=$(find . -maxdepth 2 -name "Install Pilot.command" | head -1) && [ -n "$INSTALLER" ] && bash "$INSTALLER"; STATUS=$?; rm -rf "${dir}"; exit $STATUS`
   const child = spawn('/bin/bash', ['-c', script], { detached: true, stdio: ['ignore', logFile, logFile] })
   child.unref()
   return { started: true }
