@@ -16,6 +16,7 @@ interface SessionsState {
 
   init: () => Promise<void>
   createSession: (profileId: string, cwd: string) => Promise<string>
+  forkSession: (sessionId: string) => Promise<string>
   setActive: (sessionId: string | null) => void
   sendMessage: (sessionId: string, text: string, images?: PastedImage[]) => Promise<void>
   interrupt: (sessionId: string) => Promise<void>
@@ -23,6 +24,7 @@ interface SessionsState {
   deleteSession: (sessionId: string) => Promise<void>
   reopen: (sessionId: string) => Promise<void>
   rename: (sessionId: string, title: string) => Promise<void>
+  setColor: (sessionId: string, color: string | null) => Promise<void>
   setModel: (sessionId: string, model: string) => Promise<void>
   setPermissionMode: (sessionId: string, mode: SessionMeta['permissionMode']) => Promise<void>
   applyEventBatch: (sessionId: string, events: UiEvent[]) => void
@@ -61,6 +63,17 @@ export const useSessionsStore = create<SessionsState>((set, get) => ({
     const meta = await window.api.invoke('sessions:create', { profileId, cwd })
     set((state) => ({
       sessions: { ...state.sessions, [meta.id]: { meta, blocks: [], historyLoaded: true } },
+      order: [meta.id, ...state.order],
+      activeId: meta.id
+    }))
+    return meta.id
+  },
+
+  forkSession: async (sessionId) => {
+    const meta = await window.api.invoke('sessions:fork', { sessionId })
+    const events = await window.api.invoke('sessions:history', { sessionId: meta.id })
+    set((state) => ({
+      sessions: { ...state.sessions, [meta.id]: { meta, blocks: applyEvents([], events), historyLoaded: true } },
       order: [meta.id, ...state.order],
       activeId: meta.id
     }))
@@ -155,6 +168,19 @@ export const useSessionsStore = create<SessionsState>((set, get) => ({
       }
       return {
         sessions: { ...state.sessions, [sessionId]: { ...entry, meta: { ...entry.meta, title } } }
+      }
+    })
+  },
+
+  setColor: async (sessionId, color) => {
+    await window.api.invoke('sessions:setColor', { sessionId, color })
+    set((state) => {
+      const entry = state.sessions[sessionId]
+      if (!entry) {
+        return state
+      }
+      return {
+        sessions: { ...state.sessions, [sessionId]: { ...entry, meta: { ...entry.meta, color: color ?? undefined } } }
       }
     })
   },

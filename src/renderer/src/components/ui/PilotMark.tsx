@@ -1,17 +1,7 @@
-/** The Pilot mark: paper plane with a teal trail and the pulsing red lead dot.
- *  `subtle` tones the glow down for small placements like the top bar. */
-export default function PilotMark({ size, subtle }: { size: number; subtle?: boolean }): React.JSX.Element {
+/** The Pilot mark: paper plane with a teal trail and the pulsing red lead dot. */
+export default function PilotMark({ size }: { size: number }): React.JSX.Element {
   return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 64 64"
-      style={{
-        filter: subtle
-          ? 'drop-shadow(0 2px 10px rgba(41,172,194,0.35))'
-          : 'drop-shadow(0 14px 44px rgba(41,172,194,0.5))'
-      }}
-    >
+    <svg width={size} height={size} viewBox="0 0 64 64">
       <defs>
         <linearGradient id="pilot-mark-bg" x1="0" y1="0" x2="1" y2="1">
           <stop offset="0" stopColor="#0d2c40" />

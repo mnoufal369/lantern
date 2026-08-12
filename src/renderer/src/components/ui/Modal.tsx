@@ -20,10 +20,10 @@ export default function Modal({ title, onClose, children, wide }: Props): React.
   }, [onClose])
 
   return (
-    <div className="overlay-in fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-[2px]" onMouseDown={onClose}>
+    <div className="overlay-in fixed inset-0 z-50 flex items-center justify-center bg-black/50" onMouseDown={onClose}>
       <div
         onMouseDown={(e) => e.stopPropagation()}
-        className={`modal-in flex max-h-[85vh] w-full flex-col rounded-xl border border-deck-border bg-deck-panel shadow-2xl ${
+        className={`modal-in flex max-h-[85vh] w-full flex-col rounded-lg border border-deck-border bg-deck-panel shadow-[0_10px_32px_rgba(0,0,0,0.4)] ${
           wide ? 'max-w-3xl' : 'max-w-lg'
         }`}
       >

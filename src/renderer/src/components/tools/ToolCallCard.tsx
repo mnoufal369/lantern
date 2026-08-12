@@ -98,7 +98,7 @@ function SimpleToolCard({ block }: { block: ToolBlock }): React.JSX.Element | nu
   const emoji = isEditLike ? '✏️' : block.toolName === 'Bash' ? '⚙️' : block.toolName === 'Task' ? '✨' : '🔧'
 
   return (
-    <div className="my-2 max-w-[92%] rounded-xl border border-deck-border bg-deck-panel px-3.5 py-2.5">
+    <div className="my-2 max-w-[92%] rounded-lg border border-deck-border bg-deck-panel px-3.5 py-2.5">
       <div className="flex items-center gap-2.5 text-[13px]">
         <span>{emoji}</span>
         <span className="text-zinc-300">{sentence}</span>
@@ -123,7 +123,7 @@ function SimpleToolCard({ block }: { block: ToolBlock }): React.JSX.Element | nu
             <BashBlock command={str(input.command)} output={block.output} isError={block.isError} />
           )}
           {!isEditLike && block.toolName !== 'Bash' && (
-            <pre className="selectable max-h-40 overflow-y-auto whitespace-pre-wrap rounded bg-[#0d0d10] p-2 font-mono text-[11.5px] text-zinc-400">
+            <pre className="selectable max-h-40 overflow-y-auto whitespace-pre-wrap rounded bg-deck-code p-2 font-mono text-[11.5px] text-zinc-400">
               {block.output ?? JSON.stringify(block.input, null, 2)}
             </pre>
           )}
@@ -229,7 +229,7 @@ const ToolCallCard = memo(function ToolCallCard({
                 </div>
               )}
               {block.output !== undefined && (
-                <pre className="selectable mt-1 max-h-48 overflow-y-auto whitespace-pre-wrap rounded bg-[#0d0d10] p-2 font-mono text-[11.5px] text-zinc-400">
+                <pre className="selectable mt-1 max-h-48 overflow-y-auto whitespace-pre-wrap rounded bg-deck-code p-2 font-mono text-[11.5px] text-zinc-400">
                   {block.output}
                 </pre>
               )}
@@ -238,12 +238,12 @@ const ToolCallCard = memo(function ToolCallCard({
 
           {!isBash && !isEdit && !isWrite && !isSubagent && (
             <div className="space-y-1.5">
-              <pre className="selectable overflow-x-auto rounded bg-[#0d0d10] p-2 font-mono text-[11.5px] text-zinc-400">
+              <pre className="selectable overflow-x-auto rounded bg-deck-code p-2 font-mono text-[11.5px] text-zinc-400">
                 {JSON.stringify(block.input, null, 2)}
               </pre>
               {block.output !== undefined && (
                 <pre
-                  className={`selectable max-h-48 overflow-y-auto whitespace-pre-wrap rounded bg-[#0d0d10] p-2 font-mono text-[11.5px] ${
+                  className={`selectable max-h-48 overflow-y-auto whitespace-pre-wrap rounded bg-deck-code p-2 font-mono text-[11.5px] ${
                     block.isError ? 'text-red-300' : 'text-zinc-400'
                   }`}
                 >

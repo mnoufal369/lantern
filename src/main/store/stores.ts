@@ -11,7 +11,9 @@ const profileStore = new Store<{ profiles: AgentProfile[]; seedVersion: number }
   defaults: { profiles: [], seedVersion: 0 }
 })
 
-const SEED_VERSION = 2
+const SEED_VERSION = 3
+
+const LEGACY_PROFILE_COLORS = ['#6366f1', '#22c55e', '#f59e0b', '#06b6d4', '#ec4899']
 
 const HUMAN_TONE =
   'Tone: write like a warm, friendly colleague, not a machine. Use contractions, first person and everyday words. Short sentences. Be encouraging without being fake. Never sound like a manual.'
@@ -114,13 +116,13 @@ export const ProfileStore = {
       updatedAt: now
     }
     const defaults: AgentProfile[] = [
-      { ...base, id: 'prof_default_dev', name: 'Dev Agent', icon: 'bot', color: '#6366f1' },
+      { ...base, id: 'prof_default_dev', name: 'Dev Agent', icon: 'bot', color: '#7e9cbf' },
       {
         ...base,
         id: 'prof_default_planner',
         name: 'Planner',
         icon: 'book-open',
-        color: '#22c55e',
+        color: '#94ab84',
         permissionMode: 'plan',
         systemPrompt: {
           mode: 'append',
@@ -132,7 +134,7 @@ export const ProfileStore = {
         id: 'prof_default_qa',
         name: 'QA Agent',
         icon: 'bug',
-        color: '#f59e0b',
+        color: '#c3a765',
         allowedTools: ['Read', 'Glob', 'Grep'],
         systemPrompt: {
           mode: 'append',
@@ -144,7 +146,7 @@ export const ProfileStore = {
         id: 'prof_default_consultant',
         name: 'Consultant',
         icon: 'briefcase',
-        color: '#06b6d4',
+        color: '#79a8a0',
         allowedTools: ['Read', 'Glob', 'Grep'],
         systemPrompt: {
           mode: 'append',
@@ -156,7 +158,7 @@ export const ProfileStore = {
         id: 'prof_default_explainer',
         name: 'Explainer',
         icon: 'sparkles',
-        color: '#ec4899',
+        color: '#b58aa8',
         allowedTools: ['Read', 'Glob', 'Grep'],
         systemPrompt: {
           mode: 'append',
@@ -175,7 +177,12 @@ export const ProfileStore = {
     if (profileStore.get('seedVersion') !== SEED_VERSION) {
       const refreshed = profileStore.get('profiles').map((profile) => {
         const seed = defaults.find((d) => d.id === profile.id)
-        return seed ? { ...profile, systemPrompt: seed.systemPrompt, updatedAt: now } : profile
+        if (!seed) {
+          return profile
+        }
+        // Only recolour agents still wearing a retired default, so hand-picked colours survive.
+        const color = LEGACY_PROFILE_COLORS.includes(profile.color) ? seed.color : profile.color
+        return { ...profile, color, systemPrompt: seed.systemPrompt, updatedAt: now }
       })
       profileStore.set('profiles', refreshed)
       profileStore.set('seedVersion', SEED_VERSION)

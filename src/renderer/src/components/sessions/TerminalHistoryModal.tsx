@@ -55,7 +55,7 @@ export default function TerminalHistoryModal({ onClose }: { onClose: () => void 
   )
 
   return (
-    <Modal title="Terminal history — your Claude Code conversations" onClose={onClose} wide>
+    <Modal title="Terminal history: your Claude Code conversations" onClose={onClose} wide>
       <div className="space-y-3">
         <div className="flex items-center gap-2 rounded-lg border border-deck-border bg-deck-raised px-3 py-2">
           <Search size={13} className="shrink-0 text-zinc-500" />
@@ -69,7 +69,7 @@ export default function TerminalHistoryModal({ onClose }: { onClose: () => void 
         </div>
 
         <p className="text-[11px] text-zinc-600">
-          These are the sessions you ran with <span className="font-mono">claude</span> in the terminal — same store,
+          These are the sessions you ran with <span className="font-mono">claude</span> in the terminal, same store,
           same account. Opening one imports the transcript and lets you continue the conversation here.
         </p>
 

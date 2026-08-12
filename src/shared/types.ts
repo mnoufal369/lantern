@@ -55,6 +55,12 @@ export interface SessionStats {
 export interface SessionMeta {
   id: string
   sdkSessionId?: string
+  /** Set on a fork until its first reply, when the SDK hands back its own session id. */
+  forkPending?: boolean
+  /** The session this one was forked from, if any. */
+  forkedFrom?: string
+  /** Optional colour tag shown on the session's tab. */
+  color?: string
   profileId: string
   title: string
   cwd: string

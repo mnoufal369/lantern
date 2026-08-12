@@ -3,6 +3,7 @@ import { execSync } from 'node:child_process'
 import { cpSync, existsSync, statSync } from 'node:fs'
 import path from 'node:path'
 import { registerIpc } from './ipc'
+import { installAppMenu } from './menu'
 import { SessionManager } from './sessions/SessionManager'
 import { ProfileStore } from './store/stores'
 
@@ -74,7 +75,9 @@ function createWindow(): void {
     minWidth: 1080,
     minHeight: 640,
     titleBarStyle: 'hiddenInset',
-    backgroundColor: '#09090b',
+    // Centres the 12px traffic lights in the 44px top bar so they line up with the title
+    trafficLightPosition: { x: 19, y: 16 },
+    backgroundColor: '#1e1e1e',
     show: false,
     webPreferences: {
       preload: path.join(import.meta.dirname, '../preload/index.cjs'),
@@ -149,6 +152,7 @@ app.whenReady().then(() => {
   adoptLoginShellPath()
   ProfileStore.seedDefaults()
   app.setAsDefaultProtocolClient('pilot')
+  installAppMenu()
   manager = new SessionManager(() => mainWindow)
   registerIpc(manager)
   createWindow()

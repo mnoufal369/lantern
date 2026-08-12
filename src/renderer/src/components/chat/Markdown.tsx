@@ -21,7 +21,7 @@ export function CopyButton({ text }: { text: string }): React.JSX.Element {
 
 export function CodeSnippet({ code, lang }: { code: string; lang?: string }): React.JSX.Element {
   return (
-    <div className="group/code my-2 overflow-hidden rounded-lg border border-deck-border bg-[#0d0d10]">
+    <div className="group/code my-2 overflow-hidden rounded-lg border border-deck-border bg-deck-code">
       <div className="flex items-center justify-between border-b border-deck-border/60 px-3 py-1">
         <span className="text-[11px] text-zinc-500">{lang || 'code'}</span>
         <CopyButton text={code} />

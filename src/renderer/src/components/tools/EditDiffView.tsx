@@ -8,7 +8,7 @@ interface Props {
 export default function EditDiffView({ oldText, newText }: Props): React.JSX.Element {
   const parts = diffLines(oldText, newText)
   return (
-    <pre className="selectable overflow-x-auto rounded-md bg-[#0d0d10] p-2 font-mono text-[12px] leading-relaxed">
+    <pre className="selectable overflow-x-auto rounded-md bg-deck-code p-2 font-mono text-[12px] leading-relaxed">
       {parts.map((part, i) => {
         const lines = part.value.replace(/\n$/, '').split('\n')
         return lines.map((line, j) => (
@@ -16,9 +16,9 @@ export default function EditDiffView({ oldText, newText }: Props): React.JSX.Ele
             key={`${i}-${j}`}
             className={
               part.added
-                ? 'bg-green-950/60 text-green-300'
+                ? 'bg-diff-add text-diff-add-text'
                 : part.removed
-                  ? 'bg-red-950/60 text-red-300'
+                  ? 'bg-diff-del text-diff-del-text'
                   : 'text-zinc-400'
             }
           >

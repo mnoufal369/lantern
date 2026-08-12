@@ -144,7 +144,7 @@ export default function OverflowRow({
       {menuOpen && inMenu.length > 0 && (
         <div
           onClick={() => setMenuOpen(false)}
-          className="menu-in absolute right-0 top-6 z-30 flex min-w-[190px] flex-col gap-0.5 rounded-lg border border-deck-border bg-deck-panel p-1 shadow-2xl"
+          className="menu-in absolute right-0 top-6 z-30 flex min-w-[190px] flex-col gap-0.5 rounded-lg border border-deck-border bg-deck-panel p-1 shadow-[0_10px_32px_rgba(0,0,0,0.4)]"
         >
           {inMenu.map((item) => (
             <div key={item.id} className="flex items-center">

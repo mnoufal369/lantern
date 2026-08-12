@@ -18,7 +18,7 @@ export default function BashBlock({ command, output, isError }: Props): React.JS
   const shown = isLong && !expanded ? lines.slice(-COLLAPSE_AFTER_LINES) : lines
 
   return (
-    <div className="group/bash overflow-hidden rounded-md bg-[#0d0d10]">
+    <div className="group/bash overflow-hidden rounded-md bg-deck-code">
       <div className="selectable flex items-start gap-2 border-b border-deck-border/60 px-2.5 py-1.5 font-mono text-[12px] text-zinc-300">
         <span className="select-none text-green-500">❯</span>
         <span className="min-w-0 flex-1 whitespace-pre-wrap break-all">{command}</span>

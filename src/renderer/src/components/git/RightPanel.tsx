@@ -166,7 +166,7 @@ export default function RightPanel({ sessionId }: { sessionId: string }): React.
 
   return (
     <aside className="flex w-[320px] shrink-0 flex-col border-l border-deck-border bg-deck-panel">
-      <div className="flex items-center gap-2 border-b border-deck-border px-3 py-2">
+      <div className="flex h-9 shrink-0 items-center gap-2 border-b border-deck-border px-3">
         <GitBranch size={13} className="text-zinc-500" />
         {status?.isRepo ? (
           <span className="truncate text-xs font-medium text-zinc-300">
@@ -250,7 +250,7 @@ function DiffPreview({ diffText }: { diffText: string }): React.JSX.Element {
   const files = parseDiff(diffText)
   let rendered = 0
   return (
-    <div className="selectable my-1 max-h-72 overflow-auto rounded-md bg-[#0d0d10] p-2 font-mono text-[11px] leading-relaxed">
+    <div className="selectable my-1 max-h-72 overflow-auto rounded-md bg-deck-code p-2 font-mono text-[11px] leading-relaxed">
       {files.map((file, fi) =>
         file.chunks.map((chunk, ci) => (
           <div key={`${fi}-${ci}`} className="mb-1">
@@ -264,9 +264,9 @@ function DiffPreview({ diffText }: { diffText: string }): React.JSX.Element {
                   key={i}
                   className={
                     change.type === 'add'
-                      ? 'bg-green-950/60 text-green-300'
+                      ? 'bg-diff-add text-diff-add-text'
                       : change.type === 'del'
-                        ? 'bg-red-950/60 text-red-300'
+                        ? 'bg-diff-del text-diff-del-text'
                         : 'text-zinc-500'
                   }
                 >

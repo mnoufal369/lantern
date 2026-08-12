@@ -210,9 +210,9 @@ export default function QuickMenu({
   }
 
   return (
-    <div className="menu-in absolute bottom-full left-0 right-0 z-40 mb-2 max-h-72 overflow-y-auto rounded-xl border border-deck-border bg-deck-panel shadow-2xl">
+    <div className="menu-in absolute bottom-full left-0 right-0 z-40 mb-2 max-h-72 overflow-y-auto rounded-lg border border-deck-border bg-deck-panel shadow-[0_10px_32px_rgba(0,0,0,0.4)]">
       <p className="border-b border-deck-border px-3 py-1.5 text-[10.5px] uppercase tracking-wide text-zinc-600">
-        Quick actions — ↑↓ navigate · ⏎ run · esc close
+        Quick actions · ↑↓ navigate · ⏎ run · esc close
       </p>
       {filtered.length === 0 && <p className="px-3 py-3 text-xs text-zinc-500">No matching action</p>}
       {filtered.map((command, index) => (

@@ -159,6 +159,81 @@ export class SessionManager {
     return meta
   }
 
+  /** Root of a fork family, so tabs opened from any member share one naming pool. */
+  private rootOf(sessionId: string): string {
+    const seen = new Set<string>()
+    let current = sessionId
+    let parentId = this.metas.get(current)?.forkedFrom
+    while (parentId && !seen.has(current)) {
+      seen.add(current)
+      current = parentId
+      parentId = this.metas.get(current)?.forkedFrom
+    }
+    return current
+  }
+
+  /** "New tab", then "New tab (2)", skipping names already used in this family. */
+  private nextTabTitle(parentId: string): string {
+    const root = this.rootOf(parentId)
+    const taken = new Set(
+      [...this.metas.values()].filter((m) => !m.archived && this.rootOf(m.id) === root).map((m) => m.title)
+    )
+    let title = 'New tab'
+    let n = 2
+    while (taken.has(title)) {
+      title = `New tab (${n})`
+      n += 1
+    }
+    return title
+  }
+
+  /**
+   * Branches a session into a second tab: the agent keeps the conversation so far but
+   * runs in its own process, so both tabs can work at the same time without one
+   * overwriting the other's history.
+   */
+  async fork(sessionId: string): Promise<SessionMeta> {
+    const parent = this.metas.get(sessionId)
+    if (!parent) {
+      throw new Error('Session not found')
+    }
+    if (!parent.sdkSessionId) {
+      throw new Error('Send a message in this session first, then it can be branched.')
+    }
+    if (this.runningCount() >= Settings.get().maxConcurrentSessions) {
+      throw new Error(
+        `Concurrent session limit reached (${Settings.get().maxConcurrentSessions}). Interrupt or archive a running session first.`
+      )
+    }
+
+    const meta: SessionMeta = {
+      ...parent,
+      id: `sess_${Date.now()}_${++this.counter}`,
+      title: this.nextTabTitle(parent.id),
+      // A tab starts untagged; the colour belongs to the tab, not to the family.
+      color: undefined,
+      forkPending: true,
+      forkedFrom: parent.id,
+      status: { kind: 'idle' },
+      stats: { totalCostUsd: 0, inputTokens: 0, outputTokens: 0, cacheReadTokens: 0, turns: 0 },
+      filesTouched: [],
+      createdAt: Date.now(),
+      lastActiveAt: Date.now(),
+      archived: false
+    }
+
+    // Carry the visible history across too, so the new tab reads as a continuation.
+    const events = await importClaudeTranscript(parent.sdkSessionId).catch(() => [])
+    const transcriptDir = path.join(app.getPath('userData'), 'transcripts')
+    await mkdir(transcriptDir, { recursive: true })
+    await writeFile(path.join(transcriptDir, `${meta.id}.json`), JSON.stringify(events), 'utf8')
+
+    this.metas.set(meta.id, meta)
+    this.startRuntime(meta)
+    this.persistMeta(meta, true)
+    return meta
+  }
+
   private startRuntime(meta: SessionMeta): SessionRuntime {
     const profile = ProfileStore.list().find((p) => p.id === meta.profileId) ?? ProfileStore.list()[0]
     if (!profile) {
@@ -309,6 +384,18 @@ export class SessionManager {
     const meta = this.metas.get(sessionId)
     if (meta) {
       meta.title = title.trim() || meta.title
+      this.persistMeta(meta, true)
+    }
+  }
+
+  setColor(sessionId: string, color: string | null): void {
+    const meta = this.metas.get(sessionId)
+    if (meta) {
+      if (color) {
+        meta.color = color
+      } else {
+        delete meta.color
+      }
       this.persistMeta(meta, true)
     }
   }

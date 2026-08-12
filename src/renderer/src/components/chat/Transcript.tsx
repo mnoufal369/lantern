@@ -52,6 +52,58 @@ function CollapsibleText({ text, done }: { text: string; done: boolean }): React
   )
 }
 
+const START_WORDS = ['Dazzling…', 'Skedaddling…', 'Percolating…', 'Noodling…', 'Tinkering…', 'Limbering up…', 'Spooling up…']
+
+/** Delightful stand-in for the session-start dump; the facts hide behind a link. */
+function SessionStart({ block }: { block: TranscriptBlock & { kind: 'init' } }): React.JSX.Element {
+  const [open, setOpen] = useState(false)
+  // Keyed off the block id so the word is stable per session, not reshuffled on every render.
+  const word = START_WORDS[[...block.id].reduce((sum, c) => sum + c.charCodeAt(0), 0) % START_WORDS.length]
+  const stalledServers = block.mcpServers.filter((server) => server.status !== 'connected')
+
+  return (
+    <div className="my-2 text-[11px] text-zinc-600">
+      <div className="flex items-center gap-2.5">
+        <span className="text-[13.5px] text-zinc-400">
+          {[...word].map((letter, i) => (
+            <span key={i} className="letter-in" style={{ animationDelay: `${i * 40}ms` }}>
+              {letter}
+            </span>
+          ))}
+        </span>
+        <button onClick={() => setOpen(!open)} className="text-zinc-600 hover:text-zinc-400">
+          {open ? 'Hide details' : 'Expand details'}
+        </button>
+      </div>
+      {open && (
+        <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+          <span>
+            {block.model} · {block.tools.length} tools
+            {block.mcpServers.length > 0 && ` · ${block.mcpServers.length} MCP server${block.mcpServers.length > 1 ? 's' : ''}`}
+          </span>
+          {block.newNames.map((name) => (
+            <span
+              key={name}
+              className="rounded-full border border-deck-border bg-deck-raised px-2 py-0.5 font-mono text-[10px] text-zinc-400"
+              title="First time this tool appears on your deck"
+            >
+              {name.replace(/^mcp:/, '')} <span className="font-sans font-semibold">NEW</span>
+            </span>
+          ))}
+          {stalledServers.map((server) => (
+            <span
+              key={server.name}
+              className="rounded-full border border-amber-900/60 bg-amber-950/40 px-2 py-0.5 font-mono text-[10px] text-amber-400"
+            >
+              {server.name}: {server.status}
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 const Block = memo(function Block({
   block,
   simple
@@ -63,7 +115,8 @@ const Block = memo(function Block({
     case 'user':
       return (
         <div className="my-3 flex justify-end">
-          <div className="max-w-[85%] rounded-2xl rounded-br-md border border-cyan-500/15 bg-gradient-to-br from-cyan-500/15 to-teal-500/10 px-4 py-2.5 text-sm text-zinc-100">
+          {/* Square bottom-right corner points back at the composer, like a speech bubble tail. */}
+          <div className="max-w-[85%] rounded-lg rounded-br-none border border-deck-accent/25 bg-deck-accent/10 px-4 py-2.5 text-sm text-zinc-100">
             {block.images && block.images.length > 0 && (
               <div className="mb-1.5 flex flex-wrap gap-1.5">
                 {block.images.map((src, i) => (
@@ -132,7 +185,7 @@ const Block = memo(function Block({
         <div className="my-3 flex items-center gap-2 text-[11px] text-zinc-600">
           <div className="h-px flex-1 bg-deck-border" />
           {block.isError ? (
-            <span className="text-red-400">turn failed{block.errorMessage ? ` — ${block.errorMessage}` : ''}</span>
+            <span className="text-red-400">turn failed{block.errorMessage ? `: ${block.errorMessage}` : ''}</span>
           ) : simple ? (
             <span>✓ done · ${block.costUsd.toFixed(2)}</span>
           ) : (
@@ -150,7 +203,7 @@ const Block = memo(function Block({
           <div className="my-3 max-w-[95%] rounded-lg border border-red-900/60 bg-red-950/40 px-3 py-2 text-sm text-red-300">
             <div className="flex items-start gap-2">
               <CircleAlert size={15} className="mt-0.5 shrink-0" />
-              <span>Something went wrong on the agent's side. Just send your message again — it picks up where it left off.</span>
+              <span>Something went wrong on the agent's side. Just send your message again. It picks up where it left off.</span>
             </div>
             <details className="mt-1.5 pl-6">
               <summary className="cursor-pointer text-[11px] text-red-400/70 hover:text-red-300">technical details</summary>
@@ -170,31 +223,7 @@ const Block = memo(function Block({
       if (simple) {
         return null
       }
-      return (
-        <div className="my-2 flex flex-wrap items-center gap-1.5 text-[11px] text-zinc-600">
-          <span>
-            session started · {block.model} · {block.tools.length} tools
-            {block.mcpServers.length > 0 && ` · ${block.mcpServers.length} MCP server${block.mcpServers.length > 1 ? 's' : ''}`}
-          </span>
-          {block.newNames.map((name) => (
-            <span
-              key={name}
-              className="rounded-full border border-deck-accent/40 bg-deck-accent/10 px-2 py-0.5 font-mono text-[10px] text-sky-300"
-              title="First time this tool appears on your deck"
-            >
-              {name.replace(/^mcp:/, '')} <span className="font-sans font-semibold">NEW</span>
-            </span>
-          ))}
-          {block.mcpServers.filter((s) => s.status !== 'connected').map((server) => (
-            <span
-              key={server.name}
-              className="rounded-full border border-amber-900/60 bg-amber-950/40 px-2 py-0.5 font-mono text-[10px] text-amber-400"
-            >
-              {server.name}: {server.status}
-            </span>
-          ))}
-        </div>
-      )
+      return <SessionStart block={block} />
   }
 })
 

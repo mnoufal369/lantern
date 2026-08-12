@@ -77,7 +77,7 @@ function AuthStatusLine({ status }: { status: AuthStatus | null }): React.JSX.El
     },
     'claude-login': {
       icon: <UserRound size={13} className="text-green-400" />,
-      text: `Using your Claude Code login — ${status.detail}`,
+      text: `Using your Claude Code login: ${status.detail}`,
       sub: 'Sessions bill to your existing Claude plan'
     },
     none: {
@@ -149,7 +149,7 @@ export default function SettingsModal({ onClose }: { onClose: () => void }): Rea
             type="password"
             value={apiKey}
             onChange={(e) => setApiKey(e.target.value)}
-            placeholder={settings?.hasApiKey ? '••••••••  key saved — type to replace' : 'sk-ant-…'}
+            placeholder={settings?.hasApiKey ? '••••••••  key saved, type to replace' : 'sk-ant-…'}
             className="selectable w-full rounded-lg border border-deck-border bg-deck-raised px-3 py-2 font-mono text-sm text-zinc-100 outline-none focus:border-deck-accent"
           />
           {settings?.hasApiKey && (
@@ -176,7 +176,7 @@ export default function SettingsModal({ onClose }: { onClose: () => void }): Rea
                 key={theme.value}
                 onClick={() => void update({ theme: theme.value })}
                 className={`flex-1 rounded-md py-1.5 text-xs ${
-                  settings?.theme === theme.value ? 'bg-deck-accent text-white' : 'text-zinc-400 hover:text-zinc-200'
+                  settings?.theme === theme.value ? 'bg-deck-accent text-deck-on-accent' : 'text-zinc-400 hover:text-zinc-200'
                 }`}
               >
                 {theme.label}
@@ -199,7 +199,7 @@ export default function SettingsModal({ onClose }: { onClose: () => void }): Rea
                 onClick={() => void update({ uiMode: mode.value })}
                 title={mode.hint}
                 className={`flex-1 rounded-md py-1.5 text-xs ${
-                  settings?.uiMode === mode.value ? 'bg-deck-accent text-white' : 'text-zinc-400 hover:text-zinc-200'
+                  settings?.uiMode === mode.value ? 'bg-deck-accent text-deck-on-accent' : 'text-zinc-400 hover:text-zinc-200'
                 }`}
               >
                 {mode.label}
@@ -253,7 +253,7 @@ export default function SettingsModal({ onClose }: { onClose: () => void }): Rea
             className="w-24 rounded-lg border border-deck-border bg-deck-raised px-3 py-2 text-sm text-zinc-100 outline-none focus:border-deck-accent"
           />
           <p className="mt-1 text-[11px] text-zinc-600">
-            Each running session is its own agent process — keep this modest.
+            Each running session is its own agent process, so keep this modest.
           </p>
         </div>
 
@@ -274,7 +274,7 @@ export default function SettingsModal({ onClose }: { onClose: () => void }): Rea
           <button
             onClick={() => void save()}
             disabled={saving}
-            className="rounded-lg bg-deck-accent px-4 py-1.5 text-xs font-medium text-white hover:opacity-90 disabled:opacity-50"
+            className="rounded-lg bg-deck-accent px-4 py-1.5 text-xs font-medium text-deck-on-accent hover:opacity-90 disabled:opacity-50"
           >
             {saving ? 'Saving…' : 'Save'}
           </button>

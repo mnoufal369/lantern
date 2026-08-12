@@ -1,16 +1,24 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Check, ChevronDown, ChevronUp, Copy, CopyPlus, Download, Search, Sparkles, X } from 'lucide-react'
+import { Check, ChevronDown, ChevronUp, Copy, Download, Plus, Search, Sparkles, X } from 'lucide-react'
 import { CONTEXT_WINDOW_TOKENS } from '@shared/constants'
 import Transcript from './Transcript'
 import Composer from './Composer'
 import BranchSwitcher from './BranchSwitcher'
+import TabStrip from './TabStrip'
 import QuickActions from './QuickActions'
+import HoverCard from '@/components/ui/HoverCard'
 import OverflowRow from '@/components/ui/OverflowRow'
 import type { OverflowItem } from '@/components/ui/OverflowRow'
 import { useSessionsStore } from '@/stores/useSessionsStore'
 import { useSettingsStore } from '@/stores/useSettingsStore'
 import { useProfilesStore } from '@/stores/useProfilesStore'
 import { transcriptToMarkdown } from '@/lib/exportMarkdown'
+
+const COST_DISCLAIMER =
+  'Added up from what the Claude Code SDK reports for each turn in this session. Treat it as a close guide rather than a bill: subscription plans, cached reads and retries can all make your real charge differ.'
+
+/** Set the first time a tab is opened, so the hint never returns. */
+const TABS_HINT_KEY = 'pilot.tabsHintUsed'
 
 export default function ChatView({ sessionId }: { sessionId: string }): React.JSX.Element {
   const entry = useSessionsStore((s) => s.sessions[sessionId])
@@ -26,6 +34,9 @@ export default function ChatView({ sessionId }: { sessionId: string }): React.JS
   const [matchIndex, setMatchIndex] = useState(0)
   const searchInputRef = useRef<HTMLInputElement>(null)
   const subagentCount = entry?.blocks.filter((b) => b.kind === 'tool' && b.toolName === 'Task').length ?? 0
+  const hasForked = useSessionsStore((s) => Object.values(s.sessions).some((e) => e.meta.forkedFrom))
+  const [tabsHintUsed, setTabsHintUsed] = useState(localStorage.getItem(TABS_HINT_KEY) === '1')
+  const showTabsHint = !tabsHintUsed && !hasForked
 
   const matches = useMemo(() => {
     const needle = searchQuery.trim().toLowerCase()
@@ -119,10 +130,12 @@ export default function ChatView({ sessionId }: { sessionId: string }): React.JS
     setTimeout(() => searchInputRef.current?.focus(), 0)
   }
 
-  const openTabOnSameProject = (): void => {
+  const openParallelTab = (): void => {
+    localStorage.setItem(TABS_HINT_KEY, '1')
+    setTabsHintUsed(true)
     useSessionsStore
       .getState()
-      .createSession(entry.meta.profileId, entry.meta.cwd)
+      .forkSession(sessionId)
       .catch((e: unknown) => {
         window.alert(
           e instanceof Error
@@ -144,14 +157,24 @@ export default function ChatView({ sessionId }: { sessionId: string }): React.JS
               style={{ width: `${budgetRatio * 100}%` }}
             />
           </span>
-          <span className={budgetRatio > 0.9 ? 'text-red-400' : undefined}>
-            ${spent.toFixed(2)} / ${budget?.toFixed(0)} · {totalTokens} tokens
-          </span>
+          <HoverCard title="How this is counted" body={COST_DISCLAIMER}>
+            <span
+              className={`underline decoration-zinc-600 decoration-dotted underline-offset-[3px] ${
+                budgetRatio > 0.9 ? 'text-red-400' : ''
+              }`}
+            >
+              ${spent.toFixed(2)} / ${budget?.toFixed(0)} · {totalTokens} tokens
+            </span>
+          </HoverCard>
         </span>
-      ) : simple ? (
-        `$${spent.toFixed(2)} · ${totalTokens} tokens`
       ) : (
-        `${entry.meta.stats.turns} turn${entry.meta.stats.turns === 1 ? '' : 's'} · $${spent.toFixed(3)} · ${totalTokens} tokens`
+        <HoverCard title="How this is counted" body={COST_DISCLAIMER}>
+          <span className="underline decoration-zinc-600 decoration-dotted underline-offset-[3px]">
+            {simple
+              ? `$${spent.toFixed(2)} · ${totalTokens} tokens`
+              : `${entry.meta.stats.turns} turn${entry.meta.stats.turns === 1 ? '' : 's'} · $${spent.toFixed(3)} · ${totalTokens} tokens`}
+          </span>
+        </HoverCard>
       )}
     </span>
   )
@@ -161,7 +184,7 @@ export default function ChatView({ sessionId }: { sessionId: string }): React.JS
       title={
         contextTokens > 0
           ? `Context: ~${formatTokens(contextTokens)} of ${formatTokens(contextWindow)} tokens in the model's memory. Near 100% the agent starts forgetting the oldest parts of the conversation.`
-          : 'Context meter — fills in after the agent’s first reply in this session.'
+          : 'Context meter, fills in after the agent’s first reply in this session.'
       }
       className={`flex items-center gap-1 whitespace-nowrap tabular-nums ${contextPct > 90 ? 'text-red-400' : contextPct > 70 ? 'text-amber-500' : ''}`}
     >
@@ -189,25 +212,6 @@ export default function ChatView({ sessionId }: { sessionId: string }): React.JS
     { id: 'stats', priority: 50, bar: stats, menu: <MenuReadout>{stats}</MenuReadout> },
     { id: 'context', priority: 60, bar: contextMeter, menu: <MenuReadout>{contextMeter}</MenuReadout> },
     {
-      id: 'new-tab',
-      priority: 30,
-      bar: (
-        <button
-          onClick={openTabOnSameProject}
-          title="New tab on this project — same folder, same agent, fresh conversation"
-          className="flex items-center gap-1 whitespace-nowrap rounded border border-deck-border/60 px-1.5 py-0.5 text-zinc-400 hover:border-deck-accent/50 hover:bg-deck-accent/10 hover:text-zinc-200"
-        >
-          <CopyPlus size={11} />
-          New tab
-        </button>
-      ),
-      menu: (
-        <MenuAction onClick={openTabOnSameProject} icon={<CopyPlus size={12} />}>
-          New tab on this project
-        </MenuAction>
-      )
-    },
-    {
       id: 'search',
       priority: 40,
       bar: (
@@ -232,7 +236,7 @@ export default function ChatView({ sessionId }: { sessionId: string }): React.JS
         <button
           onClick={() => void copyTranscript()}
           disabled={nothingToShare}
-          title="Copy the whole session as Markdown — paste it into a ticket or chat"
+          title="Copy the whole session as Markdown, ready to paste into a ticket or chat"
           className="flex items-center gap-1 whitespace-nowrap rounded px-1.5 py-0.5 hover:bg-deck-raised hover:text-zinc-300 disabled:opacity-30"
         >
           {copied ? <Check size={11} className="text-green-400" /> : <Copy size={11} />}
@@ -277,10 +281,27 @@ export default function ChatView({ sessionId }: { sessionId: string }): React.JS
 
   return (
     <div className="flex min-w-0 flex-1 flex-col">
-      <div className="flex shrink-0 items-center gap-3 border-b border-deck-border px-4 py-1.5 text-[11px] text-zinc-500">
+      <div className="flex h-9 shrink-0 items-center gap-3 border-b border-deck-border px-4 text-[11px] text-zinc-500">
         <BranchSwitcher key={sessionId} sessionId={sessionId} />
         <OverflowRow items={headerItems} gap={10} className="flex-1" />
+        <HoverCard
+          title={showTabsHint ? 'Introducing tabs' : 'New tab'}
+          body="Branch this conversation into a second tab. It keeps everything said so far and runs in its own process, so two things can happen at once."
+          className="relative shrink-0"
+        >
+          <button
+            onClick={openParallelTab}
+            className="flex h-6 w-6 items-center justify-center rounded-md text-zinc-500 hover:bg-deck-raised hover:text-zinc-200"
+          >
+            <Plus size={14} />
+          </button>
+          {showTabsHint && (
+            <span className="ripple-dot pointer-events-none absolute -right-px -top-px h-1.5 w-1.5 rounded-full bg-deck-accent" />
+          )}
+        </HoverCard>
       </div>
+
+      <TabStrip sessionId={sessionId} />
 
       {searchOpen && (
         <div className="flex shrink-0 items-center gap-2 border-b border-deck-border bg-deck-panel px-4 py-1.5">
@@ -388,7 +409,7 @@ function formatTokens(n: number): string {
 }
 
 const STARTERS = [
-  { emoji: '🗺️', text: 'Give me a tour of this project — what is it and how is it organized?' },
+  { emoji: '🗺️', text: 'Give me a tour of this project. What is it and how is it organized?' },
   { emoji: '🕵️', text: 'Look for anything broken or risky here and propose fixes' },
   { emoji: '📝', text: 'Write a clear README for this folder' },
   { emoji: '🎨', text: 'Build a simple, beautiful landing page in this folder' }
@@ -398,7 +419,6 @@ function StarterPrompts({ sessionId, cwd }: { sessionId: string; cwd: string }):
   const sendMessage = useSessionsStore((s) => s.sendMessage)
   return (
     <div className="relative mt-14 flex flex-col items-center gap-4">
-      <div className="hero-glow" />
       <p className="z-10 text-sm text-zinc-500">
         Your agent is ready in <span className="font-mono text-zinc-400">{cwd.replace(/^\/Users\/[^/]+/, '~')}</span>
       </p>
@@ -407,7 +427,7 @@ function StarterPrompts({ sessionId, cwd }: { sessionId: string; cwd: string }):
           <button
             key={starter.text}
             onClick={() => void sendMessage(sessionId, starter.text)}
-            className="rounded-full border border-deck-border bg-deck-panel px-3.5 py-1.5 text-[12.5px] text-zinc-300 transition-all hover:-translate-y-0.5 hover:border-deck-accent/60 hover:bg-deck-accent/10 hover:text-zinc-100 hover:shadow-[0_6px_24px_rgba(41,172,194,0.15)]"
+            className="rounded-md border border-deck-border bg-deck-panel px-3.5 py-1.5 text-[12.5px] text-zinc-300 hover:border-deck-accent/50 hover:bg-deck-raised hover:text-zinc-100"
           >
             <span className="mr-1.5">{starter.emoji}</span>
             {starter.text}

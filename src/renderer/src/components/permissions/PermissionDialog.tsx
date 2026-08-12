@@ -30,7 +30,7 @@ function CollapsiblePre({ text }: { text: string }): React.JSX.Element {
 
   return (
     <div>
-      <pre className="selectable max-h-72 overflow-auto whitespace-pre-wrap break-words rounded-lg bg-[#0d0d10] p-3 font-mono text-[12.5px] text-zinc-200">
+      <pre className="selectable max-h-72 overflow-auto whitespace-pre-wrap break-words rounded-lg bg-deck-code p-3 font-mono text-[12.5px] text-zinc-200">
         <span className="select-none text-green-500">❯ </span>
         {shown}
       </pre>
@@ -102,7 +102,7 @@ export default function PermissionDialog(): React.JSX.Element | null {
         </div>
       )}
       {!isBash && !isEdit && !isWrite && (
-        <pre className="selectable overflow-x-auto rounded-lg bg-[#0d0d10] p-3 font-mono text-[12px] text-zinc-300">
+        <pre className="selectable overflow-x-auto rounded-lg bg-deck-code p-3 font-mono text-[12px] text-zinc-300">
           {JSON.stringify(request.input, null, 2)}
         </pre>
       )}
@@ -110,8 +110,8 @@ export default function PermissionDialog(): React.JSX.Element | null {
   )
 
   return (
-    <div className="overlay-in fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-[2px]">
-      <div className="modal-in flex max-h-[80vh] w-full max-w-xl flex-col rounded-xl border border-amber-900/50 bg-deck-panel shadow-[0_24px_80px_rgba(0,0,0,0.5),0_0_40px_rgba(245,158,11,0.08)]">
+    <div className="overlay-in fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+      <div className="modal-in flex max-h-[80vh] w-full max-w-xl flex-col rounded-lg border border-amber-900/50 bg-deck-panel shadow-[0_16px_48px_rgba(0,0,0,0.45)]">
         <div className="flex shrink-0 items-center gap-2.5 border-b border-deck-border px-4 py-3">
           <ShieldAlert size={18} className="text-amber-500" />
           <div className="min-w-0">
@@ -171,7 +171,7 @@ export default function PermissionDialog(): React.JSX.Element | null {
             </button>
             <button
               onClick={() => void resolve(request.requestId, { kind: 'allow-once' })}
-              className="shrink-0 rounded-lg bg-deck-accent px-3 py-1.5 text-xs font-medium text-white hover:opacity-90"
+              className="shrink-0 rounded-lg bg-deck-accent px-3 py-1.5 text-xs font-medium text-deck-on-accent hover:opacity-90"
             >
               Allow once
             </button>

@@ -176,7 +176,7 @@ export default function NewSessionModal({ onClose, onOpenBuilder, initialCwd }: 
             <button
               onClick={() => setSource('local')}
               className={`flex flex-1 items-center justify-center gap-1.5 rounded-md py-1.5 text-xs ${
-                source === 'local' ? 'bg-deck-accent text-white' : 'text-zinc-400 hover:text-zinc-200'
+                source === 'local' ? 'bg-deck-accent text-deck-on-accent' : 'text-zinc-400 hover:text-zinc-200'
               }`}
             >
               <HardDrive size={13} /> Folder on this Mac
@@ -189,7 +189,7 @@ export default function NewSessionModal({ onClose, onOpenBuilder, initialCwd }: 
                 }
               }}
               className={`flex flex-1 items-center justify-center gap-1.5 rounded-md py-1.5 text-xs ${
-                source === 'remote' ? 'bg-deck-accent text-white' : 'text-zinc-400 hover:text-zinc-200'
+                source === 'remote' ? 'bg-deck-accent text-deck-on-accent' : 'text-zinc-400 hover:text-zinc-200'
               }`}
             >
               <Globe size={13} /> Online repository
@@ -248,13 +248,13 @@ export default function NewSessionModal({ onClose, onOpenBuilder, initialCwd }: 
                 />
               </div>
               <p className="mt-1.5 text-[11px] text-zinc-600">
-                Pilot fetches it for you — no cloning, no terminal, no running the app. Leave the second field empty
+                Pilot fetches it for you: no cloning, no terminal, no running the app. Leave the second field empty
                 for the default branch, or paste a branch name or PR number (#123). Private repos use the git access
                 already on this machine.
               </p>
               {!githubOrg && (
                 <p className="mt-1.5 text-[11px] text-zinc-600">
-                  Tip: set your <b>GitHub organisation</b> in Settings — this field then pre-fills with your org and
+                  Tip: set your <b>GitHub organisation</b> in Settings, and this field then pre-fills with your org and
                   suggests its repositories as you type.
                 </p>
               )}
@@ -310,7 +310,7 @@ export default function NewSessionModal({ onClose, onOpenBuilder, initialCwd }: 
           <button
             onClick={() => void start()}
             disabled={creating}
-            className="flex items-center gap-2 rounded-lg bg-deck-accent px-4 py-2 text-xs font-medium text-white hover:opacity-90 disabled:opacity-60"
+            className="flex items-center gap-2 rounded-lg bg-deck-accent px-4 py-2 text-xs font-medium text-deck-on-accent hover:opacity-90 disabled:opacity-60"
           >
             {creating && <Loader2 size={12} className="animate-spin" />}
             {creating ? (source === 'remote' ? 'Fetching repository…' : 'Starting…') : 'Start session'}

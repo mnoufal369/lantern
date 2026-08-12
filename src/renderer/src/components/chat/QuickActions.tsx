@@ -26,7 +26,7 @@ const ACTIONS_BY_PROFILE: Record<string, QuickAction[]> = {
   prof_default_consultant: [
     {
       label: '📋 Product summary',
-      send: 'Write an executive summary of this product: what it does, its main modules, integrations, and overall quality. Aimed at a business audience — clear, structured, no jargon.'
+      send: 'Write an executive summary of this product: what it does, its main modules, integrations, and overall quality. Aimed at a business audience, clear, structured, no jargon.'
     },
     { label: '💬 A client asks…', prefill: 'A client asks: ' },
     {
@@ -35,7 +35,7 @@ const ACTIONS_BY_PROFILE: Record<string, QuickAction[]> = {
     }
   ],
   prof_default_explainer: [
-    { label: '✨ Explain this app', send: 'Explain what this app does in simple, everyday words — like you would to a friend.' },
+    { label: '✨ Explain this app', send: 'Explain what this app does in simple, everyday words, like you would to a friend.' },
     { label: '🙋 Can it…?', prefill: 'Can this app ' },
     { label: '🗺️ Give me a tour', send: 'Give me a friendly tour of the main things this project can do, one thing at a time.' }
   ]
@@ -50,7 +50,7 @@ const GITHUB_ACTIONS: QuickAction[] = [
   {
     label: '🎫 Compose a ticket…',
     prefill:
-      'Draft a GitHub issue following our format — Title, Problem, Proposed solution, and a "Technical todos" checklist. Show me the draft before creating it with gh. Topic: '
+      'Draft a GitHub issue following our format: Title, Problem, Proposed solution, and a "Technical todos" checklist. Show me the draft before creating it with gh. Topic: '
   },
   {
     label: '☑️ Update technical todos…',

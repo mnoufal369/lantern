@@ -1,38 +1,52 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Plus, Archive, ArchiveRestore, ChevronDown, ChevronRight, CircleStop, History, Search, Trash2 } from 'lucide-react'
 import { useSessionsStore } from '@/stores/useSessionsStore'
 import { useProfilesStore } from '@/stores/useProfilesStore'
 import type { SessionStatus } from '@shared/types'
+import { APP_NAME } from '@shared/constants'
 
 function statusLabel(status: SessionStatus): string {
   switch (status.kind) {
     case 'idle':
-      return 'idle'
+      return 'Idle'
     case 'thinking':
-      return 'thinking…'
+      return 'Thinking…'
     case 'running-tool':
-      return `running ${status.toolName}`
+      return `Running ${status.toolName}`
     case 'waiting-permission':
-      return 'needs permission'
+      return 'Needs permission'
     case 'done':
-      return 'done'
+      return 'Done'
     case 'error':
-      return 'error'
+      return 'Error'
   }
 }
 
-function StatusDot({ status, color }: { status: SessionStatus; color: string }): React.JSX.Element {
-  const active = status.kind === 'thinking' || status.kind === 'running-tool'
-  const waiting = status.kind === 'waiting-permission'
-  const dotColor = waiting ? '#f59e0b' : status.kind === 'error' ? '#ef4444' : color
+/** The agent's colour, worn as a Finder-style tag chip rather than a hairline. */
+function AgentChip({ color, name, status }: { color: string; name: string; status: SessionStatus }): React.JSX.Element {
+  const busy = status.kind === 'thinking' || status.kind === 'running-tool'
   return (
-    <span
-      className={`inline-block h-2 w-2 shrink-0 rounded-full ${active ? 'status-pulse' : ''}`}
-      style={{
-        backgroundColor: dotColor,
-        boxShadow: active || waiting ? `0 0 8px ${dotColor}` : undefined
-      }}
-    />
+    <span className="relative shrink-0">
+      <span
+        className="flex h-[18px] w-[18px] items-center justify-center rounded-[5px] text-[10px] font-bold text-black/70"
+        style={{ backgroundColor: color }}
+      >
+        {name.slice(0, 1).toUpperCase() || '?'}
+      </span>
+      {(busy || status.kind === 'waiting-permission' || status.kind === 'error') && (
+        <span
+          className={`absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full ring-2 ring-deck-panel ${
+            busy ? 'status-pulse' : ''
+          } ${
+            status.kind === 'error'
+              ? 'bg-red-500'
+              : status.kind === 'waiting-permission'
+                ? 'bg-amber-500'
+                : 'bg-deck-accent'
+          }`}
+        />
+      )}
+    </span>
   )
 }
 
@@ -57,6 +71,11 @@ export default function Sidebar({
   const [renamingId, setRenamingId] = useState<string | null>(null)
   const [renameDraft, setRenameDraft] = useState('')
   const [archivedOpen, setArchivedOpen] = useState(false)
+  const [version, setVersion] = useState('')
+
+  useEffect(() => {
+    void window.api.invoke('app:getVersion').then(setVersion).catch(() => undefined)
+  }, [])
 
   const matchesSearch = (id: string): boolean => {
     if (search.trim() === '') {
@@ -79,7 +98,7 @@ export default function Sidebar({
 
   return (
     <aside className="flex w-[260px] shrink-0 flex-col border-r border-deck-border bg-deck-panel">
-      <div className="flex items-center gap-1.5 border-b border-deck-border px-3 py-2">
+      <div className="flex h-9 shrink-0 items-center gap-1.5 border-b border-deck-border px-3">
         <Search size={12} className="shrink-0 text-zinc-600" />
         <input
           value={search}
@@ -88,7 +107,8 @@ export default function Sidebar({
           className="selectable w-full bg-transparent text-xs text-zinc-200 outline-none placeholder:text-zinc-600"
         />
       </div>
-      <div className="flex-1 overflow-y-auto p-2">
+
+      <div className="flex-1 overflow-y-auto px-1.5 py-1.5">
         {visible.length === 0 && (
           <p className="px-2 py-4 text-xs text-zinc-500">
             {search ? 'No sessions match.' : 'No sessions yet. Start one with ⌘N.'}
@@ -97,6 +117,7 @@ export default function Sidebar({
         {visible.map((id) => {
           const { meta } = sessions[id]
           const profile = profiles.find((p) => p.id === meta.profileId)
+          const active = id === activeId
           const busy =
             meta.status.kind === 'thinking' ||
             meta.status.kind === 'running-tool' ||
@@ -105,15 +126,14 @@ export default function Sidebar({
             <div
               key={id}
               onClick={() => setActive(id)}
-              className={`group mb-1 cursor-pointer rounded-lg border border-l-[3px] px-3 py-2 ${
-                id === activeId
-                  ? 'border-deck-border bg-deck-raised'
-                  : 'border-transparent hover:bg-deck-raised/60'
+              className={`group cursor-pointer rounded-md px-2 py-1.5 ${
+                active
+                  ? 'bg-deck-bg ring-1 ring-inset ring-deck-border'
+                  : 'hover:bg-deck-bg/50'
               }`}
-              style={{ borderLeftColor: id === activeId ? (profile?.color ?? '#29acc2') : 'transparent' }}
             >
               <div className="flex items-center gap-2">
-                <StatusDot status={meta.status} color={profile?.color ?? '#6366f1'} />
+                <AgentChip color={profile?.color ?? '#7e9cbf'} name={profile?.name ?? '?'} status={meta.status} />
                 {renamingId === id ? (
                   <input
                     autoFocus
@@ -129,7 +149,7 @@ export default function Sidebar({
                       }
                     }}
                     onClick={(e) => e.stopPropagation()}
-                    className="selectable w-full rounded border border-deck-accent/50 bg-deck-panel px-1 text-[13px] text-zinc-100 outline-none"
+                    className="selectable w-full rounded border border-deck-border bg-deck-panel px-1 text-[13px] text-zinc-100 outline-none"
                   />
                 ) : (
                   <span
@@ -139,12 +159,12 @@ export default function Sidebar({
                       setRenameDraft(meta.title)
                     }}
                     title="Double-click to rename"
-                    className="truncate text-[13px] font-medium text-zinc-200"
+                    className={`truncate text-[13px] font-medium ${active ? 'text-zinc-100' : 'text-zinc-200'}`}
                   >
                     {meta.title || 'New session'}
                   </span>
                 )}
-                <div className="ml-auto hidden gap-1 group-hover:flex">
+                <div className="ml-auto hidden shrink-0 gap-1 group-hover:flex">
                   {busy && (
                     <button
                       title="Interrupt"
@@ -169,10 +189,10 @@ export default function Sidebar({
                   </button>
                 </div>
               </div>
-              <div className="mt-1 flex items-center justify-between text-[11px] text-zinc-500">
-                <span className="truncate">{meta.cwd.replace(/^\/Users\/[^/]+/, '~')}</span>
-              </div>
-              <div className="mt-0.5 flex items-center justify-between text-[11px]">
+              <p className="mt-0.5 truncate pl-[26px] text-[11px] text-zinc-500">
+                {meta.cwd.replace(/^\/Users\/[^/]+/, '~')}
+              </p>
+              <div className="flex items-center justify-between pl-[26px] text-[11px]">
                 <span
                   className={
                     meta.status.kind === 'waiting-permission'
@@ -196,19 +216,25 @@ export default function Sidebar({
           <div className="mt-3">
             <button
               onClick={() => setArchivedOpen(!archivedOpen)}
-              className="flex w-full items-center gap-1 px-2 py-1 text-[11px] font-medium uppercase tracking-wide text-zinc-600 hover:text-zinc-400"
+              className="flex w-full items-center gap-1 px-1.5 py-1 text-[11px] font-semibold text-zinc-600 hover:text-zinc-400"
             >
               {archivedOpen ? <ChevronDown size={11} /> : <ChevronRight size={11} />}
-              Archived ({archived.length})
+              Archived
+              <span className="font-normal text-zinc-600">({archived.length})</span>
             </button>
             {archivedOpen &&
               archived.map((id) => {
                 const { meta } = sessions[id]
+                const profile = profiles.find((p) => p.id === meta.profileId)
                 return (
                   <div
                     key={id}
-                    className="group mb-0.5 flex items-center gap-2 rounded-lg px-3 py-1.5 hover:bg-deck-raised/60"
+                    className="group flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-deck-raised"
                   >
+                    <span
+                      className="h-[18px] w-[18px] shrink-0 rounded-[5px] opacity-40"
+                      style={{ backgroundColor: profile?.color ?? '#7e9cbf' }}
+                    />
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-[12.5px] text-zinc-500">{meta.title || 'New session'}</span>
                       <span className="block truncate text-[10.5px] text-zinc-600">
@@ -218,7 +244,7 @@ export default function Sidebar({
                     <button
                       title="Restore session"
                       onClick={() => void reopen(id)}
-                      className="hidden text-zinc-500 hover:text-zinc-200 group-hover:block"
+                      className="hidden shrink-0 text-zinc-500 hover:text-zinc-200 group-hover:block"
                     >
                       <ArchiveRestore size={13} />
                     </button>
@@ -227,13 +253,13 @@ export default function Sidebar({
                       onClick={() => {
                         if (
                           window.confirm(
-                            `Delete "${meta.title || 'this session'}" permanently? The transcript is removed too — this cannot be undone.`
+                            `Delete "${meta.title || 'this session'}" permanently? The transcript is removed too, and this cannot be undone.`
                           )
                         ) {
                           void deleteSession(id)
                         }
                       }}
-                      className="hidden text-zinc-500 hover:text-red-400 group-hover:block"
+                      className="hidden shrink-0 text-zinc-500 hover:text-red-400 group-hover:block"
                     >
                       <Trash2 size={13} />
                     </button>
@@ -243,19 +269,25 @@ export default function Sidebar({
           </div>
         )}
       </div>
-      <div className="m-2 flex flex-col gap-1.5">
+
+      <p className="shrink-0 px-3 pb-1 text-[11px] text-zinc-600">
+        {APP_NAME}
+        {version && ` v${version}`}
+      </p>
+      <div className="flex h-9 shrink-0 items-center gap-1 border-t border-deck-border px-1.5">
         <button
           onClick={onNewSession}
-          className="flex items-center justify-center gap-1.5 rounded-lg border border-dashed border-deck-border py-2 text-xs text-zinc-400 hover:bg-deck-raised hover:text-zinc-200"
+          title="New session (⌘N)"
+          className="flex flex-1 items-center gap-1.5 rounded-md px-1.5 py-1 text-xs text-zinc-400 hover:bg-deck-raised hover:text-zinc-200"
         >
           <Plus size={13} /> New session
         </button>
         <button
           onClick={onOpenHistory}
           title="Browse and continue your terminal Claude Code conversations"
-          className="flex items-center justify-center gap-1.5 rounded-lg py-1.5 text-[11.5px] text-zinc-500 hover:bg-deck-raised hover:text-zinc-300"
+          className="flex h-6 w-6 items-center justify-center rounded-md text-zinc-500 hover:bg-deck-raised hover:text-zinc-300"
         >
-          <History size={12} /> Terminal history
+          <History size={13} />
         </button>
       </div>
     </aside>
