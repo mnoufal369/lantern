@@ -1,7 +1,7 @@
 {
   "name": "pilot",
   "productName": "Pilot",
-  "version": "0.5.6",
+  "version": "0.5.7",
   "description": "Pilot — you talk, Pilot builds. A desktop cockpit for AI agents.",
   "author": "Pilot",
   "license": "MIT",

@@ -3,8 +3,7 @@ import { execFile, spawn } from 'node:child_process'
 import { existsSync, openSync } from 'node:fs'
 import { writeFile } from 'node:fs/promises'
 import path from 'node:path'
-import { REPO_URL } from '@shared/constants'
-import { selfUpdateFromRelease } from './updater'
+import { latestReleaseTag, selfUpdateFromRelease } from './updater'
 import { prepareRepoWorkspace } from './git/RepoWorkspace'
 import type { PastedImage, PermissionDecision } from '@shared/types'
 import { FALLBACK_MODELS } from '@shared/constants'
@@ -171,33 +170,15 @@ export function registerIpc(manager: SessionManager): void {
     existsSync(path.join(__BUILD_SOURCE_DIR__, 'scripts', 'install-mac.sh'))
   const canSelfUpdate = (): boolean => process.platform === 'darwin' && (hasCheckout() || app.isPackaged)
 
-  // Compares the commit this build was made from against origin's HEAD, using
-  // the git credentials colleagues already have for cloning. Fails quiet: no
-  // git, no repo access, or offline just means "no update banner".
-  ipcMain.handle('app:checkForUpdate', () => {
-    return new Promise((resolvePromise) => {
-      if (!__BUILD_COMMIT__) {
-        resolvePromise({ updateAvailable: false, canSelfUpdate: false })
-        return
-      }
-      const gitBinary = existsSync('/usr/bin/git') ? '/usr/bin/git' : 'git'
-      execFile(
-        gitBinary,
-        ['ls-remote', REPO_URL, 'HEAD'],
-        { timeout: 10_000, env: { ...process.env, GIT_TERMINAL_PROMPT: '0' } },
-        (error, stdout) => {
-          if (error) {
-            resolvePromise({ updateAvailable: false, canSelfUpdate: false })
-            return
-          }
-          const remote = stdout.trim().split(/\s+/)[0] ?? ''
-          resolvePromise({
-            updateAvailable: remote !== '' && remote !== __BUILD_COMMIT__,
-            canSelfUpdate: canSelfUpdate()
-          })
-        }
-      )
-    })
+  // A new version exists when the latest published release tag differs from
+  // this build's version — releases are the channel, so commits to main
+  // between releases never trigger false banners. Fails quiet when offline.
+  ipcMain.handle('app:checkForUpdate', async () => {
+    const tag = await latestReleaseTag()
+    return {
+      updateAvailable: tag !== null && tag !== `v${app.getVersion()}`,
+      canSelfUpdate: canSelfUpdate()
+    }
   })
 
   // One click in the banner: pull main in the checkout this build came from,

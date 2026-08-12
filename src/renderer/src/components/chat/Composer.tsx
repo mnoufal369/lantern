@@ -40,6 +40,19 @@ export default function Composer({
     }
   }, [injectedDraft])
 
+  // Grow with the content — wrapped lines count too, unlike a rows= heuristic.
+  // Caps at ~12 lines, then scrolls.
+  const MAX_COMPOSER_HEIGHT = 260
+  useEffect(() => {
+    const el = textareaRef.current
+    if (!el) {
+      return
+    }
+    el.style.height = 'auto'
+    el.style.height = `${Math.min(el.scrollHeight, MAX_COMPOSER_HEIGHT)}px`
+    el.style.overflowY = el.scrollHeight > MAX_COMPOSER_HEIGHT ? 'auto' : 'hidden'
+  }, [text])
+
   useEffect(() => {
     const handler = (e: KeyboardEvent): void => {
       if (e.metaKey && e.key === 'k') {
@@ -218,9 +231,9 @@ export default function Composer({
               void interrupt(sessionId)
             }
           }}
-          rows={Math.min(6, Math.max(1, text.split('\n').length))}
+          rows={1}
           placeholder="Message the agent… paste screenshots too  (/ or ⌘K quick actions · ⇧Tab mode · ⏎ send)"
-          className="selectable max-h-40 flex-1 resize-none bg-transparent px-1 py-1 text-sm text-zinc-100 outline-none placeholder:text-zinc-600"
+          className="selectable flex-1 resize-none bg-transparent px-1 py-1 text-sm leading-relaxed text-zinc-100 outline-none placeholder:text-zinc-600"
         />
         <button
           onClick={() => {

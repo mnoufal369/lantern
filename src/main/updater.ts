@@ -126,14 +126,33 @@ function downloadAsset(assetApiUrl: string, token: string | null, dest: string):
   })
 }
 
+interface ReleaseInfo {
+  tag_name?: string
+  assets?: { id: number; name: string }[]
+}
+
+async function latestRelease(token: string | null): Promise<ReleaseInfo> {
+  return (await getJson(`https://api.github.com/repos/${REPO_SLUG}/releases/latest`, token)) as ReleaseInfo
+}
+
+/** Tag of the latest published release ("v0.5.7"), or null when unreachable. */
+export async function latestReleaseTag(): Promise<string | null> {
+  try {
+    const token = await githubToken()
+    return (await latestRelease(token)).tag_name ?? null
+  } catch {
+    return null
+  }
+}
+
 export async function selfUpdateFromRelease(): Promise<{ started: boolean; reason?: string }> {
   // Public repo: unauthenticated works. A token (gh / git credentials) is
   // used when present — required only if the repo is ever private again.
   const token = await githubToken()
 
-  let release: { tag_name?: string; assets?: { id: number; name: string }[] }
+  let release: ReleaseInfo
   try {
-    release = (await getJson(`https://api.github.com/repos/${REPO_SLUG}/releases/latest`, token)) as typeof release
+    release = await latestRelease(token)
   } catch (error) {
     return {
       started: false,

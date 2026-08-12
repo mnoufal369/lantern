@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.5.7 — A message box you can actually read
+- The composer grows with what you type or paste (wrapped lines included),
+  up to ~12 lines before scrolling — no more squinting at two visible lines.
+- Update checks now compare against the latest published release instead of
+  the branch, so they work on any machine (no git needed) and only fire for
+  real releases. Releases carry just the dmg and the Windows installer now.
+
 ## 0.5.6 — Downloads, simplified
 - Self-update now installs straight from the **dmg** — releases need only the
   dmg (macOS) and Setup exe (Windows). This release carries the mac zip one
