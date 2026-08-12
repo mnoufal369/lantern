@@ -1,5 +1,15 @@
 # Release notes
 
+## 0.6.0 — Branching conversations
+Community PR #2 — thank you!
+
+- **Branch a session**: fork any conversation into a new tab — same history
+  up to that point, then each side continues independently. Great for trying
+  two approaches against the same context.
+- **Colour tags** on session tabs, so a busy sidebar stays scannable.
+- Smarter top bar: items collapse gracefully on narrow windows, and long
+  file names truncate intelligently mid-path.
+
 ## 0.5.7 — A message box you can actually read
 - The composer grows with what you type or paste (wrapped lines included),
   up to ~12 lines before scrolling — no more squinting at two visible lines.
