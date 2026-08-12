@@ -1,0 +1,386 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pilot — You talk. Pilot builds.</title>
+<meta name="description" content="Pilot is a native desktop cockpit for AI agents (macOS &amp; Windows). Your AI copilot: describe it, and a team of agents builds, tests and explains it. Review every change, stay in control, no terminal required.">
+<style>
+  :root {
+    --bg: #09090b; --panel: #111113; --raised: #18181b; --border: #26262a;
+    --text: #e4e4e7; --dim: #a1a1aa; --faint: #64646e;
+    --accent: #29acc2; --accent2: #16998f; --green: #4ade80; --amber: #f59e0b;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
+    line-height: 1.6; overflow-x: hidden;
+  }
+  .mono { font-family: "SF Mono", ui-monospace, Menlo, monospace; }
+  a { color: inherit; text-decoration: none; }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+
+  /* nav */
+  nav {
+    position: sticky; top: 0; z-index: 50; backdrop-filter: blur(14px);
+    background: rgba(9,9,11,.75); border-bottom: 1px solid var(--border);
+  }
+  nav .wrap { display: flex; align-items: center; gap: 28px; height: 60px; }
+  nav .brand { display: flex; align-items: center; gap: 12px; font-weight: 800; font-size: 23px; letter-spacing: -.02em; }
+  .wordmark {
+    background: linear-gradient(100deg, #67e8f9, #5eead4 45%, #e4125c 140%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .lead-dot {
+    transform-box: fill-box; transform-origin: center;
+    animation: lead-pulse 2.2s ease-in-out infinite;
+  }
+  .lead-ring {
+    transform-box: fill-box; transform-origin: center;
+    fill: none; stroke: #e4125c; stroke-width: 1.4;
+    animation: lead-ring 2.2s ease-out infinite;
+  }
+  @keyframes lead-pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: .6; transform: scale(.84); }
+  }
+  @keyframes lead-ring {
+    0% { transform: scale(1); opacity: .9; }
+    70%, 100% { transform: scale(2.2); opacity: 0; }
+  }
+  nav .links { display: flex; gap: 22px; margin-left: auto; font-size: 13.5px; color: var(--dim); }
+  nav .links a:hover { color: var(--text); }
+  .btn {
+    display: inline-block; padding: 10px 20px; border-radius: 10px; font-weight: 600; font-size: 14px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2)); color: #fff;
+    box-shadow: 0 8px 30px rgba(41,172,194,.35); transition: transform .15s, box-shadow .15s;
+  }
+  .btn:hover { transform: translateY(-1px); box-shadow: 0 12px 36px rgba(41,172,194,.45); }
+  .btn.ghost { background: none; border: 1px solid var(--border); box-shadow: none; color: var(--dim); }
+  .btn.ghost:hover { color: var(--text); border-color: var(--faint); }
+  nav .btn { padding: 7px 14px; font-size: 13px; }
+
+  /* hero */
+  header { position: relative; padding: 90px 0 60px; text-align: center; }
+  .glow {
+    position: absolute; inset: -200px 0 auto; height: 600px; pointer-events: none;
+    background: radial-gradient(600px 300px at 50% 20%, rgba(41,172,194,.22), transparent 70%),
+                radial-gradient(400px 250px at 70% 10%, rgba(30,146,164,.15), transparent 70%);
+  }
+  .eyebrow {
+    display: inline-block; font-size: 12.5px; letter-spacing: .04em; color: #bae6fd;
+    border: 1px solid rgba(41,172,194,.4); background: rgba(41,172,194,.12);
+    padding: 4px 14px; border-radius: 999px; margin-bottom: 22px;
+  }
+  h1 {
+    font-size: clamp(36px, 6vw, 60px); line-height: 1.08; font-weight: 800; letter-spacing: -.02em;
+    background: linear-gradient(120deg, #bae6fd, #f4f4f5 40%, #a5f3fc);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .sub { max-width: 620px; margin: 22px auto 0; font-size: 18px; color: var(--dim); }
+  .cta { margin-top: 34px; display: flex; gap: 14px; justify-content: center; align-items: center; }
+  .cta-note { margin-top: 14px; font-size: 12.5px; color: var(--faint); }
+
+  /* app mockup */
+  .mock {
+    margin: 70px auto 0; max-width: 920px; border-radius: 16px; overflow: hidden; text-align: left;
+    border: 1px solid var(--border); background: var(--panel);
+    box-shadow: 0 40px 120px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.03) inset;
+    font-size: 12px;
+  }
+  .mock-title { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-bottom: 1px solid var(--border); background: #0d0d10; }
+  .dot { width: 11px; height: 11px; border-radius: 50%; }
+  .mock-body { display: grid; grid-template-columns: 200px 1fr 190px; min-height: 420px; }
+  .mock aside { border-right: 1px solid var(--border); padding: 10px; }
+  .sess { border-radius: 9px; padding: 8px 10px; margin-bottom: 6px; }
+  .sess.active { background: var(--raised); border: 1px solid var(--border); }
+  .sess .t { display: flex; align-items: center; gap: 7px; font-weight: 600; color: var(--text); }
+  .sess .m { color: var(--faint); font-size: 10.5px; margin-top: 2px; }
+  .pulse { width: 7px; height: 7px; border-radius: 50%; background: var(--green); animation: pulse 1.4s infinite; }
+  .pulse.violet { background: var(--accent); } .pulse.amber { background: var(--amber); animation: none; }
+  @keyframes pulse { 50% { opacity: .3; } }
+  .chat { padding: 14px 18px; display: flex; flex-direction: column; gap: 10px; }
+  .bubble-user { align-self: flex-end; background: rgba(41,172,194,.15); border-radius: 14px 14px 4px 14px; padding: 8px 13px; color: #e0f2fe; max-width: 75%; }
+  .bubble-ai { color: var(--dim); max-width: 90%; }
+  .toolcard { border: 1px solid var(--border); background: #0d0d10; border-radius: 10px; overflow: hidden; }
+  .toolcard .h { display: flex; gap: 8px; padding: 7px 11px; color: var(--dim); border-bottom: 1px solid var(--border); }
+  .diff { padding: 8px 12px; line-height: 1.7; }
+  .del { background: rgba(127,29,29,.35); color: #fca5a5; display: block; padding: 0 6px; border-radius: 3px; }
+  .add { background: rgba(20,83,45,.4); color: #86efac; display: block; padding: 0 6px; border-radius: 3px; }
+  .turn { display: flex; align-items: center; gap: 10px; color: var(--faint); font-size: 10.5px; }
+  .turn::before, .turn::after { content: ""; height: 1px; flex: 1; background: var(--border); }
+  .gitpane { border-left: 1px solid var(--border); padding: 12px; }
+  .gitpane .gh { font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: var(--faint); margin: 10px 0 6px; }
+  .gf { display: flex; gap: 8px; padding: 3px 0; color: var(--dim); }
+  .gf b { width: 12px; text-align: center; }
+  .permission {
+    margin-top: 4px; border: 1px solid rgba(245,158,11,.4); background: rgba(69,26,3,.25);
+    border-radius: 10px; padding: 9px 12px;
+  }
+  .permission .pt { color: #fcd34d; font-weight: 600; margin-bottom: 6px; }
+  .pbtns { display: flex; gap: 6px; }
+  .pbtn { border-radius: 7px; padding: 3px 10px; font-size: 10.5px; border: 1px solid var(--border); color: var(--dim); }
+  .pbtn.allow { background: #15803d; border: none; color: #fff; }
+  .pbtn.once { background: var(--accent); border: none; color: #fff; }
+
+  /* sections */
+  section { padding: 84px 0; position: relative; }
+  .kicker { text-align: center; font-size: 13px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+  h2 { text-align: center; font-size: clamp(26px, 4vw, 38px); font-weight: 800; letter-spacing: -.01em; margin-top: 10px; }
+  .lead { text-align: center; max-width: 640px; margin: 14px auto 0; color: var(--dim); font-size: 16px; }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; margin-top: 48px; }
+  .card {
+    border: 1px solid var(--border); border-radius: 16px; padding: 24px; background: linear-gradient(180deg, var(--raised), var(--panel));
+    transition: transform .18s, border-color .18s;
+  }
+  .card:hover { transform: translateY(-3px); border-color: #3f3f50; }
+  .card .ic { font-size: 24px; }
+  .card h3 { font-size: 15.5px; margin: 12px 0 6px; }
+  .card p { font-size: 13.5px; color: var(--dim); }
+
+  .personas { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-top: 48px; }
+  .persona { border: 1px solid var(--border); border-radius: 18px; padding: 26px 22px; background: linear-gradient(180deg, var(--raised), var(--panel)); display: flex; flex-direction: column; transition: transform .18s, border-color .18s; }
+  .persona:hover { transform: translateY(-3px); }
+  .persona .pe { font-size: 30px; }
+  .persona h3 { font-size: 16.5px; margin: 12px 0 4px; }
+  .persona .role-tag { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+  .persona ul { list-style: none; margin: 12px 0 16px; display: flex; flex-direction: column; gap: 7px; font-size: 13px; color: var(--dim); }
+  .persona li::before { content: "✓ "; color: var(--green); font-weight: 700; }
+  .prompt-bubble {
+    margin-top: auto; border-radius: 14px 14px 14px 4px; padding: 10px 13px; font-size: 12.5px; line-height: 1.5;
+    background: rgba(41,172,194,.12); border: 1px solid rgba(41,172,194,.25); color: #bae6fd; font-style: italic;
+  }
+  .split { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center; margin-top: 48px; }
+  .split ul { list-style: none; display: flex; flex-direction: column; gap: 14px; }
+  .split li { display: flex; gap: 12px; font-size: 14.5px; color: var(--dim); }
+  .split li b { color: var(--text); }
+  .check { color: var(--green); font-weight: 700; }
+  @media (max-width: 760px) { .split { grid-template-columns: 1fr; } .mock-body { grid-template-columns: 1fr; } .mock aside, .gitpane { display: none; } }
+
+  /* pricing */
+  .tiers { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 18px; margin-top: 48px; }
+  .tier { border: 1px solid var(--border); border-radius: 18px; padding: 30px 26px; background: var(--panel); position: relative; }
+  .tier.hot { border-color: rgba(41,172,194,.6); background: linear-gradient(180deg, rgba(41,172,194,.10), var(--panel) 55%); }
+  .tier .badge { position: absolute; top: -11px; left: 50%; transform: translateX(-50%); background: linear-gradient(135deg, var(--accent), var(--accent2)); font-size: 11px; font-weight: 700; padding: 3px 12px; border-radius: 999px; }
+  .tier h3 { font-size: 16px; }
+  .price { font-size: 38px; font-weight: 800; margin: 12px 0 2px; }
+  .price span { font-size: 13.5px; font-weight: 500; color: var(--faint); }
+  .tier ul { list-style: none; margin: 18px 0 24px; display: flex; flex-direction: column; gap: 9px; font-size: 13.5px; color: var(--dim); }
+  .tier .btn { width: 100%; text-align: center; }
+  .pricing-note { text-align: center; margin-top: 26px; color: var(--faint); font-size: 13px; }
+
+  /* faq + footer */
+  details { border-bottom: 1px solid var(--border); padding: 18px 4px; max-width: 720px; margin: 0 auto; }
+  summary { cursor: pointer; font-weight: 600; font-size: 15px; list-style: none; display: flex; justify-content: space-between; }
+  summary::after { content: "+"; color: var(--faint); }
+  details[open] summary::after { content: "–"; }
+  details p { margin-top: 10px; color: var(--dim); font-size: 14px; }
+  footer { border-top: 1px solid var(--border); padding: 40px 0 60px; text-align: center; color: var(--faint); font-size: 13px; }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap">
+    <a class="brand" href="#">
+      <svg width="42" height="42" viewBox="0 0 64 64"><defs><linearGradient id="pmark-nav" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0d2c40"/><stop offset="1" stop-color="#116e78"/></linearGradient></defs><rect width="64" height="64" rx="15" fill="url(#pmark-nav)"/><circle cx="13.3" cy="46.8" r="2.1" fill="#5ecfe0" opacity=".6"/><circle cx="19.1" cy="43.1" r="1.6" fill="#5ecfe0" opacity=".45"/><circle cx="23.9" cy="40.2" r="1.25" fill="#5ecfe0" opacity=".32"/><polygon points="8,32 54.5,12.5 38,51.5 27.3,37.5" fill="#f4fbfd"/><polygon points="27.3,37.5 54.5,12.5 32,34.8" fill="#b5e3ef"/><circle cx="55.3" cy="11.8" r="2.9" fill="#e4125c"/></svg>
+      <span class="wordmark">Pilot</span>
+    </a>
+    <div class="links">
+      <a href="#whoitsfor">Who it's for</a>
+      <a href="#features">Features</a>
+      <a href="#security">Security</a>
+    </div>
+    <a class="btn" href="#whoitsfor">Get started</a>
+  </div>
+</nav>
+
+<header>
+  <div class="glow"></div>
+  <div class="wrap">
+    <svg width="120" height="120" viewBox="0 0 64 64" style="margin-bottom:28px; filter: drop-shadow(0 16px 54px rgba(41,172,194,.55))"><defs><linearGradient id="pmark-hero" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0d2c40"/><stop offset="1" stop-color="#116e78"/></linearGradient></defs><rect width="64" height="64" rx="15" fill="url(#pmark-hero)"/><circle cx="13.3" cy="46.8" r="2.1" fill="#5ecfe0" opacity=".6"/><circle cx="19.1" cy="43.1" r="1.6" fill="#5ecfe0" opacity=".45"/><circle cx="23.9" cy="40.2" r="1.25" fill="#5ecfe0" opacity=".32"/><polygon points="8,32 54.5,12.5 38,51.5 27.3,37.5" fill="#f4fbfd"/><polygon points="27.3,37.5 54.5,12.5 32,34.8" fill="#b5e3ef"/><circle class="lead-ring" cx="55.3" cy="11.8" r="2.9"/><circle class="lead-dot" cx="55.3" cy="11.8" r="2.9" fill="#e4125c"/></svg>
+    <br>
+    <span class="eyebrow">The AI agent cockpit — macOS &amp; Windows</span>
+    <h1>You talk.<br>Pilot builds.</h1>
+    <p class="sub">
+      Pilot puts a whole team of AI agents in one beautiful desktop app — building, testing and
+      explaining software while you stay in command. Every change reviewable, every action approved
+      by you. Powered by the same engine as Claude Code. No terminal required.
+    </p>
+    <div class="cta">
+      <a class="btn ghost" href="#features">See what it does</a>
+    </div>
+    <p class="cta-note">macOS &amp; Windows · Internal builds · Uses your Claude login or API key · Your code never leaves your machine*</p>
+
+    <div class="mock">
+      <div class="mock-title">
+        <span class="dot" style="background:#ff5f57"></span><span class="dot" style="background:#febc2e"></span><span class="dot" style="background:#28c840"></span>
+        <span style="color:var(--faint); margin-left:8px; font-weight:600">Pilot</span>
+      </div>
+      <div class="mock-body">
+        <aside>
+          <div class="sess active">
+            <div class="t"><span class="pulse"></span> Add auth to API</div>
+            <div class="m">~/projects/api · running Bash · $0.42</div>
+          </div>
+          <div class="sess">
+            <div class="t"><span class="pulse violet"></span> Portfolio website</div>
+            <div class="m">~/sites/me · thinking… · $0.12</div>
+          </div>
+          <div class="sess">
+            <div class="t"><span class="pulse amber"></span> Fix flaky tests</div>
+            <div class="m">~/projects/web · needs permission</div>
+          </div>
+        </aside>
+        <div class="chat">
+          <div class="bubble-user">add login with sessions to my api</div>
+          <div class="bubble-ai">I'll add session-based auth. Creating the middleware first…</div>
+          <div class="toolcard">
+            <div class="h">✏️ <b>Edit</b> <span class="mono">src/auth.ts</span> <span style="margin-left:auto;color:var(--green)">✓ allowed</span></div>
+            <div class="diff mono">
+              <span class="del">- app.use(noAuth())</span>
+              <span class="add">+ app.use(session({ secret: env.SECRET }))</span>
+              <span class="add">+ app.use(requireLogin(["/api"]))</span>
+            </div>
+          </div>
+          <div class="permission">
+            <div class="pt">🛡️ Agent wants to run <span class="mono">npm test</span></div>
+            <div class="pbtns"><span class="pbtn">Deny</span><span class="pbtn once">Allow once</span><span class="pbtn allow">Always allow</span></div>
+          </div>
+          <div class="turn">✓ turn done · $0.13 · 8.2k tokens</div>
+        </div>
+        <div class="gitpane">
+          <div class="gh">Branch</div>
+          <div class="gf"><b style="color:#7dd3fc">⎇</b> feature/auth ↑2</div>
+          <div class="gh">Changes (3)</div>
+          <div class="gf"><b style="color:var(--amber)">M</b> src/auth.ts</div>
+          <div class="gf"><b style="color:var(--green)">A</b> src/session.ts</div>
+          <div class="gf"><b style="color:var(--amber)">M</b> package.json</div>
+          <div class="gh">Touched this session</div>
+          <div class="gf mono" style="font-size:10.5px">src/auth.ts</div>
+          <div class="gf mono" style="font-size:10.5px">src/session.ts</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<section id="whoitsfor" style="padding-top:70px">
+  <div class="wrap">
+    <p class="kicker">One app, every role</p>
+    <h2>Whatever your role, Pilot has your back</h2>
+    <p class="lead">Pilot asks who you are on first launch and reshapes itself — full instrument panel for engineers, plain language for everyone else.</p>
+    <div class="personas">
+      <div class="persona">
+        <div class="pe">👩‍💻</div>
+        <span class="role-tag" style="color:#7dd3fc">Developers</span>
+        <h3>The full cockpit</h3>
+        <ul>
+          <li>Live diffs, git panel, one-click revert</li>
+          <li>Agents in parallel across projects</li>
+          <li>Models, permission modes, MCP extensions</li>
+        </ul>
+        <p class="prompt-bubble">"Refactor the auth module and run the tests — ask me before touching the schema."</p>
+      </div>
+      <div class="persona">
+        <div class="pe">🐞</div>
+        <span class="role-tag" style="color:#fbbf24">QA &amp; Testers</span>
+        <h3>Test any branch, no setup</h3>
+        <ul>
+          <li>Paste a repo URL + branch — no Docker, no checkout</li>
+          <li>One-click: generate test cases, find risky changes</li>
+          <li>Export findings as a Markdown report for the ticket</li>
+        </ul>
+        <p class="prompt-bubble">"What changed on release/2.4 that could break payments? Give me a regression checklist."</p>
+      </div>
+      <div class="persona">
+        <div class="pe">💼</div>
+        <span class="role-tag" style="color:#67e8f9">Consultants &amp; Analysts</span>
+        <h3>Answers your clients can read</h3>
+        <ul>
+          <li>Ask anything about any codebase — read-only agent</li>
+          <li>Executive summaries, risk &amp; quality assessments</li>
+          <li>"A client asks…" button for instant client Q&amp;A</li>
+        </ul>
+        <p class="prompt-bubble">"A client asks: does this platform support multi-currency invoicing? Verify and answer plainly."</p>
+      </div>
+      <div class="persona">
+        <div class="pe">🌱</div>
+        <span class="role-tag" style="color:#86efac">Curious builders</span>
+        <h3>No code. No jargon. Real results.</h3>
+        <ul>
+          <li>Simple mode: changes explained in plain sentences</li>
+          <li>Understand any app by just asking about it</li>
+          <li>Build by describing — approve each step</li>
+        </ul>
+        <p class="prompt-bubble">"Build a beautiful one-page site about my bakery. Explain what you're doing as you go."</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="features" style="padding-top:40px">
+  <div class="wrap">
+    <p class="kicker">Everything the terminal does — visual</p>
+    <h2>A cockpit, not a console</h2>
+    <p class="lead">Every capability of a terminal AI agent, redesigned as an interface a human actually enjoys.</p>
+    <div class="grid">
+      <div class="card"><div class="ic">🪄</div><h3>Rich live transcript</h3><p>File edits render as red/green diffs, commands as terminal blocks, plans as checklists, and code as copy-ready snippets — all streaming in real time.</p></div>
+      <div class="card"><div class="ic">🛡️</div><h3>One-click permission control</h3><p>See the exact diff or command an agent wants to run before it happens. Deny, allow once, or always allow — and flip between Plan, Ask, and Auto modes mid-flight.</p></div>
+      <div class="card"><div class="ic">🚀</div><h3>Agents in parallel</h3><p>Run several agents across different projects at once. Live status, per-session cost, and a dashboard that shows exactly who's doing what.</p></div>
+      <div class="card"><div class="ic">🎨</div><h3>Agent builder</h3><p>Design reusable agents: custom instructions, model choice, permission style, allowed tools, even MCP extensions — saved as one-click profiles.</p></div>
+      <div class="card"><div class="ic">⎇</div><h3>Git-aware by design</h3><p>Branch info, changed files with inline diffs, and per-file revert built into every session. Review like a pull request, undo like a time machine.</p></div>
+      <div class="card"><div class="ic">💬</div><h3>Talk while it works</h3><p>The composer never locks. Queue follow-ups mid-run, interrupt instantly with Esc, and keep the conversation flowing.</p></div>
+      <div class="card"><div class="ic">🔎</div><h3>Named, searchable threads</h3><p>Every session has a human name — rename with a double-click, find anything by search. Close the app, come back, resume where you left off.</p></div>
+      <div class="card"><div class="ic">📊</div><h3>Cost transparency</h3><p>Live token and dollar counters per turn and per session, plus hard budget caps per agent. No surprises on your bill.</p></div>
+      <div class="card"><div class="ic">🌍</div><h3>Any repo, any branch</h3><p>Paste a repository link and a branch — Pilot fetches it into its own workspace and you start asking. Switch branches from a dropdown. No cloning, no Docker, no running the app.</p></div>
+      <div class="card"><div class="ic">🌱</div><h3>Simple mode</h3><p>One toggle turns the cockpit into plain language: changes described in sentences, no jargon, same power underneath. Perfect for teammates who don't live in code.</p></div>
+      <div class="card"><div class="ic">⚡</div><h3>Everything one click away</h3><p>Type / or hit ⌘K for the quick menu: switch mode, model or branch, export, rename, interrupt. Shift+Tab cycles permission modes, just like the terminal.</p></div>
+      <div class="card"><div class="ic">🕰️</div><h3>Continue terminal sessions</h3><p>Pilot reads the same store as the claude CLI — browse every past terminal conversation, search by project, open the transcript and keep talking where you left off.</p></div>
+      <div class="card"><div class="ic">📸</div><h3>Paste screenshots</h3><p>⌘V a screenshot straight into the chat — the agent sees the image. "Why does this button look broken?" plus a picture is a complete bug report.</p></div>
+      <div class="card"><div class="ic">🐙</div><h3>GitHub workflows built in</h3><p>One-click chips for the daily grind: review a PR against our checklist, compose a ticket in your team’s format, update an issue's technical todos.</p></div>
+      <div class="card"><div class="ic">☀️</div><h3>Your cockpit, your rules</h3><p>Dark or light theme, global instructions every agent follows, switchable branches on any repo (with a guard for uncommitted work), sessions restored exactly where you quit.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="security">
+  <div class="wrap">
+    <p class="kicker">Security first</p>
+    <h2>Locked down like it should be</h2>
+    <p class="lead">Pilot is built on the principle that an AI with your keyboard deserves a seatbelt.</p>
+    <div class="grid">
+      <div class="card"><div class="ic">🔐</div><h3>Keys encrypted in your keychain</h3><p>API keys are encrypted at rest with macOS keychain-backed storage, and never leave the app's core process — the UI literally cannot read them.</p></div>
+      <div class="card"><div class="ic">🏠</div><h3>100% local, zero telemetry</h3><p>Sessions, transcripts and profiles live only on your machine. No analytics, no tracking, no third-party servers. The only network traffic is the agent talking to Anthropic.</p></div>
+      <div class="card"><div class="ic">🧱</div><h3>Sandboxed by architecture</h3><p>The interface runs fully sandboxed with no file or network access, behind a strict content-security policy and a typed, enumerated bridge.</p></div>
+      <div class="card"><div class="ic">✋</div><h3>Human in the loop, always</h3><p>Unattended permission requests fail closed after 5 minutes. Full-auto mode is opt-in, visibly flagged red, and one click away from off.</p></div>
+    </div>
+  </div>
+</section>
+
+<section style="padding-top:0">
+  <div class="wrap">
+    <p class="kicker">FAQ</p>
+    <h2 style="margin-bottom:28px">Questions, answered</h2>
+    <details><summary>Do I need to know how to code?</summary><p>No. Describe what you want in plain language; the agent writes the code and shows you everything it changes. Developers get power tools; everyone else gets a builder that explains itself.</p></details>
+    <details><summary>How does it connect to Claude?</summary><p>Three ways, automatically: an API key you save in Settings (encrypted), an ANTHROPIC_API_KEY in your environment, or your existing Claude Code login on the machine. Settings shows exactly which one is active.</p></details>
+    <details><summary>Does the Windows version do everything the Mac version does?</summary><p>Yes — same engine, same features: agents, personas, repo sessions with branch switching, permission control, exports. It's the identical app built for Windows x64.</p></details>
+    <details><summary>I'm in QA or consulting — do I need a dev environment?</summary><p>No. Install Pilot, paste the repository link (and the branch you're testing), and ask. Pilot fetches the code into its own workspace — no Docker, no local build, no IDE. Generate test cases or client-ready summaries and export them as reports. The only requirement is Git installed on the machine.</p></details>
+    <details><summary>What does AI usage cost?</summary><p>Usage bills to your Claude login or the company API key — Pilot adds nothing on top and shows live per-turn costs. Budget caps per agent are built in.</p></details>
+    <details><summary>Can it break my project?</summary><p>It asks before changing files (unless you opt into auto mode), every change is visible as a diff, and the git panel reverts any file with one click. Work on a branch for extra comfort.</p></details>
+    <details><summary>Is my code sent anywhere?</summary><p>*Only what the agent needs goes to Anthropic's API to generate responses — the same as Claude Code in your terminal. Pilot itself has no servers, no telemetry, and stores everything locally.</p></details>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <p><b style="color:var(--dim)">Pilot</b> — built on the Claude Agent SDK.</p>
+    <p style="margin-top:6px">© 2026 Pilot · internal use · <a href="#security" style="text-decoration:underline">Security</a></p>
+  </div>
+</footer>
+
+</body>
+</html>

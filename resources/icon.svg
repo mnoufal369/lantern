@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="bg" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="1024" y2="1024">
+      <stop offset="0" stop-color="#0d2c40"/>
+      <stop offset="1" stop-color="#116e78"/>
+    </linearGradient>
+    <radialGradient id="glow" gradientUnits="userSpaceOnUse" cx="563" cy="358" r="717">
+      <stop offset="0" stop-color="#29acc2" stop-opacity="0.38"/>
+      <stop offset="1" stop-color="#29acc2" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1024" height="1024" rx="224" fill="url(#bg)"/>
+  <rect width="1024" height="1024" rx="224" fill="url(#glow)"/>
+  <!-- trail -->
+  <circle cx="212" cy="748" r="34" fill="#5ecfe0" opacity="0.6"/>
+  <circle cx="306" cy="690" r="26" fill="#5ecfe0" opacity="0.45"/>
+  <circle cx="382" cy="644" r="20" fill="#5ecfe0" opacity="0.32"/>
+  <!-- paper plane -->
+  <polygon points="128,512 872,200 608,824 436,600" fill="#f4fbfd"/>
+  <polygon points="436,600 872,200 512,556" fill="#b5e3ef"/>
+  <!-- lead dot -->
+  <circle cx="884" cy="188" r="46" fill="#e4125c"/>
+</svg>

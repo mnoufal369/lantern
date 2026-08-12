@@ -1,0 +1,235 @@
+import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron'
+import { execFile, spawn } from 'node:child_process'
+import { existsSync, openSync } from 'node:fs'
+import { writeFile } from 'node:fs/promises'
+import path from 'node:path'
+import { REPO_URL } from '@shared/constants'
+import { selfUpdateFromRelease } from './updater'
+import { prepareRepoWorkspace } from './git/RepoWorkspace'
+import type { PastedImage, PermissionDecision } from '@shared/types'
+import { FALLBACK_MODELS } from '@shared/constants'
+import type { SessionManager } from './sessions/SessionManager'
+import { GitService } from './git/GitService'
+import { ProfileStore, Settings } from './store/stores'
+import type { AgentProfile, AppSettings } from '@shared/types'
+
+export function registerIpc(manager: SessionManager): void {
+  const gitService = new GitService()
+
+  const cwdOf = (sessionId: string): string => {
+    const meta = manager.getMeta(sessionId)
+    if (!meta) {
+      throw new Error('Session not found')
+    }
+    return meta.cwd
+  }
+
+  ipcMain.handle('sessions:create', (_e, req: { profileId: string; cwd: string }) => {
+    const meta = manager.create(req.profileId, req.cwd)
+    Settings.recordRecentFolder(req.cwd)
+    return meta
+  })
+  ipcMain.handle(
+    'sessions:createFromRepo',
+    async (_e, req: { profileId: string; repoUrl: string; branch?: string }) => {
+      const workspace = await prepareRepoWorkspace(req.repoUrl, req.branch)
+      const meta = manager.create(req.profileId, workspace)
+      Settings.recordRecentRepo(req.repoUrl.trim(), req.branch?.trim() || undefined)
+      return meta
+    }
+  )
+  ipcMain.handle('sessions:exportTranscript', async (_e, req: { sessionId: string; markdown: string }) => {
+    const meta = manager.getMeta(req.sessionId)
+    const window = BrowserWindow.getFocusedWindow()
+    if (!window) {
+      return null
+    }
+    const result = await dialog.showSaveDialog(window, {
+      defaultPath: `${(meta?.title ?? 'session').replace(/[^\w\s-]/g, '').slice(0, 40) || 'session'}.md`,
+      filters: [{ name: 'Markdown', extensions: ['md'] }]
+    })
+    if (result.canceled || !result.filePath) {
+      return null
+    }
+    await writeFile(result.filePath, req.markdown, 'utf8')
+    return result.filePath
+  })
+  ipcMain.handle('sessions:send', (_e, req: { sessionId: string; text: string; images?: PastedImage[] }) =>
+    manager.sendMessage(req.sessionId, req.text, req.images)
+  )
+  ipcMain.handle('sessions:interrupt', (_e, req: { sessionId: string }) => manager.interrupt(req.sessionId))
+  ipcMain.handle('sessions:archive', (_e, req: { sessionId: string }) => manager.archive(req.sessionId))
+  ipcMain.handle('sessions:delete', (_e, req: { sessionId: string }) => manager.deleteSession(req.sessionId))
+  ipcMain.handle('sessions:reopen', (_e, req: { sessionId: string }) => manager.reopen(req.sessionId))
+  ipcMain.handle('sessions:list', () => manager.list())
+  ipcMain.handle('sessions:history', (_e, req: { sessionId: string }) => manager.history(req.sessionId))
+  ipcMain.handle('sessions:setModel', (_e, req: { sessionId: string; model: string }) =>
+    manager.setModel(req.sessionId, req.model)
+  )
+  ipcMain.handle('sessions:setPermissionMode', (_e, req: { sessionId: string; mode: string }) =>
+    manager.setPermissionMode(req.sessionId, req.mode)
+  )
+  ipcMain.handle('sessions:rename', (_e, req: { sessionId: string; title: string }) =>
+    manager.rename(req.sessionId, req.title)
+  )
+
+  ipcMain.handle('permissions:respond', (_e, req: { requestId: string; decision: PermissionDecision }) =>
+    manager.broker.respond(req.requestId, req.decision)
+  )
+
+  ipcMain.handle('history:list', () => manager.listTerminalHistory())
+  ipcMain.handle('history:import', (_e, req: { sdkSessionId: string }) => manager.importTerminal(req.sdkSessionId))
+
+  ipcMain.handle('profiles:list', () => ProfileStore.list())
+  ipcMain.handle('profiles:save', (_e, req: { profile: AgentProfile }) => ProfileStore.save(req.profile))
+  ipcMain.handle('profiles:delete', (_e, req: { profileId: string }) => ProfileStore.delete(req.profileId))
+
+  ipcMain.handle('models:list', () => FALLBACK_MODELS)
+
+  const workspacesRoot = path.join(app.getPath('userData'), 'workspaces')
+  const isManaged = (cwd: string): boolean => cwd.startsWith(workspacesRoot + path.sep)
+
+  // Org repo list for New Session autocomplete — via `gh` (colleagues already
+  // authenticate it for private repos). Cached; fails quiet to an empty list.
+  let orgRepoCache: { org: string; at: number; repos: string[] } | null = null
+  ipcMain.handle('git:orgRepos', () => {
+    const org = Settings.get().githubOrg
+    if (!org) {
+      return []
+    }
+    if (orgRepoCache && orgRepoCache.org === org && Date.now() - orgRepoCache.at < 5 * 60 * 1000) {
+      return orgRepoCache.repos
+    }
+    return new Promise<string[]>((resolvePromise) => {
+      execFile(
+        process.platform === 'win32' ? 'gh.exe' : 'gh',
+        ['repo', 'list', org, '--limit', '100', '--json', 'nameWithOwner'],
+        { timeout: 10_000 },
+        (error, stdout) => {
+          if (error) {
+            resolvePromise(orgRepoCache?.org === org ? orgRepoCache.repos : [])
+            return
+          }
+          try {
+            const repos = (JSON.parse(stdout) as { nameWithOwner: string }[]).map((r) => r.nameWithOwner)
+            orgRepoCache = { org, at: Date.now(), repos }
+            resolvePromise(repos)
+          } catch {
+            resolvePromise([])
+          }
+        }
+      )
+    })
+  })
+
+  ipcMain.handle('git:status', async (_e, req: { sessionId: string }) => {
+    const cwd = cwdOf(req.sessionId)
+    const status = await gitService.status(cwd)
+    return { ...status, managed: isManaged(cwd) }
+  })
+  ipcMain.handle('git:remoteBranches', (_e, req: { sessionId: string }) => {
+    const cwd = cwdOf(req.sessionId)
+    return isManaged(cwd) ? gitService.remoteBranches(cwd) : gitService.allBranches(cwd)
+  })
+  ipcMain.handle('git:checkoutBranch', async (_e, req: { sessionId: string; branch: string }) => {
+    const cwd = cwdOf(req.sessionId)
+    if (isManaged(cwd)) {
+      await gitService.checkoutBranch(cwd, req.branch)
+    } else {
+      await gitService.checkoutLocalBranch(cwd, req.branch)
+    }
+    const status = await gitService.status(cwd)
+    return { ...status, managed: isManaged(cwd) }
+  })
+  ipcMain.handle('git:diffFile', (_e, req: { sessionId: string; path: string }) =>
+    gitService.diffFile(cwdOf(req.sessionId), req.path)
+  )
+  ipcMain.handle('git:revertFile', (_e, req: { sessionId: string; path: string }) =>
+    gitService.revertFile(cwdOf(req.sessionId), req.path)
+  )
+
+  ipcMain.handle('dialog:pickFolder', async () => {
+    const window = BrowserWindow.getFocusedWindow()
+    const result = await dialog.showOpenDialog(window ?? new BrowserWindow({ show: false }), {
+      properties: ['openDirectory', 'createDirectory']
+    })
+    return result.canceled ? null : result.filePaths[0]
+  })
+
+  ipcMain.handle('shell:revealInFinder', (_e, req: { path: string }) => shell.showItemInFolder(req.path))
+
+  ipcMain.handle('app:getSettings', () => Settings.get())
+  ipcMain.handle('app:setSettings', (_e, req: { settings: Partial<AppSettings> }) => Settings.set(req.settings))
+  ipcMain.handle('app:getAuthStatus', () => Settings.authStatus())
+  ipcMain.handle('app:getVersion', () => app.getVersion())
+
+  // Checkout installs (yarn setup:mac) update by rebuilding locally; zip
+  // installs update by downloading the latest prebuilt release zip.
+  const hasCheckout = (): boolean =>
+    __BUILD_SOURCE_DIR__ !== '' &&
+    existsSync(path.join(__BUILD_SOURCE_DIR__, '.git')) &&
+    existsSync(path.join(__BUILD_SOURCE_DIR__, 'scripts', 'install-mac.sh'))
+  const canSelfUpdate = (): boolean => process.platform === 'darwin' && (hasCheckout() || app.isPackaged)
+
+  // Compares the commit this build was made from against origin's HEAD, using
+  // the git credentials colleagues already have for cloning. Fails quiet: no
+  // git, no repo access, or offline just means "no update banner".
+  ipcMain.handle('app:checkForUpdate', () => {
+    return new Promise((resolvePromise) => {
+      if (!__BUILD_COMMIT__) {
+        resolvePromise({ updateAvailable: false, canSelfUpdate: false })
+        return
+      }
+      const gitBinary = existsSync('/usr/bin/git') ? '/usr/bin/git' : 'git'
+      execFile(
+        gitBinary,
+        ['ls-remote', REPO_URL, 'HEAD'],
+        { timeout: 10_000, env: { ...process.env, GIT_TERMINAL_PROMPT: '0' } },
+        (error, stdout) => {
+          if (error) {
+            resolvePromise({ updateAvailable: false, canSelfUpdate: false })
+            return
+          }
+          const remote = stdout.trim().split(/\s+/)[0] ?? ''
+          resolvePromise({
+            updateAvailable: remote !== '' && remote !== __BUILD_COMMIT__,
+            canSelfUpdate: canSelfUpdate()
+          })
+        }
+      )
+    })
+  })
+
+  // One click in the banner: pull main in the checkout this build came from,
+  // rebuild, reinstall, relaunch. Runs detached so it survives the app
+  // quitting mid-way (install-mac.sh quits and relaunches Pilot itself).
+  // Everything is logged to userData/self-update.log for post-mortems.
+  ipcMain.handle('app:selfUpdate', () => {
+    if (!canSelfUpdate()) {
+      return {
+        started: false,
+        reason: 'Self-update is not available on this platform yet — install the new version from a fresh installer.'
+      }
+    }
+    // Zip installs have no checkout to rebuild — pull the prebuilt release.
+    if (!hasCheckout()) {
+      return selfUpdateFromRelease()
+    }
+    try {
+      const logFile = openSync(path.join(app.getPath('userData'), 'self-update.log'), 'a')
+      const child = spawn(
+        '/bin/bash',
+        ['-lc', `cd "${__BUILD_SOURCE_DIR__}" && echo "── self-update $(date) ──" && git pull --ff-only && bash scripts/install-mac.sh`],
+        {
+          detached: true,
+          stdio: ['ignore', logFile, logFile],
+          env: { ...process.env, GIT_TERMINAL_PROMPT: '0' }
+        }
+      )
+      child.unref()
+      return { started: true }
+    } catch (error) {
+      return { started: false, reason: error instanceof Error ? error.message : 'Could not start the update' }
+    }
+  })
+}

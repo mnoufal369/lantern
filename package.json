@@ -1,0 +1,54 @@
+{
+  "name": "pilot",
+  "productName": "Pilot",
+  "version": "0.5.5",
+  "description": "Pilot — you talk, Pilot builds. A desktop cockpit for AI agents.",
+  "author": "Pilot",
+  "license": "MIT",
+  "private": true,
+  "type": "module",
+  "main": "./out/main/index.js",
+  "scripts": {
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
+    "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
+    "test": "vitest run",
+    "start": "electron-vite preview",
+    "dist": "electron-vite build && electron-builder --mac dmg",
+    "dist:win": "electron-vite build && electron-builder --win nsis --x64",
+    "setup:mac": "bash scripts/install-mac.sh",
+    "release": "bash scripts/release.sh",
+    "dist:share": "bash scripts/package-share.sh arm64",
+    "dist:share:x64": "bash scripts/package-share.sh x64",
+    "dist:share:universal": "bash scripts/package-share.sh universal"
+  },
+  "dependencies": {
+    "@anthropic-ai/claude-agent-sdk": "0.3.223",
+    "electron-store": "^11.0.2",
+    "simple-git": "^3.36.0"
+  },
+  "resolutions": {
+    "@noble/hashes": "^1.8.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/node": "^20.14.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "@vitejs/plugin-react": "^4.7.0",
+    "anser": "^2.3.5",
+    "diff": "^9.0.0",
+    "electron": "^37.10.3",
+    "electron-builder": "^26.15.3",
+    "electron-vite": "^3.1.0",
+    "lucide-react": "^0.544.0",
+    "parse-diff": "^0.12.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^5.9.0",
+    "vite": "^6.4.3",
+    "vitest": "3.2.4",
+    "zustand": "^5.0.14"
+  }
+}

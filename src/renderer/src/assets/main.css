@@ -1,0 +1,188 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', sans-serif;
+  --font-mono: 'SF Mono', ui-monospace, 'JetBrains Mono', Menlo, monospace;
+  --color-deck-bg: #09090b;
+  --color-deck-panel: #111113;
+  --color-deck-raised: #18181b;
+  --color-deck-border: #27272a;
+  --color-deck-accent: #29acc2;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  @apply bg-deck-bg text-zinc-200 antialiased select-none;
+}
+
+.drag-region {
+  -webkit-app-region: drag;
+}
+
+.no-drag {
+  -webkit-app-region: no-drag;
+}
+
+.selectable {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background: #3f3f46;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+@keyframes deck-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+.status-pulse {
+  animation: deck-pulse 1.4s ease-in-out infinite;
+}
+
+/* Brand gradient button (matches the Pilot site) */
+.btn-brand {
+  background: linear-gradient(135deg, #29acc2, #16998f);
+  box-shadow: 0 8px 30px rgba(41, 172, 194, 0.35);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.btn-brand:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 36px rgba(41, 172, 194, 0.45);
+}
+
+/* Ambient glow behind the empty state / hero areas */
+.hero-glow {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(560px 300px at 50% 12%, rgba(41, 172, 194, 0.16), transparent 70%),
+    radial-gradient(420px 260px at 78% 32%, rgba(228, 18, 92, 0.07), transparent 70%),
+    radial-gradient(420px 260px at 22% 40%, rgba(245, 186, 14, 0.06), transparent 70%);
+}
+.light .hero-glow {
+  background:
+    radial-gradient(560px 300px at 50% 12%, rgba(41, 172, 194, 0.14), transparent 70%),
+    radial-gradient(420px 260px at 78% 32%, rgba(228, 18, 92, 0.05), transparent 70%),
+    radial-gradient(420px 260px at 22% 40%, rgba(245, 186, 14, 0.07), transparent 70%);
+}
+
+/* Brand gradient text, adjusted per theme so it stays readable */
+.hero-title {
+  background-image: linear-gradient(120deg, #67e8f9, #f4f4f5 40%, #5eead4);
+}
+.light .hero-title {
+  background-image: linear-gradient(120deg, #0e7490, #1c242d 45%, #0f766e);
+}
+.wordmark-app {
+  background-image: linear-gradient(100deg, #67e8f9, #5eead4 45%, #e4125c 140%);
+}
+.light .wordmark-app {
+  background-image: linear-gradient(100deg, #0e7490, #0f766e 45%, #e4125c 140%);
+}
+
+/* Pilot dot-logo pulse (the red lead dot) */
+@keyframes lead-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.55; transform: scale(0.84); }
+}
+.lead-dot {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: lead-pulse 2.2s ease-in-out infinite;
+}
+
+/* ---------- Motion ---------- */
+
+/* Transcript blocks slide in as they appear */
+@keyframes block-in {
+  from { opacity: 0; transform: translateY(7px); }
+  to { opacity: 1; transform: none; }
+}
+.block-in { animation: block-in 0.28s ease both; }
+
+/* Modals pop in over a fading overlay */
+@keyframes overlay-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.overlay-in { animation: overlay-in 0.18s ease both; }
+
+@keyframes modal-in {
+  from { opacity: 0; transform: scale(0.96) translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+.modal-in { animation: modal-in 0.24s cubic-bezier(0.2, 0.8, 0.3, 1) both; }
+
+/* Quick menu / dropdowns rise from the composer */
+@keyframes menu-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.99); }
+  to { opacity: 1; transform: none; }
+}
+.menu-in { animation: menu-in 0.18s cubic-bezier(0.2, 0.8, 0.3, 1) both; }
+
+/* Buttons and cards respond to touch everywhere */
+button { transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease, opacity 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease; }
+button:active { transform: scale(0.98); }
+
+/* Theme switches cross-fade instead of snapping */
+body, header, aside, main {
+  transition: background-color 0.25s ease, border-color 0.25s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lead-dot, .status-pulse { animation: none; }
+  .block-in, .overlay-in, .modal-in, .menu-in { animation: none; }
+  .btn-brand:hover { transform: none; }
+  button, button:active { transition: none; transform: none; }
+  body, header, aside, main { transition: none; }
+}
+
+/* ---------- Light theme ---------- */
+.light {
+  --color-deck-bg: #f4f6f9;
+  --color-deck-panel: #ffffff;
+  --color-deck-raised: #eaeef3;
+  --color-deck-border: #d7dde4;
+  --color-deck-accent: #178fbe;
+}
+.light body { background: #f4f6f9; color: #26303a; }
+.light .text-zinc-100, .light .text-zinc-200 { color: #1c242d; }
+.light .text-zinc-300 { color: #313c47; }
+.light .text-zinc-400 { color: #4d5a66; }
+.light .text-zinc-500 { color: #64707c; }
+.light .text-zinc-600 { color: #8494a1; }
+.light .placeholder\:text-zinc-600::placeholder { color: #9aa7b2; }
+.light .bg-\[\#0d0d10\] { background: #f0f3f6; }
+.light .bg-zinc-700 { background: #b6c0c9; }
+.light .bg-red-950\/40 { background: #fdecec; }
+.light .bg-red-950\/60 { background: #fadcdc; }
+.light .bg-green-950\/60 { background: #ddf5e4; }
+.light .bg-green-950\/70 { background: #d3f1dc; }
+.light .bg-amber-950\/40 { background: #fdf3dd; }
+.light .text-green-300, .light .text-green-400 { color: #15803d; }
+.light .text-red-300, .light .text-red-400 { color: #b91c1c; }
+.light .text-amber-400, .light .text-amber-500 { color: #b45309; }
+.light .text-purple-400 { color: #7c3aed; }
+.light .text-sky-300 { color: #0369a1; }
+.light .text-cyan-300 { color: #0e7490; }
+.light .text-indigo-300 { color: #4338ca; }
+.light .border-red-900\/60, .light .border-red-900\/50 { border-color: #f3b4b4; }
+.light .border-amber-900\/50, .light .border-amber-900\/60 { border-color: #f0d9a8; }
+.light .bg-black\/60 { background: rgba(15, 23, 32, 0.35); }
+.light ::-webkit-scrollbar-thumb { background: #c3ccd4; }

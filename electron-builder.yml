@@ -1,0 +1,57 @@
+appId: app.pilot.desktop
+productName: Pilot
+directories:
+  output: release
+  buildResources: resources
+files:
+  - out/**
+  - package.json
+  - "!node_modules/@anthropic-ai/claude-agent-sdk-linux-*/**"
+asar: true
+asarUnpack:
+  - "node_modules/@anthropic-ai/claude-agent-sdk/**"
+  - "node_modules/@anthropic-ai/claude-agent-sdk-darwin-arm64/**"
+  - "node_modules/@anthropic-ai/claude-agent-sdk-darwin-x64/**"
+  - "node_modules/@anthropic-ai/claude-agent-sdk-win32-x64/**"
+npmRebuild: false
+protocols:
+  - name: Pilot
+    schemes:
+      - pilot
+mac:
+  target:
+    - target: dmg
+      arch:
+        - arm64
+        - universal
+  category: public.app-category.developer-tools
+  identity: "-"
+  hardenedRuntime: false
+  gatekeeperAssess: false
+  # The agent runtimes are per-arch binaries the app selects at launch, not code to
+  # lipo together. Without this the universal build refuses to merge them.
+  x64ArchFiles: "**/claude-agent-sdk-darwin-*/claude"
+  files:
+    - "!node_modules/@anthropic-ai/claude-agent-sdk-win32-*/**"
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+  icon: resources/icon.ico
+  files:
+    - "!node_modules/@anthropic-ai/claude-agent-sdk-darwin-*/**"
+nsis:
+  oneClick: true
+  perMachine: false
+  deleteAppDataOnUninstall: false
+  artifactName: "Pilot-Setup-${version}-x64.${ext}"
+dmg:
+  title: Pilot
+  contents:
+    - x: 130
+      y: 220
+    - x: 410
+      y: 220
+      type: link
+      path: /Applications

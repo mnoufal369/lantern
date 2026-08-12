@@ -1,0 +1,45 @@
+Installing Pilot on your Mac
+============================
+
+Pilot has no Apple Developer signature, so macOS is suspicious of it. Either
+route below works — the first avoids the warnings entirely.
+
+
+Option 1 — run the installer (recommended, no warnings)
+-------------------------------------------------------
+1. Unzip this file (double-click it).
+2. Open the Terminal app (Spotlight: press Cmd+Space, type "Terminal").
+3. Type the word  bash  followed by a space. Don't press Return yet.
+4. Drag "Install Pilot.command" from the Finder into the Terminal window.
+   This pastes its location for you.
+5. Press Return.
+
+Pilot installs itself into Applications and starts.
+
+Don't double-click "Install Pilot.command" — macOS blocks scripts opened that
+way, and recent versions no longer offer a way around it. Running it through
+Terminal as above is not blocked.
+
+
+Option 2 — install by hand (one warning to approve)
+---------------------------------------------------
+1. Unzip this file, then drag Pilot.app into your Applications folder.
+2. Double-click Pilot. macOS will refuse to open it and say it cannot verify
+   the developer. Click Done.
+3. Open System Settings -> Privacy & Security, scroll down to the message
+   about Pilot, and click "Open Anyway". Confirm with your password.
+
+Pilot opens from then on.
+
+
+Why?
+----
+Apple charges for the developer certificate that removes this warning, and
+Pilot is an internal build without one. The installer in Option 1 simply
+clears the "downloaded from the internet" flag that triggers the block.
+
+Only do this for apps you actually trust.
+
+If macOS instead says Pilot is "damaged and can't be opened", the copy you
+were sent is a bad build — ask for a fresh zip rather than trying to work
+around it. That message has no "Open Anyway" option.
