@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Check, ChevronDown, ChevronUp, Copy, CopyPlus, Download, FolderGit2, Search, Sparkles, X } from 'lucide-react'
+import { Check, ChevronDown, ChevronUp, Copy, CopyPlus, Download, Search, Sparkles, X } from 'lucide-react'
 import { CONTEXT_WINDOW_TOKENS } from '@shared/constants'
 import Transcript from './Transcript'
 import Composer from './Composer'
 import BranchSwitcher from './BranchSwitcher'
 import QuickActions from './QuickActions'
+import OverflowRow from '@/components/ui/OverflowRow'
+import type { OverflowItem } from '@/components/ui/OverflowRow'
 import { useSessionsStore } from '@/stores/useSessionsStore'
 import { useSettingsStore } from '@/stores/useSettingsStore'
 import { useProfilesStore } from '@/stores/useProfilesStore'
@@ -110,104 +112,174 @@ export default function ChatView({ sessionId }: { sessionId: string }): React.JS
   const contextTokens = entry.meta.stats.contextTokens ?? 0
   const contextWindow = entry.meta.stats.contextWindow || CONTEXT_WINDOW_TOKENS
   const contextPct = Math.min(100, Math.round((contextTokens / contextWindow) * 100))
+  const nothingToShare = entry.blocks.length === 0
 
-  return (
-    <div className="flex min-w-0 flex-1 flex-col">
-      <div className="flex shrink-0 items-center gap-3 border-b border-deck-border px-4 py-1.5 text-[11px] text-zinc-500">
-        <span className="flex items-center gap-1 truncate">
-          <FolderGit2 size={11} />
-          <span className="truncate font-mono">{entry.meta.cwd.replace(/^\/Users\/[^/]+/, '~')}</span>
-        </span>
-        <BranchSwitcher key={sessionId} sessionId={sessionId} />
-        {subagentCount > 0 && (
-          <span className="flex items-center gap-1 text-purple-400">
-            <Sparkles size={11} />
-            {subagentCount} subagent{subagentCount > 1 ? 's' : ''} used
-          </span>
-        )}
-        <span className="ml-auto flex items-center gap-2 tabular-nums">
-          {budgetRatio !== null && (
+  const openSearch = (): void => {
+    setSearchOpen(true)
+    setTimeout(() => searchInputRef.current?.focus(), 0)
+  }
+
+  const openTabOnSameProject = (): void => {
+    useSessionsStore
+      .getState()
+      .createSession(entry.meta.profileId, entry.meta.cwd)
+      .catch((e: unknown) => {
+        window.alert(
+          e instanceof Error
+            ? e.message.replace(/^Error invoking remote method '[^']+': Error: /, '')
+            : 'Could not open a new tab'
+        )
+      })
+  }
+
+  const stats = (
+    <span className="flex items-center gap-2 whitespace-nowrap tabular-nums">
+      {budgetRatio !== null ? (
+        <span className="flex items-center gap-1.5" title={`Budget: $${spent.toFixed(2)} of $${budget?.toFixed(2)} used`}>
+          <span className="h-1.5 w-16 overflow-hidden rounded-full bg-deck-raised">
             <span
-              className="flex items-center gap-1.5"
-              title={`Budget: $${spent.toFixed(2)} of $${budget?.toFixed(2)} used`}
-            >
-              <span className="h-1.5 w-16 overflow-hidden rounded-full bg-deck-raised">
-                <span
-                  className={`block h-full rounded-full ${
-                    budgetRatio > 0.9 ? 'bg-red-500' : budgetRatio > 0.75 ? 'bg-amber-500' : 'bg-deck-accent'
-                  }`}
-                  style={{ width: `${budgetRatio * 100}%` }}
-                />
-              </span>
-              <span className={budgetRatio > 0.9 ? 'text-red-400' : undefined}>
-                ${spent.toFixed(2)} / ${budget?.toFixed(0)} · {totalTokens} tokens
-              </span>
-            </span>
-          )}
-          {budgetRatio === null &&
-            (simple
-              ? `$${spent.toFixed(2)} · ${totalTokens} tokens`
-              : `${entry.meta.stats.turns} turn${entry.meta.stats.turns === 1 ? '' : 's'} · $${spent.toFixed(3)} · ${totalTokens} tokens`)}
-          <span
-            title={
-              contextTokens > 0
-                ? `Context: ~${formatTokens(contextTokens)} of ${formatTokens(contextWindow)} tokens in the model's memory. Near 100% the agent starts forgetting the oldest parts of the conversation.`
-                : 'Context meter — fills in after the agent’s first reply in this session.'
-            }
-            className={`flex items-center gap-1 ${contextPct > 90 ? 'text-red-400' : contextPct > 70 ? 'text-amber-500' : ''}`}
-          >
-            <span className="h-1.5 w-8 overflow-hidden rounded-full bg-deck-raised">
-              <span
-                className={`block h-full rounded-full ${contextPct > 90 ? 'bg-red-500' : contextPct > 70 ? 'bg-amber-500' : 'bg-zinc-500'}`}
-                style={{ width: `${contextTokens > 0 ? Math.max(4, contextPct) : 0}%` }}
-              />
-            </span>
-            {contextPct}% ctx
+              className={`block h-full rounded-full ${
+                budgetRatio > 0.9 ? 'bg-red-500' : budgetRatio > 0.75 ? 'bg-amber-500' : 'bg-deck-accent'
+              }`}
+              style={{ width: `${budgetRatio * 100}%` }}
+            />
+          </span>
+          <span className={budgetRatio > 0.9 ? 'text-red-400' : undefined}>
+            ${spent.toFixed(2)} / ${budget?.toFixed(0)} · {totalTokens} tokens
           </span>
         </span>
+      ) : simple ? (
+        `$${spent.toFixed(2)} · ${totalTokens} tokens`
+      ) : (
+        `${entry.meta.stats.turns} turn${entry.meta.stats.turns === 1 ? '' : 's'} · $${spent.toFixed(3)} · ${totalTokens} tokens`
+      )}
+    </span>
+  )
+
+  const contextMeter = (
+    <span
+      title={
+        contextTokens > 0
+          ? `Context: ~${formatTokens(contextTokens)} of ${formatTokens(contextWindow)} tokens in the model's memory. Near 100% the agent starts forgetting the oldest parts of the conversation.`
+          : 'Context meter — fills in after the agent’s first reply in this session.'
+      }
+      className={`flex items-center gap-1 whitespace-nowrap tabular-nums ${contextPct > 90 ? 'text-red-400' : contextPct > 70 ? 'text-amber-500' : ''}`}
+    >
+      <span className="h-1.5 w-8 overflow-hidden rounded-full bg-deck-raised">
+        <span
+          className={`block h-full rounded-full ${contextPct > 90 ? 'bg-red-500' : contextPct > 70 ? 'bg-amber-500' : 'bg-zinc-500'}`}
+          style={{ width: `${contextTokens > 0 ? Math.max(4, contextPct) : 0}%` }}
+        />
+      </span>
+      {contextPct}% ctx
+    </span>
+  )
+
+  const subagentBadge = (
+    <span className="flex items-center gap-1 whitespace-nowrap text-purple-400">
+      <Sparkles size={11} />
+      {subagentCount} subagent{subagentCount > 1 ? 's' : ''} used
+    </span>
+  )
+
+  const headerItems: OverflowItem[] = [
+    ...(subagentCount > 0
+      ? [{ id: 'subagents', priority: 20, bar: subagentBadge, menu: <MenuReadout>{subagentBadge}</MenuReadout> }]
+      : []),
+    { id: 'stats', priority: 50, bar: stats, menu: <MenuReadout>{stats}</MenuReadout> },
+    { id: 'context', priority: 60, bar: contextMeter, menu: <MenuReadout>{contextMeter}</MenuReadout> },
+    {
+      id: 'new-tab',
+      priority: 30,
+      bar: (
         <button
-          onClick={() => {
-            useSessionsStore
-              .getState()
-              .createSession(entry.meta.profileId, entry.meta.cwd)
-              .catch((e: unknown) => {
-                window.alert(e instanceof Error ? e.message.replace(/^Error invoking remote method '[^']+': Error: /, '') : 'Could not open a new tab')
-              })
-          }}
+          onClick={openTabOnSameProject}
           title="New tab on this project — same folder, same agent, fresh conversation"
-          className="flex items-center gap-1 rounded border border-deck-border/60 px-1.5 py-0.5 text-zinc-400 hover:border-deck-accent/50 hover:bg-deck-accent/10 hover:text-zinc-200"
+          className="flex items-center gap-1 whitespace-nowrap rounded border border-deck-border/60 px-1.5 py-0.5 text-zinc-400 hover:border-deck-accent/50 hover:bg-deck-accent/10 hover:text-zinc-200"
         >
           <CopyPlus size={11} />
           New tab
         </button>
+      ),
+      menu: (
+        <MenuAction onClick={openTabOnSameProject} icon={<CopyPlus size={12} />}>
+          New tab on this project
+        </MenuAction>
+      )
+    },
+    {
+      id: 'search',
+      priority: 40,
+      bar: (
         <button
-          onClick={() => {
-            setSearchOpen(true)
-            setTimeout(() => searchInputRef.current?.focus(), 0)
-          }}
+          onClick={openSearch}
           title="Search this conversation (⌘F)"
           className="flex items-center gap-1 rounded px-1.5 py-0.5 hover:bg-deck-raised hover:text-zinc-300"
         >
           <Search size={11} />
         </button>
+      ),
+      menu: (
+        <MenuAction onClick={openSearch} icon={<Search size={12} />} shortcut="⌘F">
+          Find in conversation
+        </MenuAction>
+      )
+    },
+    {
+      id: 'copy',
+      priority: 15,
+      bar: (
         <button
           onClick={() => void copyTranscript()}
-          disabled={entry.blocks.length === 0}
+          disabled={nothingToShare}
           title="Copy the whole session as Markdown — paste it into a ticket or chat"
-          className="flex items-center gap-1 rounded px-1.5 py-0.5 hover:bg-deck-raised hover:text-zinc-300 disabled:opacity-30"
+          className="flex items-center gap-1 whitespace-nowrap rounded px-1.5 py-0.5 hover:bg-deck-raised hover:text-zinc-300 disabled:opacity-30"
         >
           {copied ? <Check size={11} className="text-green-400" /> : <Copy size={11} />}
           {copied ? 'Copied' : 'Copy'}
         </button>
+      ),
+      menu: (
+        <MenuAction
+          onClick={() => void copyTranscript()}
+          disabled={nothingToShare}
+          icon={copied ? <Check size={12} className="text-green-400" /> : <Copy size={12} />}
+        >
+          {copied ? 'Copied' : 'Copy as Markdown'}
+        </MenuAction>
+      )
+    },
+    {
+      id: 'export',
+      priority: 10,
+      bar: (
         <button
           onClick={() => void exportTranscript()}
-          disabled={entry.blocks.length === 0}
+          disabled={nothingToShare}
           title="Export session as a Markdown report file"
-          className="flex items-center gap-1 rounded px-1.5 py-0.5 hover:bg-deck-raised hover:text-zinc-300 disabled:opacity-30"
+          className="flex items-center gap-1 whitespace-nowrap rounded px-1.5 py-0.5 hover:bg-deck-raised hover:text-zinc-300 disabled:opacity-30"
         >
           {exported ? <Check size={11} className="text-green-400" /> : <Download size={11} />}
           {exported ? 'Saved' : 'Export'}
         </button>
+      ),
+      menu: (
+        <MenuAction
+          onClick={() => void exportTranscript()}
+          disabled={nothingToShare}
+          icon={exported ? <Check size={12} className="text-green-400" /> : <Download size={12} />}
+        >
+          {exported ? 'Saved' : 'Export as Markdown…'}
+        </MenuAction>
+      )
+    }
+  ]
+
+  return (
+    <div className="flex min-w-0 flex-1 flex-col">
+      <div className="flex shrink-0 items-center gap-3 border-b border-deck-border px-4 py-1.5 text-[11px] text-zinc-500">
+        <BranchSwitcher key={sessionId} sessionId={sessionId} />
+        <OverflowRow items={headerItems} gap={10} className="flex-1" />
       </div>
 
       {searchOpen && (
@@ -272,6 +344,37 @@ export default function ChatView({ sessionId }: { sessionId: string }): React.JS
       <Composer sessionId={sessionId} status={entry.meta.status} injectedDraft={draft} />
     </div>
   )
+}
+
+function MenuAction({
+  onClick,
+  icon,
+  shortcut,
+  disabled,
+  children
+}: {
+  onClick: () => void
+  icon: React.ReactNode
+  shortcut?: string
+  disabled?: boolean
+  children: React.ReactNode
+}): React.JSX.Element {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-[12px] text-zinc-300 hover:bg-deck-raised hover:text-zinc-100 disabled:opacity-30 disabled:hover:bg-transparent"
+    >
+      <span className="shrink-0 text-zinc-500">{icon}</span>
+      <span className="flex-1 truncate">{children}</span>
+      {shortcut && <span className="shrink-0 text-[10.5px] text-zinc-600">{shortcut}</span>}
+    </button>
+  )
+}
+
+/** Read-only stat parked in the overflow menu — same markup as in the bar, just given room. */
+function MenuReadout({ children }: { children: React.ReactNode }): React.JSX.Element {
+  return <span className="flex w-full items-center px-2 py-1 text-[11px] text-zinc-500">{children}</span>
 }
 
 function formatTokens(n: number): string {
