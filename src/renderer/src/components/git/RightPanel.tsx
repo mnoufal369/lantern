@@ -1,5 +1,21 @@
 import { useCallback, useEffect, useState } from 'react'
-import { FileDiff, GitBranch, PanelRightClose, PanelRightOpen, RotateCcw } from 'lucide-react'
+import {
+  Braces,
+  File,
+  FileCode2,
+  FileCog,
+  FileDiff,
+  FileImage,
+  FileLock,
+  FileTerminal,
+  FileText,
+  FileType2,
+  GitBranch,
+  PanelRightClose,
+  PanelRightOpen,
+  RotateCcw
+} from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 import parseDiff from 'parse-diff'
 import type { GitStatusSummary } from '@shared/types'
 import { useSessionsStore } from '@/stores/useSessionsStore'
@@ -13,12 +29,90 @@ const KIND_BADGE: Record<string, { label: string; className: string }> = {
   conflicted: { label: '!', className: 'text-red-500' }
 }
 
+const FILE_ICONS: Record<string, LucideIcon> = {
+  ts: FileCode2,
+  tsx: FileCode2,
+  js: FileCode2,
+  jsx: FileCode2,
+  mjs: FileCode2,
+  cjs: FileCode2,
+  py: FileCode2,
+  rb: FileCode2,
+  go: FileCode2,
+  rs: FileCode2,
+  swift: FileCode2,
+  java: FileCode2,
+  html: FileCode2,
+  vue: FileCode2,
+  svelte: FileCode2,
+  json: Braces,
+  yml: FileCog,
+  yaml: FileCog,
+  toml: FileCog,
+  env: FileCog,
+  css: FileType2,
+  scss: FileType2,
+  md: FileText,
+  mdx: FileText,
+  txt: FileText,
+  sh: FileTerminal,
+  zsh: FileTerminal,
+  bash: FileTerminal,
+  lock: FileLock,
+  png: FileImage,
+  jpg: FileImage,
+  jpeg: FileImage,
+  gif: FileImage,
+  svg: FileImage,
+  webp: FileImage,
+  ico: FileImage
+}
+
+function iconForPath(path: string): LucideIcon {
+  const name = path.slice(path.lastIndexOf('/') + 1)
+  const dot = name.lastIndexOf('.')
+  return (dot > 0 ? FILE_ICONS[name.slice(dot + 1).toLowerCase()] : undefined) ?? File
+}
+
+const NAME_BUDGET = 26
+
+/**
+ * Splits a path so the directory part can collapse with CSS while the file name — and its
+ * extension — always stays readable. Over-long names fold in the middle themselves.
+ */
+function splitPathForDisplay(path: string): { head: string; tail: string } {
+  const lastSlash = path.lastIndexOf('/')
+  const name = path.slice(lastSlash + 1)
+  if (name.length <= NAME_BUDGET) {
+    return { head: path.slice(0, lastSlash + 1), tail: name }
+  }
+  const front = Math.ceil((NAME_BUDGET - 1) / 2)
+  const back = NAME_BUDGET - 1 - front
+  return { head: '', tail: `${name.slice(0, front)}…${name.slice(-back)}` }
+}
+
+function TouchedFileRow({ path, cwd }: { path: string; cwd: string }): React.JSX.Element {
+  const relative = cwd && path.startsWith(`${cwd}/`) ? path.slice(cwd.length + 1) : path.replace(/^\/Users\/[^/]+/, '~')
+  const { head, tail } = splitPathForDisplay(relative)
+  const Icon = iconForPath(path)
+  return (
+    <div className="flex items-center gap-1.5 py-0.5 font-mono text-[11.5px]" title={path}>
+      <Icon size={12} className="shrink-0 text-zinc-600" />
+      <span className="flex min-w-0 text-zinc-400">
+        {head && <span className="truncate text-zinc-500">{head}</span>}
+        <span className="shrink-0">{tail}</span>
+      </span>
+    </div>
+  )
+}
+
 export default function RightPanel({ sessionId }: { sessionId: string }): React.JSX.Element | null {
   const [collapsed, setCollapsed] = useState(false)
   const [status, setStatus] = useState<GitStatusSummary | null>(null)
   const [openFile, setOpenFile] = useState<string | null>(null)
   const [diffText, setDiffText] = useState('')
   const filesTouched = useSessionsStore((s) => s.sessions[sessionId]?.meta.filesTouched ?? [])
+  const cwd = useSessionsStore((s) => s.sessions[sessionId]?.meta.cwd ?? '')
 
   const refresh = useCallback(async (): Promise<void> => {
     try {
@@ -142,9 +236,7 @@ export default function RightPanel({ sessionId }: { sessionId: string }): React.
           </p>
           {filesTouched.length === 0 && <p className="text-xs text-zinc-600">Nothing yet</p>}
           {filesTouched.map((path) => (
-            <p key={path} className="truncate py-0.5 font-mono text-[11.5px] text-zinc-400" title={path}>
-              {path}
-            </p>
+            <TouchedFileRow key={path} path={path} cwd={cwd} />
           ))}
         </div>
       </div>
