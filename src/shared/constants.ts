@@ -5,6 +5,9 @@ export const APP_NAME = 'Pilot'
 /** Where colleagues clone from — also what the in-app update check pings. */
 export const REPO_URL = 'https://github.com/mnoufal369/ai-pilot.git'
 
+/** Same repo, addressable in a browser — menu links, issue reports, release notes. */
+export const REPO_WEB_URL = REPO_URL.replace(/\.git$/, '')
+
 /** The one-liner shown to users when an update is available. */
 export const UPDATE_COMMAND = 'git pull && yarn setup:mac'
 
@@ -17,9 +20,10 @@ export const FALLBACK_MODELS: ModelInfo[] = [
 
 export const DEFAULT_MODEL = 'claude-sonnet-5'
 
+/** Muted, dusty tones — desaturated to sit beside the washed-white brand colour. */
 export const PROFILE_COLORS = [
-  '#f97316', '#eab308', '#22c55e', '#06b6d4',
-  '#3b82f6', '#8b5cf6', '#ec4899', '#ef4444'
+  '#c2836a', '#c3a765', '#94ab84', '#79a8a0',
+  '#7e9cbf', '#9a95c9', '#b58aa8', '#a8a29a'
 ]
 
 export const PROFILE_ICONS = [

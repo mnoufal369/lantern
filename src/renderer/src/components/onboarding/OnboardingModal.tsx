@@ -22,7 +22,7 @@ const CHOICES: {
     mode: 'pro',
     emoji: '👩‍💻',
     title: 'Show me everything',
-    text: 'The full cockpit — live diffs, git panel, models, permission modes and all the dials.',
+    text: 'The full cockpit: live diffs, git panel, models, permission modes and all the dials.',
     footer: 'You can switch anytime in Settings'
   }
 ]
@@ -50,15 +50,14 @@ export default function OnboardingModal(): React.JSX.Element {
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-deck-bg">
-      <div className="hero-glow" />
       <div className="z-10 w-full max-w-xl px-8">
         <div className="flex flex-col items-center text-center">
           <PilotMark size={76} />
-          <h1 className="hero-title mt-4 bg-clip-text text-2xl font-extrabold tracking-tight text-transparent">
+          <h1 className="mt-4 text-2xl font-bold tracking-tight text-zinc-100">
             Welcome aboard Pilot
           </h1>
           <p className="mt-2 text-sm text-zinc-400">
-            {mode === null ? 'One question: how do you like your cockpit?' : 'Last thing — connecting your agent.'}
+            {mode === null ? 'One question: how do you like your cockpit?' : 'Last thing, connecting your agent.'}
           </p>
         </div>
 
@@ -68,7 +67,7 @@ export default function OnboardingModal(): React.JSX.Element {
               <button
                 key={choice.mode}
                 onClick={() => setMode(choice.mode)}
-                className="group rounded-2xl border border-deck-border bg-deck-panel p-6 text-left transition-all hover:-translate-y-0.5 hover:border-deck-accent/60 hover:bg-deck-accent/5"
+                className="group rounded-lg border border-deck-border bg-deck-panel p-6 text-left hover:border-deck-accent/50 hover:bg-deck-raised"
               >
                 <div className="text-3xl">{choice.emoji}</div>
                 <p className="mt-3 text-[16px] font-semibold text-zinc-100">{choice.title}</p>
@@ -86,7 +85,7 @@ export default function OnboardingModal(): React.JSX.Element {
             )}
 
             {auth !== null && auth.source !== 'none' && (
-              <div className="rounded-2xl border border-green-900/50 bg-green-950/20 p-5">
+              <div className="rounded-lg border border-green-900/50 bg-green-950/20 p-5">
                 <p className="flex items-center gap-2 text-sm font-medium text-zinc-100">
                   {auth.source === 'claude-login' ? (
                     <UserRound size={15} className="text-green-400" />
@@ -104,12 +103,12 @@ export default function OnboardingModal(): React.JSX.Element {
             )}
 
             {auth !== null && auth.source === 'none' && (
-              <div className="rounded-2xl border border-deck-border bg-deck-panel p-5">
+              <div className="rounded-lg border border-deck-border bg-deck-panel p-5">
                 <p className="flex items-center gap-2 text-sm font-medium text-zinc-100">
                   <KeyRound size={15} className="text-amber-400" /> Add your Anthropic API key
                 </p>
                 <p className="mt-1.5 text-[13px] text-zinc-400">
-                  No Claude login was found on this Mac. Paste an API key — it’s encrypted in your keychain and never
+                  No Claude login was found on this Mac. Paste an API key. It’s encrypted in your keychain and never
                   leaves this machine.
                 </p>
                 <input
@@ -141,7 +140,7 @@ export default function OnboardingModal(): React.JSX.Element {
                   <button
                     onClick={() => void finish()}
                     disabled={saving || (auth.source === 'none' && apiKey.trim() !== '' && !apiKey.startsWith('sk-'))}
-                    className="rounded-lg bg-deck-accent px-5 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
+                    className="rounded-lg bg-deck-accent px-5 py-2 text-sm font-medium text-deck-on-accent hover:opacity-90 disabled:opacity-50"
                   >
                     {saving ? 'Setting up…' : 'Start flying'}
                   </button>

@@ -123,6 +123,8 @@ export class SessionRuntime {
           toolUseId: context.toolUseID
         }),
       resume: this.meta.sdkSessionId,
+      // A fork resumes the parent's conversation but must not write back into it.
+      forkSession: this.meta.forkPending === true ? true : undefined,
       pathToClaudeCodeExecutable: resolvePackagedCli()
     }
 
@@ -165,6 +167,7 @@ export class SessionRuntime {
       switch (event.t) {
         case 'system-init':
           this.meta.sdkSessionId = event.sdkSessionId
+          this.meta.forkPending = false
           break
         case 'text':
         case 'thinking':

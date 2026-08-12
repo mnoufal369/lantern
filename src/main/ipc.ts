@@ -28,6 +28,8 @@ export function registerIpc(manager: SessionManager): void {
     Settings.recordRecentFolder(req.cwd)
     return meta
   })
+
+  ipcMain.handle('sessions:fork', (_e, req: { sessionId: string }) => manager.fork(req.sessionId))
   ipcMain.handle(
     'sessions:createFromRepo',
     async (_e, req: { profileId: string; repoUrl: string; branch?: string }) => {
@@ -70,6 +72,10 @@ export function registerIpc(manager: SessionManager): void {
   )
   ipcMain.handle('sessions:rename', (_e, req: { sessionId: string; title: string }) =>
     manager.rename(req.sessionId, req.title)
+  )
+
+  ipcMain.handle('sessions:setColor', (_e, req: { sessionId: string; color: string | null }) =>
+    manager.setColor(req.sessionId, req.color)
   )
 
   ipcMain.handle('permissions:respond', (_e, req: { requestId: string; decision: PermissionDecision }) =>

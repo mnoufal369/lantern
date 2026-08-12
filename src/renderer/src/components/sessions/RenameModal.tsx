@@ -52,7 +52,7 @@ export default function RenameModal(): React.JSX.Element | null {
           <button
             onClick={save}
             disabled={!value.trim()}
-            className="rounded-lg bg-deck-accent px-4 py-1.5 text-xs font-medium text-white hover:opacity-90 disabled:opacity-40"
+            className="rounded-lg bg-deck-accent px-4 py-1.5 text-xs font-medium text-deck-on-accent hover:opacity-90 disabled:opacity-40"
           >
             Save
           </button>

@@ -10,7 +10,7 @@ const MODE_OPTIONS: { value: PermissionMode; label: string; hint: string; proOnl
   { value: 'plan', label: 'Plan', hint: 'Plans before acting' },
   { value: 'default', label: 'Ask', hint: 'Asks before risky tools' },
   { value: 'acceptEdits', label: 'Auto-edit', hint: 'Auto-approves file edits' },
-  { value: 'bypassPermissions', label: 'Full auto', hint: 'Never asks — careful!', proOnly: true }
+  { value: 'bypassPermissions', label: 'Full auto', hint: 'Never asks, careful!', proOnly: true }
 ]
 
 export default function Composer({
@@ -152,7 +152,7 @@ export default function Composer({
           }}
         />
       )}
-      <div className="flex flex-col gap-2 rounded-xl border border-deck-border bg-deck-raised p-2 transition-all duration-200 focus-within:border-deck-accent/60 focus-within:shadow-[0_0_0_3px_rgba(41,172,194,0.12),0_8px_30px_rgba(41,172,194,0.08)]">
+      <div className="flex flex-col gap-2 rounded-lg border border-deck-border bg-deck-raised p-2 focus-within:border-deck-accent/70">
         {attachments.length > 0 && (
           <div className="flex gap-2 px-1 pt-1">
             {attachments.map((att, index) => (
@@ -241,10 +241,10 @@ export default function Composer({
             setMenuIndex(0)
             textareaRef.current?.focus()
           }}
-          title="Quick actions (/ or ⌘K) — mode, model, branch, export…"
+          title="Quick actions (/ or ⌘K): mode, model, branch, export…"
           className={`flex h-8 w-8 items-center justify-center rounded-lg border ${
             menuOpen
-              ? 'border-deck-accent bg-deck-accent/20 text-deck-accent'
+              ? 'border-deck-accent bg-deck-accent/20 text-deck-accent-text'
               : 'border-deck-border text-zinc-400 hover:bg-deck-panel hover:text-zinc-200'
           }`}
         >
@@ -263,7 +263,7 @@ export default function Composer({
             onClick={submit}
             disabled={!text.trim() && attachments.length === 0}
             title="Send (⏎)"
-            className="btn-brand flex h-8 w-8 items-center justify-center rounded-lg text-white disabled:opacity-30"
+            className="btn-brand flex h-8 w-8 items-center justify-center rounded-md disabled:opacity-30"
           >
             <SendHorizonal size={14} />
           </button>
@@ -272,7 +272,7 @@ export default function Composer({
       </div>
       {sendError && (
         <p className="mt-2 px-1 text-[11.5px] text-red-400">
-          {sendError} <span className="text-zinc-500">— your message is back in the box.</span>
+          {sendError} <span className="text-zinc-500">Your message is back in the box.</span>
         </p>
       )}
       {meta && (
@@ -304,12 +304,12 @@ export default function Composer({
                   key={mode.value}
                   disabled={locked}
                   onClick={() => void setPermissionMode(sessionId, mode.value)}
-                  title={locked ? 'Full auto is Pro-only — switch the interface mode in Settings' : mode.hint}
+                  title={locked ? 'Full auto is Pro-only. Switch the interface mode in Settings' : mode.hint}
                   className={`rounded px-2 py-0.5 text-[11px] ${
                     meta.permissionMode === mode.value
                       ? mode.value === 'bypassPermissions'
                         ? 'bg-red-700/80 text-white'
-                        : 'bg-deck-accent text-white'
+                        : 'bg-deck-accent text-deck-on-accent'
                       : locked
                         ? 'cursor-not-allowed text-zinc-700'
                         : 'text-zinc-500 hover:text-zinc-300'

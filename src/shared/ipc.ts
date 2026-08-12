@@ -32,6 +32,8 @@ export interface IpcApi {
   'sessions:setModel': (req: { sessionId: string; model: string }) => void
   'sessions:setPermissionMode': (req: { sessionId: string; mode: string }) => void
   'sessions:rename': (req: { sessionId: string; title: string }) => void
+  /** Colour tag for the session's tab; null clears it. */
+  'sessions:setColor': (req: { sessionId: string; color: string | null }) => void
   'permissions:respond': (req: { requestId: string; decision: PermissionDecision }) => void
   'history:list': (req?: undefined) => ClaudeHistoryItem[]
   'history:import': (req: { sdkSessionId: string }) => SessionMeta
@@ -52,6 +54,8 @@ export interface IpcApi {
   'app:setSettings': (req: { settings: Partial<AppSettings> }) => AppSettings
   'app:getAuthStatus': (req?: undefined) => AuthStatus
   'app:getVersion': (req?: undefined) => string
+  /** Branches a session: same conversation so far, own process from here on. */
+  'sessions:fork': (req: { sessionId: string }) => SessionMeta
   'app:checkForUpdate': (req?: undefined) => { updateAvailable: boolean; canSelfUpdate: boolean }
   /** Pulls main in the build checkout, rebuilds, reinstalls and relaunches — detached. */
   'app:selfUpdate': (req?: undefined) => { started: boolean; reason?: string }

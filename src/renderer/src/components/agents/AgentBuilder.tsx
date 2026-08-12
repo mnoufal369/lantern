@@ -26,7 +26,7 @@ const PERMISSION_MODES: { value: PermissionMode; label: string; hint: string }[]
   { value: 'plan', label: 'Plan', hint: 'plans before acting' },
   { value: 'default', label: 'Ask', hint: 'asks before risky tools' },
   { value: 'acceptEdits', label: 'Auto-edit', hint: 'auto-approves file edits' },
-  { value: 'bypassPermissions', label: 'Full auto', hint: 'never asks — careful!' }
+  { value: 'bypassPermissions', label: 'Full auto', hint: 'never asks, careful!' }
 ]
 
 export default function AgentBuilder({ onClose }: { onClose: () => void }): React.JSX.Element {
@@ -54,7 +54,7 @@ export default function AgentBuilder({ onClose }: { onClose: () => void }): Reac
         {profiles.map((profile) => (
           <div
             key={profile.id}
-            className="group flex items-start gap-3 rounded-xl border border-deck-border bg-deck-raised p-3"
+            className="group flex items-start gap-3 rounded-lg border border-deck-border bg-deck-raised p-3"
           >
             <span
               className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-sm font-bold text-white"
@@ -93,7 +93,7 @@ export default function AgentBuilder({ onClose }: { onClose: () => void }): Reac
         ))}
         <button
           onClick={() => setEditing(newProfile())}
-          className="flex min-h-24 items-center justify-center gap-2 rounded-xl border border-dashed border-deck-border text-sm text-zinc-500 hover:bg-deck-raised hover:text-zinc-300"
+          className="flex min-h-24 items-center justify-center gap-2 rounded-lg border border-dashed border-deck-border text-sm text-zinc-500 hover:bg-deck-raised hover:text-zinc-300"
         >
           <Plus size={15} /> New agent profile
         </button>
@@ -191,7 +191,7 @@ function ProfileEditor({
                 title={mode.hint}
                 className={`flex-1 rounded-md px-2 py-1.5 text-xs ${
                   profile.permissionMode === mode.value
-                    ? 'bg-deck-accent text-white'
+                    ? 'bg-deck-accent text-deck-on-accent'
                     : 'text-zinc-400 hover:text-zinc-200'
                 }`}
               >
@@ -207,14 +207,14 @@ function ProfileEditor({
             <div className="flex gap-1 text-[11px]">
               <button
                 onClick={() => patch({ systemPrompt: { ...profile.systemPrompt, mode: 'append' } })}
-                className={profile.systemPrompt.mode === 'append' ? 'text-deck-accent' : 'text-zinc-500'}
+                className={profile.systemPrompt.mode === 'append' ? 'text-deck-accent-text' : 'text-zinc-500'}
               >
                 Extend Claude Code
               </button>
               <span className="text-zinc-700">|</span>
               <button
                 onClick={() => patch({ systemPrompt: { ...profile.systemPrompt, mode: 'replace' } })}
-                className={profile.systemPrompt.mode === 'replace' ? 'text-deck-accent' : 'text-zinc-500'}
+                className={profile.systemPrompt.mode === 'replace' ? 'text-deck-accent-text' : 'text-zinc-500'}
               >
                 Replace entirely
               </button>
@@ -296,7 +296,7 @@ function ProfileEditor({
           <button
             onClick={() => void onSave(profile)}
             disabled={!profile.name.trim()}
-            className="rounded-lg bg-deck-accent px-4 py-1.5 text-xs font-medium text-white hover:opacity-90 disabled:opacity-40"
+            className="rounded-lg bg-deck-accent px-4 py-1.5 text-xs font-medium text-deck-on-accent hover:opacity-90 disabled:opacity-40"
           >
             Save profile
           </button>

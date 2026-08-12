@@ -59,18 +59,18 @@ export default function BranchSwitcher({ sessionId }: { sessionId: string }): Re
   const visibleBranches = branches?.filter((b) => b.toLowerCase().includes(search.toLowerCase())) ?? null
 
   return (
-    <div ref={containerRef} className="relative">
+    <div ref={containerRef} className="relative min-w-0 shrink">
       <button
         onClick={() => void toggle()}
-        title={status.managed ? "Switch branch — Pilot refetches the code for you" : "Switch branch (blocked if you have uncommitted changes)"}
-        className="flex items-center gap-1 rounded-md border border-deck-border px-1.5 py-0.5 text-[11px] text-zinc-400 hover:bg-deck-raised hover:text-zinc-200"
+        title={status.managed ? "Switch branch. Pilot refetches the code for you" : "Switch branch (blocked if you have uncommitted changes)"}
+        className="flex w-full items-center gap-1 whitespace-nowrap rounded-md border border-deck-border px-1.5 py-0.5 text-[11px] text-zinc-400 hover:bg-deck-raised hover:text-zinc-200"
       >
-        <GitBranch size={11} />
-        {status.branch}
-        <ChevronDown size={10} />
+        <GitBranch size={11} className="shrink-0" />
+        <span className="truncate">{status.branch}</span>
+        <ChevronDown size={10} className="shrink-0" />
       </button>
       {open && (
-        <div className="menu-in absolute left-0 top-6 z-30 flex max-h-72 w-60 flex-col rounded-lg border border-deck-border bg-deck-panel shadow-2xl">
+        <div className="menu-in absolute left-0 top-6 z-30 flex max-h-72 w-60 flex-col rounded-lg border border-deck-border bg-deck-panel shadow-[0_10px_32px_rgba(0,0,0,0.4)]">
           <input
             autoFocus
             value={search}
