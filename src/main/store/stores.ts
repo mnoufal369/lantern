@@ -6,10 +6,19 @@ import Store from 'electron-store'
 import type { AgentProfile, AppSettings, AuthStatus, RecentRepo, SessionMeta } from '@shared/types'
 import { DEFAULT_MAX_CONCURRENT_SESSIONS, DEFAULT_MODEL, MAX_RECENTS } from '@shared/constants'
 
-const profileStore = new Store<{ profiles: AgentProfile[]; seedVersion: number }>({
-  name: 'profiles',
-  defaults: { profiles: [], seedVersion: 0 }
-})
+/**
+ * The stores are built on first use, never at import time. electron-store
+ * writes its defaults file the moment it is constructed, and an import-time
+ * store meant userData already held settings.json before the legacy-data
+ * migration ran — so the migration's "have we already migrated?" check always
+ * said yes and the rename silently started everyone from scratch.
+ */
+let profileStoreInstance: Store<{ profiles: AgentProfile[]; seedVersion: number }> | null = null
+const profileStore = (): Store<{ profiles: AgentProfile[]; seedVersion: number }> =>
+  (profileStoreInstance ??= new Store<{ profiles: AgentProfile[]; seedVersion: number }>({
+    name: 'profiles',
+    defaults: { profiles: [], seedVersion: 0 }
+  }))
 
 const SEED_VERSION = 3
 
@@ -18,10 +27,12 @@ const LEGACY_PROFILE_COLORS = ['#6366f1', '#22c55e', '#f59e0b', '#06b6d4', '#ec4
 const HUMAN_TONE =
   'Tone: write like a warm, friendly colleague, not a machine. Use contractions, first person and everyday words. Short sentences. Be encouraging without being fake. Never sound like a manual.'
 
-const sessionStore = new Store<{ sessions: SessionMeta[] }>({
-  name: 'sessions',
-  defaults: { sessions: [] }
-})
+let sessionStoreInstance: Store<{ sessions: SessionMeta[] }> | null = null
+const sessionStore = (): Store<{ sessions: SessionMeta[] }> =>
+  (sessionStoreInstance ??= new Store<{ sessions: SessionMeta[] }>({
+    name: 'sessions',
+    defaults: { sessions: [] }
+  }))
 
 interface PersistedSettings {
   /** API key encrypted with Electron safeStorage (keychain-backed), base64. */
@@ -36,19 +47,21 @@ interface PersistedSettings {
   githubOrg?: string
 }
 
-const settingsStore = new Store<{ settings: PersistedSettings }>({
-  name: 'settings',
-  defaults: {
-    settings: {
-      apiKeyEnc: '',
-      theme: 'dark',
-      customInstructions: '',
-      maxConcurrentSessions: DEFAULT_MAX_CONCURRENT_SESSIONS,
-      uiMode: 'pro',
-      onboarded: false
+let settingsStoreInstance: Store<{ settings: PersistedSettings }> | null = null
+const settingsStore = (): Store<{ settings: PersistedSettings }> =>
+  (settingsStoreInstance ??= new Store<{ settings: PersistedSettings }>({
+    name: 'settings',
+    defaults: {
+      settings: {
+        apiKeyEnc: '',
+        theme: 'dark',
+        customInstructions: '',
+        maxConcurrentSessions: DEFAULT_MAX_CONCURRENT_SESSIONS,
+        uiMode: 'pro',
+        onboarded: false
+      }
     }
-  }
-})
+  }))
 
 function encryptKey(plain: string): string {
   if (plain === '') {
@@ -76,31 +89,31 @@ function decryptKey(stored: string): string {
 
 export const ProfileStore = {
   list(): AgentProfile[] {
-    return profileStore.get('profiles')
+    return profileStore().get('profiles')
   },
   save(profile: AgentProfile): AgentProfile {
-    const profiles = profileStore.get('profiles')
+    const profiles = profileStore().get('profiles')
     const index = profiles.findIndex((p) => p.id === profile.id)
     if (index >= 0) {
       profiles[index] = profile
     } else {
       profiles.push(profile)
     }
-    profileStore.set('profiles', profiles)
+    profileStore().set('profiles', profiles)
     return profile
   },
   delete(profileId: string): void {
-    profileStore.set(
+    profileStore().set(
       'profiles',
-      profileStore.get('profiles').filter((p) => p.id !== profileId)
+      profileStore().get('profiles').filter((p) => p.id !== profileId)
     )
   },
   addAllowedTool(profileId: string, rule: string): void {
-    const profiles = profileStore.get('profiles')
+    const profiles = profileStore().get('profiles')
     const profile = profiles.find((p) => p.id === profileId)
     if (profile && !profile.allowedTools.includes(rule)) {
       profile.allowedTools.push(rule)
-      profileStore.set('profiles', profiles)
+      profileStore().set('profiles', profiles)
     }
   },
   seedDefaults(): void {
@@ -177,16 +190,16 @@ export const ProfileStore = {
         }
       }
     ]
-    const existing = profileStore.get('profiles')
+    const existing = profileStore().get('profiles')
     const missing = defaults.filter((d) => !existing.some((p) => p.id === d.id))
     if (existing.length === 0) {
-      profileStore.set('profiles', defaults)
+      profileStore().set('profiles', defaults)
     } else if (missing.length > 0) {
-      profileStore.set('profiles', [...existing, ...missing])
+      profileStore().set('profiles', [...existing, ...missing])
     }
 
-    if (profileStore.get('seedVersion') !== SEED_VERSION) {
-      const refreshed = profileStore.get('profiles').map((profile) => {
+    if (profileStore().get('seedVersion') !== SEED_VERSION) {
+      const refreshed = profileStore().get('profiles').map((profile) => {
         const seed = defaults.find((d) => d.id === profile.id)
         if (!seed) {
           return profile
@@ -195,33 +208,33 @@ export const ProfileStore = {
         const color = LEGACY_PROFILE_COLORS.includes(profile.color) ? seed.color : profile.color
         return { ...profile, color, systemPrompt: seed.systemPrompt, updatedAt: now }
       })
-      profileStore.set('profiles', refreshed)
-      profileStore.set('seedVersion', SEED_VERSION)
+      profileStore().set('profiles', refreshed)
+      profileStore().set('seedVersion', SEED_VERSION)
     }
   }
 }
 
 export const SessionStore = {
   list(): SessionMeta[] {
-    return sessionStore.get('sessions')
+    return sessionStore().get('sessions')
   },
   save(meta: SessionMeta): void {
-    const sessions = sessionStore.get('sessions')
+    const sessions = sessionStore().get('sessions')
     const index = sessions.findIndex((s) => s.id === meta.id)
     if (index >= 0) {
       sessions[index] = meta
     } else {
       sessions.unshift(meta)
     }
-    sessionStore.set('sessions', sessions)
+    sessionStore().set('sessions', sessions)
   },
   saveAll(metas: SessionMeta[]): void {
-    sessionStore.set('sessions', metas)
+    sessionStore().set('sessions', metas)
   },
   remove(sessionId: string): void {
-    sessionStore.set(
+    sessionStore().set(
       'sessions',
-      sessionStore.get('sessions').filter((s) => s.id !== sessionId)
+      sessionStore().get('sessions').filter((s) => s.id !== sessionId)
     )
   }
 }
@@ -229,7 +242,7 @@ export const SessionStore = {
 export const Settings = {
   /** Renderer-safe view — the API key itself never leaves the main process. */
   get(): AppSettings {
-    const persisted = settingsStore.get('settings')
+    const persisted = settingsStore().get('settings')
     return {
       apiKey: '',
       hasApiKey: persisted.apiKeyEnc !== '',
@@ -247,10 +260,10 @@ export const Settings = {
   },
   /** Decrypted key for the session runtime only. */
   getApiKey(): string {
-    return decryptKey(settingsStore.get('settings').apiKeyEnc)
+    return decryptKey(settingsStore().get('settings').apiKeyEnc)
   },
   set(patch: Partial<AppSettings>): AppSettings {
-    const persisted = settingsStore.get('settings')
+    const persisted = settingsStore().get('settings')
     if (patch.apiKey !== undefined) {
       persisted.apiKeyEnc = encryptKey(patch.apiKey.trim())
     }
@@ -275,24 +288,24 @@ export const Settings = {
     if (patch.onboarded !== undefined) {
       persisted.onboarded = patch.onboarded
     }
-    settingsStore.set('settings', persisted)
+    settingsStore().set('settings', persisted)
     return Settings.get()
   },
   recordRecentFolder(folder: string): void {
-    const persisted = settingsStore.get('settings')
+    const persisted = settingsStore().get('settings')
     const next = [folder, ...(persisted.recentFolders ?? []).filter((f) => f !== folder)].slice(0, MAX_RECENTS)
-    settingsStore.set('settings', { ...persisted, recentFolders: next })
+    settingsStore().set('settings', { ...persisted, recentFolders: next })
   },
   recordRecentRepo(url: string, branch?: string): void {
-    const persisted = settingsStore.get('settings')
+    const persisted = settingsStore().get('settings')
     const next = [
       { url, branch },
       ...(persisted.recentRepos ?? []).filter((r) => r.url !== url || r.branch !== branch)
     ].slice(0, MAX_RECENTS)
-    settingsStore.set('settings', { ...persisted, recentRepos: next })
+    settingsStore().set('settings', { ...persisted, recentRepos: next })
   },
   authStatus(): AuthStatus {
-    if (settingsStore.get('settings').apiKeyEnc !== '') {
+    if (settingsStore().get('settings').apiKeyEnc !== '') {
       return { source: 'settings-key', detail: 'API key from Loods Settings (encrypted at rest)' }
     }
     if (process.env.ANTHROPIC_API_KEY) {

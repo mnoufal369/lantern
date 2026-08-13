@@ -119,22 +119,44 @@ function createWindow(): void {
   })
 }
 
-/** One-time migration: the app was renamed AgentDeck -> Crew -> Pilot -> Loods; carry data over. */
+/** What actually belongs to us in userData — the rest is Chromium's own cache. */
+const OWNED_DATA = ['settings.json', 'profiles.json', 'sessions.json', 'transcripts']
+
+/**
+ * The app has been renamed AgentDeck -> Crew -> Pilot -> Loods, and each rename
+ * moves userData to a new folder. Carry our own files across from the newest
+ * previous name that has them.
+ *
+ * Called before any store is constructed, because a store writes its defaults
+ * file on construction and would make the destination look already-populated.
+ * Each item is copied only when it is missing at the destination, so an
+ * interrupted migration finishes itself on the next launch.
+ */
 function migrateLegacyAppData(): void {
-  try {
-    const newDir = app.getPath('userData')
-    if (existsSync(path.join(newDir, 'settings.json'))) {
-      return
+  const newDir = app.getPath('userData')
+  const missing = OWNED_DATA.filter((item) => !existsSync(path.join(newDir, item)))
+  if (missing.length === 0) {
+    return
+  }
+  for (const legacyName of ['Pilot', 'dockPilot', 'Crew', 'AgentDeck']) {
+    const oldDir = path.join(path.dirname(newDir), legacyName)
+    if (!existsSync(path.join(oldDir, 'settings.json'))) {
+      continue
     }
-    for (const legacyName of ['Pilot', 'dockPilot', 'Crew', 'AgentDeck']) {
-      const oldDir = path.join(path.dirname(newDir), legacyName)
-      if (existsSync(path.join(oldDir, 'settings.json'))) {
-        cpSync(oldDir, newDir, { recursive: true, errorOnExist: false, force: false })
-        return
+    for (const item of missing) {
+      const from = path.join(oldDir, item)
+      if (!existsSync(from)) {
+        continue
+      }
+      // One unreadable item must not abandon the others.
+      try {
+        cpSync(from, path.join(newDir, item), { recursive: true, errorOnExist: false, force: false })
+        console.log(`Carried ${item} over from ${legacyName}`)
+      } catch (error) {
+        console.warn(`Could not carry ${item} over from ${legacyName}`, error)
       }
     }
-  } catch (error) {
-    console.warn('Legacy data migration skipped', error)
+    return
   }
 }
 

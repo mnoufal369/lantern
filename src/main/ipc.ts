@@ -15,6 +15,7 @@ import type { UpdateProgress } from '@shared/types'
 import { prepareRepoWorkspace } from './git/RepoWorkspace'
 import type { PastedImage, PermissionDecision } from '@shared/types'
 import { FALLBACK_MODELS } from '@shared/constants'
+import { isNewerVersion } from '@shared/version'
 import type { SessionManager } from './sessions/SessionManager'
 import { GitService } from './git/GitService'
 import { ProfileStore, Settings } from './store/stores'
@@ -191,7 +192,7 @@ export function registerIpc(manager: SessionManager): void {
   ipcMain.handle('app:checkForUpdate', async () => {
     const latest = await latestReleaseVersion()
     return {
-      updateAvailable: latest !== null && latest.version !== app.getVersion(),
+      updateAvailable: latest !== null && isNewerVersion(latest.version, app.getVersion()),
       canSelfUpdate: canSelfUpdate(),
       latestVersion: latest?.version
     }
