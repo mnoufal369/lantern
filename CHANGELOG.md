@@ -1,5 +1,16 @@
 # Release notes
 
+## 0.7.2: Restore a session by its ID
+- **Paste a session ID into Terminal history** to reopen any Claude Code
+  conversation — including ones older than the list reaches. It shows the
+  session's title, folder and branch so you can check it's the right one
+  before importing. A bare ID works, so does a `claude --resume` line or the
+  path of a transcript file.
+- A session **already open in Pilot** now offers to switch to it, instead of
+  quietly being missing from the list.
+- If a session's project folder has since been deleted, Pilot says so rather
+  than failing on your first message.
+
 ## 0.7.1: Updates that ask first
 - **Pilot no longer disappears mid-sentence.** Choosing to update now downloads
   the new version in the background while you keep working, then asks before
