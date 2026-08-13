@@ -13,11 +13,11 @@ let manager: SessionManager | null = null
 let pendingOpenPath: string | null = null
 let rendererReady = false
 
-/** pilot://open?path=%2FUsers%2F…&new=1 → { dir, forceNew } (or null). */
+/** loods://open?path=%2FUsers%2F…&new=1 → { dir, forceNew } (or null). */
 function pathFromDeepLink(url: string): { dir: string; forceNew: boolean } | null {
   try {
     const parsed = new URL(url)
-    if (parsed.protocol !== 'pilot:') {
+    if (parsed.protocol !== 'loods:') {
       return null
     }
     const dir = parsed.searchParams.get('path')
@@ -27,8 +27,8 @@ function pathFromDeepLink(url: string): { dir: string; forceNew: boolean } | nul
   }
 }
 
-/** Focus (or create) a session for a folder — the `pilot` CLI lands here. */
-function openFolderInPilot(dir: string, forceNew = false): void {
+/** Focus (or create) a session for a folder — the `loods` CLI lands here. */
+function openFolderInLoods(dir: string, forceNew = false): void {
   try {
     if (!existsSync(dir) || !statSync(dir).isDirectory()) {
       return
@@ -113,20 +113,20 @@ function createWindow(): void {
       if (pendingOpenPath) {
         const dir = pendingOpenPath
         pendingOpenPath = null
-        openFolderInPilot(dir)
+        openFolderInLoods(dir)
       }
     }, 600)
   })
 }
 
-/** One-time migration: the app was renamed AgentDeck -> Crew -> Pilot; carry data over. */
+/** One-time migration: the app was renamed AgentDeck -> Crew -> Pilot -> Loods; carry data over. */
 function migrateLegacyAppData(): void {
   try {
     const newDir = app.getPath('userData')
     if (existsSync(path.join(newDir, 'settings.json'))) {
       return
     }
-    for (const legacyName of ['dockPilot', 'Crew', 'AgentDeck']) {
+    for (const legacyName of ['Pilot', 'dockPilot', 'Crew', 'AgentDeck']) {
       const oldDir = path.join(path.dirname(newDir), legacyName)
       if (existsSync(path.join(oldDir, 'settings.json'))) {
         cpSync(oldDir, newDir, { recursive: true, errorOnExist: false, force: false })
@@ -138,13 +138,13 @@ function migrateLegacyAppData(): void {
   }
 }
 
-// The `pilot` CLI opens pilot://open?path=… — macOS delivers it here whether
+// The `loods` CLI opens loods://open?path=… — macOS delivers it here whether
 // the app is already running or not (possibly before ready).
 app.on('open-url', (event, url) => {
   event.preventDefault()
   const link = pathFromDeepLink(url)
   if (link) {
-    openFolderInPilot(link.dir, link.forceNew)
+    openFolderInLoods(link.dir, link.forceNew)
   }
 })
 
@@ -152,13 +152,13 @@ app.whenReady().then(() => {
   migrateLegacyAppData()
   adoptLoginShellPath()
   ProfileStore.seedDefaults()
-  app.setAsDefaultProtocolClient('pilot')
+  app.setAsDefaultProtocolClient('loods')
   installAppMenu()
   manager = new SessionManager(() => mainWindow)
   registerIpc(manager)
   createWindow()
 
-  // `pilot <dir>` can also launch the app directly with --dir (Windows path).
+  // `loods <dir>` can also launch the app directly with --dir (Windows path).
   const dirFlag = process.argv.indexOf('--dir')
   if (dirFlag >= 0 && process.argv[dirFlag + 1]) {
     pendingOpenPath = process.argv[dirFlag + 1]

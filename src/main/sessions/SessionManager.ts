@@ -106,7 +106,7 @@ export class SessionManager {
       return
     }
     const prev = this.prevStatusKind.get(meta.id)
-    const title = meta.title || 'Pilot session'
+    const title = meta.title || 'Loods session'
     let body: string | null = null
     if (status.kind === 'waiting-permission' && prev !== 'waiting-permission') {
       body = 'The agent needs your approval to continue.'
@@ -410,7 +410,7 @@ export class SessionManager {
     return this.metas.get(sessionId)
   }
 
-  /** `pilot <dir>` CLI entry: focus the existing tab for a folder or open a new one. */
+  /** `loods <dir>` CLI entry: focus the existing tab for a folder or open a new one. */
   openPath(dir: string, forceNew = false): void {
     const existing = [...this.metas.values()].find((m) => !m.archived && m.cwd === dir)
     if (existing && !forceNew) {
@@ -431,7 +431,7 @@ export class SessionManager {
     }
   }
 
-  /** Past Claude Code sessions from the shared store, minus ones Pilot already owns. */
+  /** Past Claude Code sessions from the shared store, minus ones Loods already owns. */
   async listTerminalHistory(): Promise<ClaudeHistoryItem[]> {
     const known = new Set([...this.metas.values()].map((m) => m.sdkSessionId).filter(Boolean))
     const sessions = await listClaudeSessions()
@@ -444,7 +444,7 @@ export class SessionManager {
     return id ? findClaudeSession(id) : null
   }
 
-  /** Adopts a terminal session: imports its transcript and makes it resumable in Pilot. */
+  /** Adopts a terminal session: imports its transcript and makes it resumable in Loods. */
   async importTerminal(sdkSessionId: string): Promise<SessionMeta> {
     const id = extractSessionId(sdkSessionId) ?? sdkSessionId
     const item = await findClaudeSession(id)

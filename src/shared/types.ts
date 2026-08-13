@@ -138,7 +138,7 @@ export interface GitStatusSummary {
   ahead?: number
   behind?: number
   files: GitFileChange[]
-  /** True when the session lives in a Pilot-managed workspace (safe to switch branches). */
+  /** True when the session lives in a Loods-managed workspace (safe to switch branches). */
   managed?: boolean
 }
 

@@ -27,7 +27,7 @@ function toHistoryItem(session: SDKSessionInfo): ClaudeHistoryItem | null {
 
 /**
  * Bridges to the shared ~/.claude session store that the terminal Claude Code
- * CLI also writes to — Pilot can list and adopt those conversations.
+ * CLI also writes to — Loods can list and adopt those conversations.
  */
 export async function listClaudeSessions(): Promise<ClaudeHistoryItem[]> {
   const sessions = await listSessions({ limit: LIST_LIMIT })
@@ -60,7 +60,7 @@ interface SessionMessageLike {
   parent_tool_use_id: string | null
 }
 
-/** Converts a stored CLI transcript into Pilot's normalized UiEvent log. */
+/** Converts a stored CLI transcript into Loods's normalized UiEvent log. */
 export async function importClaudeTranscript(sdkSessionId: string): Promise<UiEvent[]> {
   const messages = (await getSessionMessages(sdkSessionId)) as SessionMessageLike[]
   const normalizer = new Normalizer()

@@ -106,7 +106,7 @@ export class GitService {
     }
   }
 
-  /** Shallow-fetch checkout for Pilot-managed workspaces. */
+  /** Shallow-fetch checkout for Loods-managed workspaces. */
   async checkoutBranch(cwd: string, branch: string): Promise<void> {
     if (!/^[\w./-]+$/.test(branch)) {
       throw new Error('Invalid branch name')

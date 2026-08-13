@@ -1,5 +1,5 @@
-appId: app.pilot.desktop
-productName: Pilot
+appId: app.loods.desktop
+productName: Loods
 directories:
   output: release
   buildResources: resources
@@ -15,9 +15,9 @@ asarUnpack:
   - "node_modules/@anthropic-ai/claude-agent-sdk-win32-x64/**"
 npmRebuild: false
 protocols:
-  - name: Pilot
+  - name: Loods
     schemes:
-      - pilot
+      - loods
 mac:
   target:
     - target: dmg
@@ -45,9 +45,9 @@ nsis:
   oneClick: true
   perMachine: false
   deleteAppDataOnUninstall: false
-  artifactName: "Pilot-Setup-${version}-x64.${ext}"
+  artifactName: "Loods-Setup-${version}-x64.${ext}"
 dmg:
-  title: Pilot
+  title: Loods
   contents:
     - x: 130
       y: 220

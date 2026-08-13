@@ -9,9 +9,9 @@ VERSION=$(node -p "require('./package.json').version")
 TAG="v$VERSION"
 ASSETS=()
 for FILE in \
-  "release/Pilot-$VERSION-mac-arm64.zip" \
-  "release/Pilot-$VERSION-arm64.dmg" \
-  "release/Pilot-Setup-$VERSION-x64.exe"
+  "release/Loods-$VERSION-mac-arm64.zip" \
+  "release/Loods-$VERSION-arm64.dmg" \
+  "release/Loods-Setup-$VERSION-x64.exe"
 do
   [ -f "$FILE" ] && ASSETS+=("$FILE")
 done
@@ -22,6 +22,6 @@ if gh release view "$TAG" >/dev/null 2>&1; then
   gh release upload "$TAG" "${ASSETS[@]}" --clobber
 else
   echo "· Creating release $TAG…"
-  gh release create "$TAG" "${ASSETS[@]}" --title "Pilot $VERSION" --notes "See CHANGELOG.md" --latest
+  gh release create "$TAG" "${ASSETS[@]}" --title "Loods $VERSION" --notes "See CHANGELOG.md" --latest
 fi
 echo "✓ $TAG published with: ${ASSETS[*]##*/}"

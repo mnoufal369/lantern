@@ -1,10 +1,10 @@
-# Making Pilot a trusted app (code signing)
+# Making Loods a trusted app (code signing)
 
 Unsigned builds trigger SmartScreen on Windows ("Unknown publisher") and Gatekeeper on macOS
 (right-click → Open). Fixing both requires a verified company identity — one-time company
 setup, then builds sign automatically.
 
-**Just running Pilot on your own Mac? You need none of this — see below.**
+**Just running Loods on your own Mac? You need none of this — see below.**
 
 ## macOS, personal use only (free, no Apple account)
 
@@ -19,18 +19,18 @@ Two things make macOS say "damaged" or refuse to open, and neither is really abo
    `Info.plist=not bound`). On Apple Silicon that inconsistency is fatal. Check with:
 
    ```bash
-   codesign --verify --deep --strict /Applications/Pilot.app
+   codesign --verify --deep --strict /Applications/Loods.app
    # bad: "code has no resources but signature indicates they must be present"
    ```
 
-   Fix by rebuilding, or re-sign in place: `codesign --force --deep --sign - /Applications/Pilot.app`
+   Fix by rebuilding, or re-sign in place: `codesign --force --deep --sign - /Applications/Loods.app`
 
 2. **The quarantine flag.** Anything *downloaded* (dmg, zip, AirDrop) gets
    `com.apple.quarantine`. An ad-hoc signature is not notarized, so Gatekeeper blocks it — and
    on macOS 15+ the old right-click → Open bypass is gone. Strip it:
 
    ```bash
-   xattr -dr com.apple.quarantine /Applications/Pilot.app
+   xattr -dr com.apple.quarantine /Applications/Loods.app
    ```
 
    Apps you build locally are never quarantined, so building from source sidesteps this entirely.
@@ -43,12 +43,12 @@ self-signed **Code Signing** certificate in Keychain Access, trust it, and set
 ## Windows — recommended: Azure Trusted Signing (~$10/month)
 
 1. **Azure setup (IT / admin, one-time):**
-   - In the Azure portal, create a **Trusted Signing** account (e.g. `pilot-signing`,
+   - In the Azure portal, create a **Trusted Signing** account (e.g. `loods-signing`,
      region West Europe → endpoint `https://weu.codesigning.azure.net`).
    - Complete organization identity validation for your company (needs 3+ years of verifiable
      business history — company registration data).
-   - Create a **certificate profile** (e.g. `pilot`, type: Public Trust).
-   - Create an Entra app registration ("pilot-signer") with the
+   - Create a **certificate profile** (e.g. `loods`, type: Public Trust).
+   - Create an Entra app registration ("loods-signer") with the
      `Trusted Signing Certificate Profile Signer` role on the account; note tenant id,
      client id, client secret.
 
@@ -59,8 +59,8 @@ self-signed **Code Signing** certificate in Keychain Access, trust it, and set
      azureSignOptions:
        publisherName: Your Company B.V.
        endpoint: https://weu.codesigning.azure.net
-       codeSigningAccountName: pilot-signing
-       certificateProfileName: pilot
+       codeSigningAccountName: loods-signing
+       certificateProfileName: loods
    ```
 
    and export before `yarn dist:win`:
@@ -84,10 +84,10 @@ hardware token or cloud HSM (CA/B rules since 2023) and more paperwork. Configur
 `win.certificateSubjectName` + the CA's signing tool.
 
 ### Alternative B: internal trust only (free)
-Pilot is an internal asset — company-managed Windows machines can trust it without any CA:
+Loods is an internal asset — company-managed Windows machines can trust it without any CA:
 - IT pushes a **self-signed signing cert** to all machines as a Trusted Publisher via
   Intune/Group Policy, or
-- IT distributes Pilot as a **managed app** through Intune/Endpoint Manager — managed
+- IT distributes Loods as a **managed app** through Intune/Endpoint Manager — managed
   installs bypass SmartScreen entirely.
 No public trust, but zero warnings inside your organisation.
 

@@ -39,7 +39,7 @@ export default class ErrorBoundary extends Component<Props, State> {
           onClick={() => window.location.reload()}
           className="rounded-lg bg-deck-accent px-4 py-2 text-sm font-medium text-deck-on-accent hover:opacity-90"
         >
-          Reload Pilot
+          Reload Loods
         </button>
       </div>
     )

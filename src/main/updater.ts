@@ -12,7 +12,7 @@ import type { UpdateProgress } from '@shared/types'
  *
  *   prepare — download the release dmg (or rebuild the checkout). The app keeps
  *             running the whole time and reports progress.
- *   install — quit, swap /Applications/Pilot.app, relaunch. Only ever runs
+ *   install — quit, swap /Applications/Loods.app, relaunch. Only ever runs
  *             after the user asks for it.
  *
  * Everything is logged to userData/self-update.log for post-mortems.
@@ -36,9 +36,9 @@ function logFd(): number {
 }
 
 /** Waits for the app to actually exit before touching the bundle — `sleep 1` was a guess. */
-const WAIT_FOR_EXIT = `osascript -e 'quit app "Pilot"' >/dev/null 2>&1 || true
-for _ in $(seq 1 60); do pgrep -x Pilot >/dev/null || break; sleep 0.25; done
-if pgrep -x Pilot >/dev/null; then echo "✗ Pilot is still running — not touching the bundle"; exit 1; fi`
+const WAIT_FOR_EXIT = `osascript -e 'quit app "Loods"' >/dev/null 2>&1 || true
+for _ in $(seq 1 60); do pgrep -x Loods >/dev/null || break; sleep 0.25; done
+if pgrep -x Loods >/dev/null; then echo "✗ Loods is still running — not touching the bundle"; exit 1; fi`
 
 /** GitHub token from `gh` (preferred) or git's credential store — never prompts. */
 async function githubToken(): Promise<string | null> {
@@ -76,7 +76,7 @@ function getJson(url: string, token: string | null): Promise<unknown> {
         url,
         {
           headers: {
-            'User-Agent': 'Pilot-updater',
+            'User-Agent': 'Loods-updater',
             Accept: 'application/vnd.github+json',
             ...(token ? { Authorization: `token ${token}` } : {})
           }
@@ -132,7 +132,7 @@ function downloadAsset(
         assetApiUrl,
         {
           headers: {
-            'User-Agent': 'Pilot-updater',
+            'User-Agent': 'Loods-updater',
             Accept: 'application/octet-stream',
             ...(token ? { Authorization: `token ${token}` } : {})
           }
@@ -146,7 +146,7 @@ function downloadAsset(
               return
             }
             https
-              .get(location, { headers: { 'User-Agent': 'Pilot-updater' } }, (res2) => {
+              .get(location, { headers: { 'User-Agent': 'Loods-updater' } }, (res2) => {
                 if (res2.statusCode !== 200) {
                   res2.resume()
                   reject(new Error(`Asset download failed (${res2.statusCode})`))
@@ -258,7 +258,7 @@ export async function prepareFromRelease(emit: Emit): Promise<PrepareResult> {
 /** Stage lines install-mac.sh prints, mapped to something a human wants to read. */
 const BUILD_STAGES: { match: RegExp; detail: string; percent: number }[] = [
   { match: /Installing dependencies/i, detail: 'Installing dependencies…', percent: 35 },
-  { match: /Building Pilot/i, detail: 'Building the new version…', percent: 70 },
+  { match: /Building Loods/i, detail: 'Building the new version…', percent: 70 },
   { match: /Prepared/i, detail: 'Build finished', percent: 95 }
 ]
 
@@ -294,7 +294,7 @@ export function prepareFromCheckout(sourceDir: string, version: string, emit: Em
       } else {
         resolve({
           ok: false,
-          reason: `The build failed (exit ${code}). See self-update.log in Pilot's data folder.`
+          reason: `The build failed (exit ${code}). See self-update.log in Loods's data folder.`
         })
       }
     })
@@ -302,27 +302,38 @@ export function prepareFromCheckout(sourceDir: string, version: string, emit: Em
 }
 
 /**
- * Quits Pilot, swaps in the prepared build and relaunches. Detached so it
+ * Quits Loods, swaps in the prepared build and relaunches. Detached so it
  * survives this process exiting. Only call after the user has agreed.
  */
 export function installPrepared(prepared: PreparedUpdate, sourceDir: string): { started: boolean; reason?: string } {
   try {
+    // /Applications/Loods.app/Contents/MacOS/Loods -> /Applications/Loods.app
+    const exe = app.getPath('exe')
+    const currentBundle = exe.includes('.app/') ? `${exe.slice(0, exe.indexOf('.app/'))}.app` : ''
     const script =
       prepared.kind === 'checkout'
         ? `cd "${sourceDir}" && echo "── swap $(date) ──" && bash scripts/install-mac.sh --swap`
         : prepared.file?.endsWith('.dmg')
-          ? `echo "── dmg install ${prepared.version} $(date) ──"
+          ? // The bundle is found by pattern rather than by name: hardcoding it meant
+            // that renaming the app broke every existing install's self-update.
+            `echo "── dmg install ${prepared.version} $(date) ──"
 VOL=$(hdiutil attach -nobrowse -readonly "${prepared.file}" | awk -F'\\t' '/\\/Volumes\\//{print $NF; exit}')
-[ -d "$VOL/Pilot.app" ] || { echo "✗ No Pilot.app in the dmg"; hdiutil detach "$VOL" >/dev/null 2>&1; exit 1; }
+APP=$(find "$VOL" -maxdepth 1 -name "*.app" | head -1)
+[ -n "$APP" ] || { echo "✗ No .app inside the dmg"; hdiutil detach "$VOL" >/dev/null 2>&1; exit 1; }
+TARGET="/Applications/$(basename "$APP")"
 ${WAIT_FOR_EXIT}
-rm -rf /Applications/Pilot.app
-ditto "$VOL/Pilot.app" /Applications/Pilot.app
+rm -rf "$TARGET"
+ditto "$APP" "$TARGET"
 hdiutil detach "$VOL" >/dev/null 2>&1 || true
-xattr -dr com.apple.quarantine /Applications/Pilot.app 2>/dev/null || true
-codesign --verify --deep --strict /Applications/Pilot.app || { echo "✗ Signature check failed after install"; exit 1; }
-open /Applications/Pilot.app
+xattr -dr com.apple.quarantine "$TARGET" 2>/dev/null || true
+codesign --verify --deep --strict "$TARGET" || { echo "✗ Signature check failed after install"; exit 1; }
+# A renamed app installs beside the old bundle; drop the one we just replaced.
+if [ "$TARGET" != "${currentBundle}" ] && [ -d "${currentBundle}" ]; then
+  rm -rf "${currentBundle}" && echo "· removed the previous bundle at ${currentBundle}"
+fi
+open "$TARGET"
 echo "✓ updated to ${prepared.version}"`
-          : `cd "$(dirname "${prepared.file}")" && ditto -x -k "${prepared.file}" . && INSTALLER=$(find . -maxdepth 2 -name "Install Pilot.command" | head -1) && [ -n "$INSTALLER" ] && bash "$INSTALLER"`
+          : `cd "$(dirname "${prepared.file}")" && ditto -x -k "${prepared.file}" . && INSTALLER=$(find . -maxdepth 2 -name "Install Loods.command" | head -1) && [ -n "$INSTALLER" ] && bash "$INSTALLER"`
 
     const fd = logFd()
     const child = spawn('/bin/bash', ['-lc', script], { detached: true, stdio: ['ignore', fd, fd] })

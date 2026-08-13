@@ -1,5 +1,5 @@
 #!/bin/bash
-# Build Pilot from source and install it — locally built apps are fully
+# Build Loods from source and install it — locally built apps are fully
 # trusted by macOS (no "damaged"/Gatekeeper warnings, ever).
 #
 #   install-mac.sh            build and install (what `yarn setup:mac` runs)
@@ -21,7 +21,7 @@ esac
 
 # ── build ────────────────────────────────────────────────────────────────────
 if [ "$MODE" != "swap" ]; then
-  echo "── Pilot: build ──"
+  echo "── Loods: build ──"
 
   if ! command -v node >/dev/null 2>&1; then
     echo "✗ Node.js is missing. Install it first:  brew install node   (or https://nodejs.org)"
@@ -42,12 +42,12 @@ if [ "$MODE" != "swap" ]; then
   pkill -f "electron/install.js" >/dev/null 2>&1 || true
   yarn install --ignore-engines --silent
 
-  echo "· Building Pilot…"
+  echo "· Building Loods…"
   yarn build >/dev/null
   npx electron-builder --mac dir >/dev/null
 
-  if [ ! -d release/mac-arm64/Pilot.app ]; then
-    echo "✗ Build produced no app bundle at release/mac-arm64/Pilot.app"
+  if [ ! -d release/mac-arm64/Loods.app ]; then
+    echo "✗ Build produced no app bundle at release/mac-arm64/Loods.app"
     exit 1
   fi
 
@@ -59,36 +59,47 @@ fi
 
 # ── swap ─────────────────────────────────────────────────────────────────────
 echo "· Installing to /Applications…"
-osascript -e 'quit app "Pilot"' >/dev/null 2>&1 || true
+osascript -e 'quit app "Loods"' >/dev/null 2>&1 || true
 # Wait for the process to actually go away before replacing the bundle.
-for _ in $(seq 1 60); do pgrep -x Pilot >/dev/null || break; sleep 0.25; done
-if pgrep -x Pilot >/dev/null; then
-  echo "✗ Pilot is still running — not touching the bundle. Quit it and rerun."
+for _ in $(seq 1 60); do pgrep -x Loods >/dev/null || break; sleep 0.25; done
+if pgrep -x Loods >/dev/null; then
+  echo "✗ Loods is still running — not touching the bundle. Quit it and rerun."
   exit 1
 fi
 
-rm -rf /Applications/Pilot.app
-ditto release/mac-arm64/Pilot.app /Applications/Pilot.app
+rm -rf /Applications/Loods.app
+ditto release/mac-arm64/Loods.app /Applications/Loods.app
 
 # Ad-hoc signature is enough for a self-built app, but macOS refuses to launch
 # anything still flagged as downloaded.
-xattr -dr com.apple.quarantine /Applications/Pilot.app 2>/dev/null || true
+xattr -dr com.apple.quarantine /Applications/Loods.app 2>/dev/null || true
 
-if ! codesign --verify --deep --strict /Applications/Pilot.app 2>/dev/null; then
-  echo "✗ Signature check failed — macOS will refuse to open Pilot."
-  echo "  Re-sign with:  codesign --force --deep --sign - /Applications/Pilot.app"
+if ! codesign --verify --deep --strict /Applications/Loods.app 2>/dev/null; then
+  echo "✗ Signature check failed — macOS will refuse to open Loods."
+  echo "  Re-sign with:  codesign --force --deep --sign - /Applications/Loods.app"
   exit 1
 fi
 
-# Install the `pilot` terminal command (like `code .`) — best effort.
+# Install the `loods` terminal command (like `code .`) — best effort.
 for BIN_DIR in /opt/homebrew/bin /usr/local/bin "$HOME/.local/bin"; do
   if [ -d "$BIN_DIR" ] && [ -w "$BIN_DIR" ]; then
-    cp scripts/pilot "$BIN_DIR/pilot" && chmod +x "$BIN_DIR/pilot"
-    echo "· Installed the \`pilot\` command → $BIN_DIR/pilot  (try: pilot .)"
+    cp scripts/loods "$BIN_DIR/loods" && chmod +x "$BIN_DIR/loods"
+    echo "· Installed the \`loods\` command → $BIN_DIR/loods  (try: loods .)"
+    # The old `pilot` shim opens pilot:// which nothing answers now — drop it
+    # rather than leave a command that fails silently.
+    if [ -f "$BIN_DIR/pilot" ] && grep -q "pilot://open" "$BIN_DIR/pilot" 2>/dev/null; then
+      rm -f "$BIN_DIR/pilot" && echo "· Removed the old \`pilot\` command"
+    fi
     break
   fi
 done
 
-open /Applications/Pilot.app
+# The rename leaves the previous bundle behind; it would keep answering pilot://
+if [ -d /Applications/Pilot.app ]; then
+  osascript -e 'quit app "Pilot"' >/dev/null 2>&1 || true
+  rm -rf /Applications/Pilot.app && echo "· Removed the previous Pilot.app"
+fi
+
+open /Applications/Loods.app
 echo ""
-echo "✓ Pilot is installed and running. Rerun this script anytime to update."
+echo "✓ Loods is installed and running. Rerun this script anytime to update."

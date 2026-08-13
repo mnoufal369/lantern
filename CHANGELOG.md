@@ -1,5 +1,22 @@
 # Release notes
 
+## 0.8.0: Pilot is now Loods
+- **New name.** *Loods* is Dutch for the harbour pilot — the specialist who
+  boards a vessel and guides it safely into port. It says what the app does
+  without sounding like every other AI assistant.
+- **New icon**: signal flag “H” of the international code, which means
+  *I have a pilot on board*. White hoist, red fly, and it still reads at 16px.
+- **The window has a logo again.** The mark and the name now sit top-left in the
+  header, where there was nothing before.
+- The terminal command is now `loods` (the old `pilot` command is removed when
+  you install, since nothing answers `pilot://` any more), and links are
+  `loods://`.
+- Your sessions, settings and API key carry over automatically — the app
+  migrates its data folder across the rename.
+- Self-update no longer hardcodes the app's name, so a future rename can't
+  break it again. **This one update has to be installed by hand**, because the
+  version you have is looking for a file called `Pilot.app`.
+
 ## 0.7.2: Restore a session by its ID
 - **Paste a session ID into Terminal history** to reopen any Claude Code
   conversation — including ones older than the list reaches. It shows the

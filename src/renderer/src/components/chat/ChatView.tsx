@@ -19,7 +19,7 @@ const COST_DISCLAIMER =
   'Added up from what the Claude Code SDK reports for each turn in this session. Treat it as a close guide rather than a bill: subscription plans, cached reads and retries can all make your real charge differ.'
 
 /** Set the first time a tab is opened, so the hint never returns. */
-const TABS_HINT_KEY = 'pilot.tabsHintUsed'
+const TABS_HINT_KEY = 'loods.tabsHintUsed'
 
 export default function ChatView({ sessionId }: { sessionId: string }): React.JSX.Element {
   const entry = useSessionsStore((s) => s.sessions[sessionId])

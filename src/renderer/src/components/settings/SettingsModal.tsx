@@ -73,7 +73,7 @@ function AuthStatusLine({ status }: { status: AuthStatus | null }): React.JSX.El
     'env-key': {
       icon: <TerminalSquare size={13} className="text-green-400" />,
       text: 'Using ANTHROPIC_API_KEY from your environment',
-      sub: 'Set before launching Pilot'
+      sub: 'Set before launching Loods'
     },
     'claude-login': {
       icon: <UserRound size={13} className="text-green-400" />,
@@ -262,7 +262,7 @@ export default function SettingsModal({ onClose }: { onClose: () => void }): Rea
           <UsageSection />
         </div>
 
-        {version && <p className="text-center text-[11px] text-zinc-600">Pilot v{version}</p>}
+        {version && <p className="text-center text-[11px] text-zinc-600">Loods v{version}</p>}
 
         <div className="flex justify-end gap-2 pt-2">
           <button

@@ -1,6 +1,6 @@
 import type { ModelInfo } from './types'
 
-export const APP_NAME = 'Pilot'
+export const APP_NAME = 'Loods'
 
 /** Where colleagues clone from — also what the in-app update check pings. */
 export const REPO_URL = 'https://github.com/mnoufal369/ai-pilot.git'

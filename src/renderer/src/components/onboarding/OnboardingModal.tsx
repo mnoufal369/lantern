@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { KeyRound, Loader2, TerminalSquare, UserRound } from 'lucide-react'
 import type { AuthStatus, UiMode } from '@shared/types'
 import { useSettingsStore } from '@/stores/useSettingsStore'
-import PilotMark from '@/components/ui/PilotMark'
+import LoodsMark from '@/components/ui/LoodsMark'
 
 const CHOICES: {
   mode: UiMode
@@ -52,9 +52,9 @@ export default function OnboardingModal(): React.JSX.Element {
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-deck-bg">
       <div className="z-10 w-full max-w-xl px-8">
         <div className="flex flex-col items-center text-center">
-          <PilotMark size={76} />
+          <LoodsMark size={76} />
           <h1 className="mt-4 text-2xl font-bold tracking-tight text-zinc-100">
-            Welcome aboard Pilot
+            Welcome aboard Loods
           </h1>
           <p className="mt-2 text-sm text-zinc-400">
             {mode === null ? 'One question: how do you like your cockpit?' : 'Last thing, connecting your agent.'}
@@ -96,7 +96,7 @@ export default function OnboardingModal(): React.JSX.Element {
                 </p>
                 <p className="mt-1.5 text-[13px] text-zinc-400">
                   {auth.source === 'claude-login'
-                    ? `Pilot found your Claude Code login (${auth.detail}) and will use it automatically.`
+                    ? `Loods found your Claude Code login (${auth.detail}) and will use it automatically.`
                     : auth.detail}
                 </p>
               </div>

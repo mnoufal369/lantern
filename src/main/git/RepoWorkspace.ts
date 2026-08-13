@@ -16,7 +16,7 @@ async function checkoutPr(git: SimpleGit, prNumber: number): Promise<void> {
 }
 
 /**
- * Clones a remote repository (shallow) into Pilot's managed workspace
+ * Clones a remote repository (shallow) into Loods's managed workspace
  * directory so non-technical users can ask questions about any repo without
  * touching git themselves. Reuses an existing clone and refreshes it.
  * The branch field also accepts a PR reference ("#123", "pr/123").

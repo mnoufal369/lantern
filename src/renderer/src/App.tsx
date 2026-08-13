@@ -209,7 +209,7 @@ function UpdateBanner({
   onRetry: () => void
 }): React.JSX.Element {
   const [copied, setCopied] = useState(false)
-  const name = version ? `Pilot ${version}` : 'A new Pilot version'
+  const name = version ? `Loods ${version}` : 'A new Loods version'
   const phase = progress?.phase
 
   const shell = (children: React.ReactNode): React.JSX.Element => (
@@ -225,7 +225,7 @@ function UpdateBanner({
       <>
         <Rocket size={13} className="shrink-0 animate-pulse text-deck-accent-text" />
         <span className="text-zinc-300">
-          Getting {name} ready. You can keep working — Pilot will ask before it restarts.
+          Getting {name} ready. You can keep working — Loods will ask before it restarts.
         </span>
         <span className="upd-track" title={progress?.detail}>
           <span
@@ -276,7 +276,7 @@ function UpdateBanner({
         </button>
         <button
           onClick={onDismiss}
-          title="Keep working. Pilot will offer the update again next time you open it."
+          title="Keep working. Loods will offer the update again next time you open it."
           className="rounded px-2 py-0.5 text-[11.5px] text-zinc-400 hover:bg-deck-raised hover:text-zinc-200"
         >
           Later
@@ -290,7 +290,7 @@ function UpdateBanner({
     return shell(
       <>
         <Rocket size={13} className="shrink-0 animate-pulse text-deck-accent-text" />
-        <span className="text-zinc-300">Restarting Pilot to finish the update…</span>
+        <span className="text-zinc-300">Restarting Loods to finish the update…</span>
       </>
     )
   }
@@ -328,7 +328,7 @@ function UpdateBanner({
             if (
               !window.confirm(
                 `Download ${name}?\n\n` +
-                  'Pilot keeps running while it downloads, then asks you before restarting. ' +
+                  'Loods keeps running while it downloads, then asks you before restarting. ' +
                   'Nothing is replaced until you agree.'
               )
             ) {

@@ -83,7 +83,7 @@ export interface IpcEvents {
   'git:changed': { sessionId: string }
   /** Sent when the user clicks a native notification for this session. */
   'session:focus': { sessionId: string }
-  /** A session was created by the main process (e.g. the `pilot` CLI). */
+  /** A session was created by the main process (e.g. the `loods` CLI). */
   'session:created': SessionMeta
   /** Self-update progress: download percentage, build stage, ready, or failure. */
   'update:progress': UpdateProgress
