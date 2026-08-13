@@ -12,11 +12,11 @@ Powered by the same engine as Claude Code. No terminal required.
 <sub><i>loods</i> (Dutch) — the harbour pilot who boards a vessel and guides it
 safely into port. The mark is signal flag “H”: <i>I have a pilot on board.</i></sub>
 
-[![CI](https://github.com/mnoufal369/ai-pilot/actions/workflows/ci.yml/badge.svg)](https://github.com/mnoufal369/ai-pilot/actions/workflows/ci.yml)
-[![Release](https://img.shields.io/github/v/release/mnoufal369/ai-pilot?color=29acc2)](https://github.com/mnoufal369/ai-pilot/releases/latest)
+[![CI](https://github.com/mnoufal369/loods/actions/workflows/ci.yml/badge.svg)](https://github.com/mnoufal369/loods/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/mnoufal369/loods?color=29acc2)](https://github.com/mnoufal369/loods/releases/latest)
 [![License: MIT](https://img.shields.io/badge/license-MIT-16998f.svg)](LICENSE)
 
-[**Product page**](https://mnoufal369.github.io/ai-pilot/) · [**Download**](https://github.com/mnoufal369/ai-pilot/releases/latest) · [**Release notes**](CHANGELOG.md)
+[**Product page**](https://mnoufal369.github.io/loods/) · [**Download**](https://github.com/mnoufal369/loods/releases/latest) · [**Release notes**](CHANGELOG.md)
 
 </div>
 
@@ -59,7 +59,7 @@ the code: QA, consultants, product folks.
 ### macOS
 
 **Easiest** — download the `.dmg` from the
-[latest release](https://github.com/mnoufal369/ai-pilot/releases/latest), drag
+[latest release](https://github.com/mnoufal369/loods/releases/latest), drag
 Loods to Applications, and approve once via System Settings → Privacy &
 Security → *Open Anyway* (builds are ad-hoc signed, not notarized). From then
 on Loods updates itself in-app with one click.
@@ -68,8 +68,8 @@ on Loods updates itself in-app with one click.
 fastest self-update path:
 
 ```bash
-git clone https://github.com/mnoufal369/ai-pilot.git
-cd ai-loods
+git clone https://github.com/mnoufal369/loods.git
+cd loods
 yarn setup:mac    # installs deps, builds, installs to /Applications, launches
 ```
 
@@ -79,7 +79,7 @@ This also installs the `loods` command — try `loods .` in any project.
 ### Windows
 
 Download `Loods-Setup-<version>-x64.exe` from the
-[latest release](https://github.com/mnoufal369/ai-pilot/releases/latest) and
+[latest release](https://github.com/mnoufal369/loods/releases/latest) and
 run it (one SmartScreen prompt: *More info → Run anyway*). The agent runtime
 is bundled; install [Git for Windows](https://git-scm.com/download/win) to
 fetch repositories.

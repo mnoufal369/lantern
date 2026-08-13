@@ -3,7 +3,7 @@ import type { ModelInfo } from './types'
 export const APP_NAME = 'Loods'
 
 /** Where colleagues clone from — also what the in-app update check pings. */
-export const REPO_URL = 'https://github.com/mnoufal369/ai-pilot.git'
+export const REPO_URL = 'https://github.com/mnoufal369/loods.git'
 
 /** Same repo, addressable in a browser — menu links, issue reports, release notes. */
 export const REPO_WEB_URL = REPO_URL.replace(/\.git$/, '')
