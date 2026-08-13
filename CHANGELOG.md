@@ -1,5 +1,18 @@
 # Release notes
 
+## 0.7.1: Updates that ask first
+- **Pilot no longer disappears mid-sentence.** Choosing to update now downloads
+  the new version in the background while you keep working, then asks before
+  restarting. Nothing is replaced until you say yes.
+- **You can watch it happen.** The banner shows a real progress bar as it
+  downloads — or the current build step, if you installed from source.
+- **"Later" is a real answer.** The update waits, and Pilot offers it again the
+  next time you open it.
+- **Quitting mid-task asks too.** If an agent is still working, quitting now
+  warns you first rather than stopping it silently.
+- The installer waits for Pilot to actually close before replacing it, instead
+  of guessing at one second.
+
 ## 0.7.0: You can see it thinking
 - **Signs of life.** While an agent works you get a playful status word, the sidebar
   status glows in that agent's colour, and the message box is ringed by a slowly

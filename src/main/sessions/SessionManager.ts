@@ -63,6 +63,11 @@ export class SessionManager {
     this.getWindow()?.webContents.send(channel, payload)
   }
 
+  /** Sessions mid-turn right now — used to warn before quitting or restarting. */
+  busyCount(): number {
+    return this.runningCount()
+  }
+
   private runningCount(): number {
     let count = 0
     for (const runtime of this.runtimes.values()) {

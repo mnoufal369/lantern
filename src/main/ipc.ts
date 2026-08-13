@@ -1,9 +1,17 @@
 import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron'
-import { execFile, spawn } from 'node:child_process'
-import { existsSync, openSync } from 'node:fs'
+import { execFile } from 'node:child_process'
+import { existsSync } from 'node:fs'
 import { writeFile } from 'node:fs/promises'
 import path from 'node:path'
-import { latestReleaseTag, selfUpdateFromRelease } from './updater'
+import {
+  installPrepared,
+  latestReleaseVersion,
+  prepareFromCheckout,
+  prepareFromRelease,
+  type PreparedUpdate
+} from './updater'
+import { allowQuitForUpdate } from './quitGuard'
+import type { UpdateProgress } from '@shared/types'
 import { prepareRepoWorkspace } from './git/RepoWorkspace'
 import type { PastedImage, PermissionDecision } from '@shared/types'
 import { FALLBACK_MODELS } from '@shared/constants'
@@ -180,43 +188,75 @@ export function registerIpc(manager: SessionManager): void {
   // this build's version — releases are the channel, so commits to main
   // between releases never trigger false banners. Fails quiet when offline.
   ipcMain.handle('app:checkForUpdate', async () => {
-    const tag = await latestReleaseTag()
+    const latest = await latestReleaseVersion()
     return {
-      updateAvailable: tag !== null && tag !== `v${app.getVersion()}`,
-      canSelfUpdate: canSelfUpdate()
+      updateAvailable: latest !== null && latest.version !== app.getVersion(),
+      canSelfUpdate: canSelfUpdate(),
+      latestVersion: latest?.version
     }
   })
 
-  // One click in the banner: pull main in the checkout this build came from,
-  // rebuild, reinstall, relaunch. Runs detached so it survives the app
-  // quitting mid-way (install-mac.sh quits and relaunches Pilot itself).
-  // Everything is logged to userData/self-update.log for post-mortems.
-  ipcMain.handle('app:selfUpdate', () => {
+  ipcMain.handle('app:busyCount', () => manager.busyCount())
+
+  const emitProgress = (progress: UpdateProgress): void => {
+    BrowserWindow.getAllWindows()[0]?.webContents.send('update:progress', progress)
+  }
+
+  // Downloaded/built version waiting to be installed. Held in memory: if the
+  // user quits before restarting, the next launch simply offers the update again.
+  let prepared: PreparedUpdate | null = null
+  let preparing = false
+
+  /**
+   * Step one of two: fetch or build the new version while the app keeps
+   * running. Nothing is replaced here — when this finishes the renderer shows
+   * "ready" and waits for the user.
+   */
+  ipcMain.handle('app:prepareUpdate', () => {
     if (!canSelfUpdate()) {
       return {
         started: false,
         reason: 'Self-update is not available on this platform yet — install the new version from a fresh installer.'
       }
     }
-    // Zip installs have no checkout to rebuild — pull the prebuilt release.
-    if (!hasCheckout()) {
-      return selfUpdateFromRelease()
-    }
-    try {
-      const logFile = openSync(path.join(app.getPath('userData'), 'self-update.log'), 'a')
-      const child = spawn(
-        '/bin/bash',
-        ['-lc', `cd "${__BUILD_SOURCE_DIR__}" && echo "── self-update $(date) ──" && git pull --ff-only && bash scripts/install-mac.sh`],
-        {
-          detached: true,
-          stdio: ['ignore', logFile, logFile],
-          env: { ...process.env, GIT_TERMINAL_PROMPT: '0' }
-        }
-      )
-      child.unref()
+    if (preparing) {
       return { started: true }
-    } catch (error) {
-      return { started: false, reason: error instanceof Error ? error.message : 'Could not start the update' }
     }
+    preparing = true
+
+    void (async () => {
+      const version = (await latestReleaseVersion())?.version ?? ''
+      const result = hasCheckout()
+        ? await prepareFromCheckout(__BUILD_SOURCE_DIR__, version, emitProgress)
+        : await prepareFromRelease(emitProgress)
+      preparing = false
+      if (result.ok) {
+        prepared = result.prepared
+        emitProgress({
+          phase: 'ready',
+          percent: 100,
+          version: result.prepared.version || version,
+          detail: 'Ready to install'
+        })
+      } else {
+        prepared = null
+        emitProgress({ phase: 'error', reason: result.reason })
+      }
+    })()
+
+    return { started: true }
   })
+
+  /** Step two: only ever reached by an explicit user action in the banner. */
+  ipcMain.handle('app:installUpdate', () => {
+    if (!prepared) {
+      return { started: false, reason: 'Nothing is prepared yet — download the update first.' }
+    }
+    emitProgress({ phase: 'installing', version: prepared.version, detail: 'Restarting Pilot…' })
+    // Let the app quit without the "agents are still working" guard: the user
+    // has just been asked, and the installer waits for the process to exit.
+    allowQuitForUpdate()
+    return installPrepared(prepared, __BUILD_SOURCE_DIR__)
+  })
+
 }

@@ -146,6 +146,19 @@ export type UiMode = 'pro' | 'simple'
 
 export type Persona = 'developer' | 'qa' | 'consultant' | 'curious'
 
+/** Where a self-update has got to. The app keeps running until `ready` is acted on. */
+export type UpdatePhase = 'downloading' | 'preparing' | 'ready' | 'installing' | 'error'
+
+export interface UpdateProgress {
+  phase: UpdatePhase
+  /** 0–100 when the size is known; absent for stage-only progress. */
+  percent?: number
+  /** One human line, e.g. "Downloading — 42 of 180 MB". */
+  detail?: string
+  version?: string
+  reason?: string
+}
+
 export interface RecentRepo {
   url: string
   branch?: string

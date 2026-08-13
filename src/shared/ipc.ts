@@ -11,7 +11,8 @@ import type {
   SessionMeta,
   SessionStats,
   SessionStatus,
-  UiEvent
+  UiEvent,
+  UpdateProgress
 } from './types'
 
 /**
@@ -56,9 +57,17 @@ export interface IpcApi {
   'app:getVersion': (req?: undefined) => string
   /** Branches a session: same conversation so far, own process from here on. */
   'sessions:fork': (req: { sessionId: string }) => SessionMeta
-  'app:checkForUpdate': (req?: undefined) => { updateAvailable: boolean; canSelfUpdate: boolean }
-  /** Pulls main in the build checkout, rebuilds, reinstalls and relaunches — detached. */
-  'app:selfUpdate': (req?: undefined) => { started: boolean; reason?: string }
+  'app:checkForUpdate': (req?: undefined) => {
+    updateAvailable: boolean
+    canSelfUpdate: boolean
+    latestVersion?: string
+  }
+  /** Downloads (or rebuilds) the new version. The running app is untouched. */
+  'app:prepareUpdate': (req?: undefined) => { started: boolean; reason?: string }
+  /** Quits, swaps in the prepared build and relaunches. Only after the user agrees. */
+  'app:installUpdate': (req?: undefined) => { started: boolean; reason?: string }
+  /** How many sessions are mid-turn — used to warn before quitting or restarting. */
+  'app:busyCount': (req?: undefined) => number
 }
 
 /**
@@ -74,6 +83,8 @@ export interface IpcEvents {
   'session:focus': { sessionId: string }
   /** A session was created by the main process (e.g. the `pilot` CLI). */
   'session:created': SessionMeta
+  /** Self-update progress: download percentage, build stage, ready, or failure. */
+  'update:progress': UpdateProgress
 }
 
 export type IpcChannel = keyof IpcApi

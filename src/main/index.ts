@@ -1,4 +1,5 @@
-import { app, BrowserWindow } from 'electron'
+import { app, BrowserWindow, dialog } from 'electron'
+import { allowQuit, isQuitAllowed } from './quitGuard'
 import { execSync } from 'node:child_process'
 import { cpSync, existsSync, statSync } from 'node:fs'
 import path from 'node:path'
@@ -174,6 +175,31 @@ app.on('window-all-closed', () => {
   app.quit()
 })
 
-app.on('before-quit', () => {
+// Quitting while an agent is mid-turn loses that turn's work, so ask first.
+// The updater's restart sets the flag beforehand and skips this.
+app.on('before-quit', (event) => {
+  const busy = manager?.busyCount() ?? 0
+  if (busy > 0 && !isQuitAllowed()) {
+    event.preventDefault()
+    const plural = busy > 1
+    const options = {
+      type: 'warning' as const,
+      buttons: ['Quit anyway', 'Keep working'],
+      defaultId: 1,
+      cancelId: 1,
+      message: `${busy} agent${plural ? 's are' : ' is'} still working`,
+      detail: `Quitting now stops ${plural ? 'them' : 'it'} mid-task. The conversation${
+        plural ? 's are' : ' is'
+      } saved either way — you can pick up where ${plural ? 'they' : 'it'} left off next time.`
+    }
+    void (mainWindow ? dialog.showMessageBox(mainWindow, options) : dialog.showMessageBox(options))
+      .then(({ response }) => {
+        if (response === 0) {
+          allowQuit()
+          app.quit()
+        }
+      })
+    return
+  }
   manager?.disposeAll()
 })

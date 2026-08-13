@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Check, Copy, FolderOpen, History, Plus, Rocket, Settings as SettingsIcon, Users, X } from 'lucide-react'
 import { APP_NAME, UPDATE_COMMAND } from '@shared/constants'
+import type { UpdateProgress } from '@shared/types'
 import TopBar from '@/components/layout/TopBar'
 import Sidebar from '@/components/layout/Sidebar'
 import ChatView from '@/components/chat/ChatView'
@@ -23,7 +24,11 @@ export default function App(): React.JSX.Element {
   const [builderOpen, setBuilderOpen] = useState(false)
   const [droppedFolder, setDroppedFolder] = useState<string | null>(null)
   const [historyOpen, setHistoryOpen] = useState(false)
-  const [update, setUpdate] = useState({ available: false, canSelf: false })
+  const [update, setUpdate] = useState<{ available: boolean; canSelf: boolean; version?: string }>({
+    available: false,
+    canSelf: false
+  })
+  const [progress, setProgress] = useState<UpdateProgress | null>(null)
   const [updateDismissed, setUpdateDismissed] = useState(false)
   const activeId = useSessionsStore((s) => s.activeId)
   const settings = useSettingsStore((s) => s.settings)
@@ -33,7 +38,9 @@ export default function App(): React.JSX.Element {
     const check = (): void => {
       window.api
         .invoke('app:checkForUpdate')
-        .then(({ updateAvailable, canSelfUpdate }) => setUpdate({ available: updateAvailable, canSelf: canSelfUpdate }))
+        .then(({ updateAvailable, canSelfUpdate, latestVersion }) =>
+          setUpdate({ available: updateAvailable, canSelf: canSelfUpdate, version: latestVersion })
+        )
         .catch(() => undefined)
     }
     check()
@@ -61,6 +68,7 @@ export default function App(): React.JSX.Element {
     const offFocus = window.api.on('session:focus', ({ sessionId }) => {
       useSessionsStore.getState().setActive(sessionId)
     })
+    const offProgress = window.api.on('update:progress', (p) => setProgress(p))
     const offCreated = window.api.on('session:created', (meta) => {
       useSessionsStore.setState((state) => ({
         sessions: { ...state.sessions, [meta.id]: { meta, blocks: [], historyLoaded: true } },
@@ -76,6 +84,7 @@ export default function App(): React.JSX.Element {
       offResolved()
       offFocus()
       offCreated()
+      offProgress()
     }
   }, [])
 
@@ -139,8 +148,14 @@ export default function App(): React.JSX.Element {
         onOpenSettings={() => setSettingsOpen(true)}
         onOpenBuilder={() => setBuilderOpen(true)}
       />
-      {update.available && !updateDismissed && (
-        <UpdateBanner canSelfUpdate={update.canSelf} onDismiss={() => setUpdateDismissed(true)} />
+      {(progress ? progress.phase !== 'ready' || !updateDismissed : update.available && !updateDismissed) && (
+        <UpdateBanner
+          canSelfUpdate={update.canSelf}
+          version={progress?.version ?? update.version}
+          progress={progress}
+          onDismiss={() => setUpdateDismissed(true)}
+          onRetry={() => setProgress(null)}
+        />
       )}
       <div className="flex min-h-0 flex-1">
         <Sidebar onNewSession={() => setNewSessionOpen(true)} onOpenHistory={() => setHistoryOpen(true)} />
@@ -182,38 +197,147 @@ export default function App(): React.JSX.Element {
 
 function UpdateBanner({
   canSelfUpdate,
-  onDismiss
+  version,
+  progress,
+  onDismiss,
+  onRetry
 }: {
   canSelfUpdate: boolean
+  version?: string
+  progress: UpdateProgress | null
   onDismiss: () => void
+  onRetry: () => void
 }): React.JSX.Element {
   const [copied, setCopied] = useState(false)
-  const [updating, setUpdating] = useState(false)
+  const name = version ? `Pilot ${version}` : 'A new Pilot version'
+  const phase = progress?.phase
 
-  if (updating) {
-    return (
-      <div className="flex shrink-0 items-center gap-2.5 border-b border-deck-accent/30 bg-deck-accent/10 px-4 py-1.5 text-[12px]">
+  const shell = (children: React.ReactNode): React.JSX.Element => (
+    <div className="flex shrink-0 items-center gap-2.5 border-b border-deck-accent/30 bg-deck-accent/10 px-4 py-1.5 text-[12px]">
+      {children}
+    </div>
+  )
+
+  // ── working: download or rebuild, app stays usable ────────────────────────
+  if (phase === 'downloading' || phase === 'preparing') {
+    const pct = progress?.percent
+    return shell(
+      <>
         <Rocket size={13} className="shrink-0 animate-pulse text-deck-accent-text" />
         <span className="text-zinc-300">
-          Updating. Pilot will restart itself in a few minutes. You can keep working until then.
+          Getting {name} ready. You can keep working — Pilot will ask before it restarts.
         </span>
-      </div>
+        <span className="upd-track" title={progress?.detail}>
+          <span
+            className={pct === undefined ? 'upd-fill upd-fill-indet' : 'upd-fill'}
+            style={pct === undefined ? undefined : { width: `${pct}%` }}
+          />
+        </span>
+        <span className="tabular-nums text-zinc-500">
+          {progress?.detail ?? (pct !== undefined ? `${pct}%` : 'Working…')}
+        </span>
+      </>
     )
   }
 
-  return (
-    <div className="flex shrink-0 items-center gap-2.5 border-b border-deck-accent/30 bg-deck-accent/10 px-4 py-1.5 text-[12px]">
+  // ── ready: nothing restarts until the user says so ────────────────────────
+  if (phase === 'ready') {
+    return shell(
+      <>
+        <Rocket size={13} className="shrink-0 text-deck-accent-text" />
+        <span className="text-zinc-300">
+          {name} is downloaded and ready. Restarting takes a few seconds.
+        </span>
+        <button
+          onClick={() => {
+            void window.api
+              .invoke('app:busyCount')
+              .then((busy) => {
+                if (
+                  busy > 0 &&
+                  !window.confirm(
+                    `${busy} agent${busy > 1 ? 's are' : ' is'} still working.\n\n` +
+                      'Restarting now stops them mid-task. Their conversations are saved either way.'
+                  )
+                ) {
+                  return undefined
+                }
+                return window.api.invoke('app:installUpdate').then(({ started, reason }) => {
+                  if (!started && reason) {
+                    window.alert(reason)
+                  }
+                })
+              })
+              .catch(() => undefined)
+          }}
+          className="btn-brand rounded-md px-2.5 py-0.5 text-[11.5px] font-medium"
+        >
+          Restart now
+        </button>
+        <button
+          onClick={onDismiss}
+          title="Keep working. Pilot will offer the update again next time you open it."
+          className="rounded px-2 py-0.5 text-[11.5px] text-zinc-400 hover:bg-deck-raised hover:text-zinc-200"
+        >
+          Later
+        </button>
+      </>
+    )
+  }
+
+  // ── restarting ────────────────────────────────────────────────────────────
+  if (phase === 'installing') {
+    return shell(
+      <>
+        <Rocket size={13} className="shrink-0 animate-pulse text-deck-accent-text" />
+        <span className="text-zinc-300">Restarting Pilot to finish the update…</span>
+      </>
+    )
+  }
+
+  // ── failed ────────────────────────────────────────────────────────────────
+  if (phase === 'error') {
+    return shell(
+      <>
+        <X size={13} className="shrink-0 text-red-400" />
+        <span className="text-zinc-300">
+          The update could not be completed.{' '}
+          <span className="text-zinc-500">{progress?.reason}</span>
+        </span>
+        <button
+          onClick={onRetry}
+          className="rounded border border-deck-border px-2 py-0.5 text-[11.5px] text-zinc-300 hover:bg-deck-raised"
+        >
+          Try again
+        </button>
+        <button onClick={onDismiss} className="ml-auto text-zinc-500 hover:text-zinc-200">
+          <X size={13} />
+        </button>
+      </>
+    )
+  }
+
+  // ── available ─────────────────────────────────────────────────────────────
+  return shell(
+    <>
       <Rocket size={13} className="shrink-0 text-deck-accent-text" />
-      <span className="text-zinc-300">A new Pilot version is available.</span>
+      <span className="text-zinc-300">{name} is available.</span>
       {canSelfUpdate ? (
         <button
           onClick={() => {
+            if (
+              !window.confirm(
+                `Download ${name}?\n\n` +
+                  'Pilot keeps running while it downloads, then asks you before restarting. ' +
+                  'Nothing is replaced until you agree.'
+              )
+            ) {
+              return
+            }
             window.api
-              .invoke('app:selfUpdate')
+              .invoke('app:prepareUpdate')
               .then(({ started, reason }) => {
-                if (started) {
-                  setUpdating(true)
-                } else if (reason) {
+                if (!started && reason) {
                   window.alert(reason)
                 }
               })
@@ -245,7 +369,7 @@ function UpdateBanner({
       >
         <X size={13} />
       </button>
-    </div>
+    </>
   )
 }
 

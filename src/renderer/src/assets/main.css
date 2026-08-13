@@ -179,6 +179,34 @@ body {
   70%, 100% { transform: scale(2.8); opacity: 0; }
 }
 
+/* Update progress bar in the banner */
+.upd-track {
+  display: inline-block;
+  width: 130px;
+  height: 5px;
+  border-radius: 99px;
+  background: var(--color-deck-raised);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.upd-fill {
+  display: block;
+  height: 100%;
+  width: 0;
+  border-radius: 99px;
+  background: linear-gradient(90deg, #29acc2, #16998f);
+  transition: width 0.25s ease;
+}
+/* Stage-based work (git pull, build) has no percentage — sweep instead. */
+.upd-fill-indet {
+  width: 45%;
+  animation: upd-sweep 1.5s ease-in-out infinite;
+}
+@keyframes upd-sweep {
+  0% { transform: translateX(-105%); }
+  100% { transform: translateX(230%); }
+}
+
 /* Pilot dot-logo pulse (the red lead dot) */
 @keyframes lead-pulse {
   0%, 100% { opacity: 1; transform: scale(1); }
@@ -228,6 +256,8 @@ body, header, aside, main {
 
 @media (prefers-reduced-motion: reduce) {
   .lead-dot, .status-pulse { animation: none; }
+  .upd-fill-indet { animation: none; width: 100%; }
+  .upd-fill { transition: none; }
   .ripple-dot::after { animation: none; opacity: 0; }
   .letter-in { animation: none; }
   .shimmer-text { animation: none; background-image: none; color: var(--shimmer-color); }

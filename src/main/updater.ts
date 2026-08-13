@@ -1,19 +1,44 @@
 import { app } from 'electron'
 import { execFile, spawn } from 'node:child_process'
-import { createWriteStream, mkdtempSync, openSync } from 'node:fs'
+import { createWriteStream, mkdirSync, openSync, rmSync, writeSync } from 'node:fs'
 import https from 'node:https'
-import os from 'node:os'
 import path from 'node:path'
 import { REPO_URL } from '@shared/constants'
+import type { UpdateProgress } from '@shared/types'
 
 /**
- * Self-update for installs WITHOUT a source checkout (zip installs): download
- * the latest prebuilt zip from the repo's GitHub Releases with the machine's
- * own GitHub credentials, then run the bundled installer script, which quits,
- * swaps /Applications/Pilot.app, de-quarantines and relaunches.
+ * Self-update in two explicit halves, so the app never disappears under the
+ * user:
+ *
+ *   prepare — download the release dmg (or rebuild the checkout). The app keeps
+ *             running the whole time and reports progress.
+ *   install — quit, swap /Applications/Pilot.app, relaunch. Only ever runs
+ *             after the user asks for it.
+ *
+ * Everything is logged to userData/self-update.log for post-mortems.
  */
 
 const REPO_SLUG = REPO_URL.replace(/^https:\/\/github\.com\//, '').replace(/\.git$/, '')
+
+export type Emit = (progress: UpdateProgress) => void
+
+export interface PreparedUpdate {
+  kind: 'dmg' | 'checkout'
+  version: string
+  /** Staged dmg, for `kind: 'dmg'`. */
+  file?: string
+}
+
+type PrepareResult = { ok: true; prepared: PreparedUpdate } | { ok: false; reason: string }
+
+function logFd(): number {
+  return openSync(path.join(app.getPath('userData'), 'self-update.log'), 'a')
+}
+
+/** Waits for the app to actually exit before touching the bundle — `sleep 1` was a guess. */
+const WAIT_FOR_EXIT = `osascript -e 'quit app "Pilot"' >/dev/null 2>&1 || true
+for _ in $(seq 1 60); do pgrep -x Pilot >/dev/null || break; sleep 0.25; done
+if pgrep -x Pilot >/dev/null; then echo "✗ Pilot is still running — not touching the bundle"; exit 1; fi`
 
 /** GitHub token from `gh` (preferred) or git's credential store — never prompts. */
 async function githubToken(): Promise<string | null> {
@@ -77,10 +102,26 @@ function getJson(url: string, token: string | null): Promise<unknown> {
   })
 }
 
-/** Downloads a release asset; the API 302s to signed storage, which must be fetched WITHOUT the auth header. */
-function downloadAsset(assetApiUrl: string, token: string | null, dest: string): Promise<void> {
+/**
+ * Downloads a release asset, reporting bytes as they arrive. The API 302s to
+ * signed storage, which must be fetched WITHOUT the auth header.
+ */
+function downloadAsset(
+  assetApiUrl: string,
+  token: string | null,
+  dest: string,
+  onBytes?: (received: number, total: number) => void
+): Promise<void> {
   return new Promise((resolve, reject) => {
-    const save = (res: NodeJS.ReadableStream & { statusCode?: number }): void => {
+    const save = (res: NodeJS.ReadableStream & { headers?: Record<string, string | string[] | undefined> }): void => {
+      const total = Number(res.headers?.['content-length'] ?? 0)
+      let received = 0
+      if (onBytes) {
+        res.on('data', (chunk: Buffer) => {
+          received += chunk.length
+          onBytes(received, total)
+        })
+      }
       const file = createWriteStream(dest)
       res.pipe(file)
       file.on('finish', () => file.close(() => resolve()))
@@ -135,19 +176,33 @@ async function latestRelease(token: string | null): Promise<ReleaseInfo> {
   return (await getJson(`https://api.github.com/repos/${REPO_SLUG}/releases/latest`, token)) as ReleaseInfo
 }
 
-/** Tag of the latest published release ("v0.5.7"), or null when unreachable. */
-export async function latestReleaseTag(): Promise<string | null> {
+/** Latest published release tag and bare version ("v0.7.1" / "0.7.1"), or null when unreachable. */
+export async function latestReleaseVersion(): Promise<{ tag: string; version: string } | null> {
   try {
     const token = await githubToken()
-    return (await latestRelease(token)).tag_name ?? null
+    const tag = (await latestRelease(token)).tag_name ?? ''
+    return tag ? { tag, version: tag.replace(/^v/, '') } : null
   } catch {
     return null
   }
 }
 
-export async function selfUpdateFromRelease(): Promise<{ started: boolean; reason?: string }> {
-  // Public repo: unauthenticated works. A token (gh / git credentials) is
-  // used when present — required only if the repo is ever private again.
+function mb(bytes: number): string {
+  return `${(bytes / 1_048_576).toFixed(0)} MB`
+}
+
+/** Fresh, empty staging directory under userData (survives a "Later" choice). */
+function stagingDir(): string {
+  const dir = path.join(app.getPath('userData'), 'updates')
+  rmSync(dir, { recursive: true, force: true })
+  mkdirSync(dir, { recursive: true })
+  return dir
+}
+
+/** Downloads the latest release's mac build. Does not touch the installed app. */
+export async function prepareFromRelease(emit: Emit): Promise<PrepareResult> {
+  // Public repo: unauthenticated works. A token (gh / git credentials) is used
+  // when present — required only if the repo is ever private again.
   const token = await githubToken()
 
   let release: ReleaseInfo
@@ -155,53 +210,125 @@ export async function selfUpdateFromRelease(): Promise<{ started: boolean; reaso
     release = await latestRelease(token)
   } catch (error) {
     return {
-      started: false,
+      ok: false,
       reason: `Could not read the latest release: ${error instanceof Error ? error.message : 'unknown error'}`
     }
   }
 
-  // Prefer the dmg (the only mac asset going forward); fall back to the zip
-  // that older releases carried.
+  const version = (release.tag_name ?? '').replace(/^v/, '')
   const assets = release.assets ?? []
   const asset =
     assets.find((a) => a.name.endsWith(`${process.arch}.dmg`)) ??
     assets.find((a) => a.name.endsWith('.dmg')) ??
     assets.find((a) => a.name.includes('mac-') && a.name.endsWith('.zip'))
   if (!asset) {
-    return { started: false, reason: 'The latest release has no downloadable Mac build yet — try again later.' }
+    return { ok: false, reason: 'The latest release has no downloadable Mac build yet — try again later.' }
   }
 
-  const dir = mkdtempSync(path.join(os.tmpdir(), 'pilot-update-'))
-  const filePath = path.join(dir, asset.name)
+  const file = path.join(stagingDir(), asset.name)
+  emit({ phase: 'downloading', percent: 0, version, detail: 'Starting download…' })
+  let lastTick = 0
   try {
-    await downloadAsset(`https://api.github.com/repos/${REPO_SLUG}/releases/assets/${asset.id}`, token, filePath)
+    await downloadAsset(
+      `https://api.github.com/repos/${REPO_SLUG}/releases/assets/${asset.id}`,
+      token,
+      file,
+      (received, total) => {
+        const now = Date.now()
+        // The renderer only needs a few updates a second.
+        if (now - lastTick < 200 && received !== total) {
+          return
+        }
+        lastTick = now
+        emit({
+          phase: 'downloading',
+          percent: total > 0 ? Math.min(99, Math.round((received / total) * 100)) : undefined,
+          version,
+          detail: total > 0 ? `Downloading — ${mb(received)} of ${mb(total)}` : `Downloading — ${mb(received)}`
+        })
+      }
+    )
   } catch (error) {
-    return {
-      started: false,
-      reason: `Download failed: ${error instanceof Error ? error.message : 'unknown error'}`
-    }
+    return { ok: false, reason: `Download failed: ${error instanceof Error ? error.message : 'unknown error'}` }
   }
 
-  // Install detached so it survives this process quitting mid-way. The dmg
-  // path mounts, swaps /Applications/Pilot.app, de-quarantines and relaunches;
-  // the zip path defers to the installer script older zips carry.
-  const script = asset.name.endsWith('.dmg')
-    ? `echo "── dmg self-update ${release.tag_name ?? ''} $(date) ──"
-VOL=$(hdiutil attach -nobrowse -readonly "${filePath}" | awk -F'\\t' '/\\/Volumes\\//{print $NF; exit}')
-[ -d "$VOL/Pilot.app" ] || { echo "✗ No Pilot.app in the dmg"; hdiutil detach "$VOL" >/dev/null 2>&1; rm -rf "${dir}"; exit 1; }
-osascript -e 'quit app "Pilot"' >/dev/null 2>&1 || true
-sleep 1
+  return { ok: true, prepared: { kind: 'dmg', version, file } }
+}
+
+/** Stage lines install-mac.sh prints, mapped to something a human wants to read. */
+const BUILD_STAGES: { match: RegExp; detail: string; percent: number }[] = [
+  { match: /Installing dependencies/i, detail: 'Installing dependencies…', percent: 35 },
+  { match: /Building Pilot/i, detail: 'Building the new version…', percent: 70 },
+  { match: /Prepared/i, detail: 'Build finished', percent: 95 }
+]
+
+/** Pulls and rebuilds the checkout this build came from. Does not touch the installed app. */
+export function prepareFromCheckout(sourceDir: string, version: string, emit: Emit): Promise<PrepareResult> {
+  return new Promise((resolve) => {
+    emit({ phase: 'preparing', percent: 10, version, detail: 'Fetching the latest code…' })
+    const fd = logFd()
+    const child = spawn(
+      '/bin/bash',
+      ['-lc', `cd "${sourceDir}" && echo "── prepare $(date) ──" && git pull --ff-only && bash scripts/install-mac.sh --prepare`],
+      { env: { ...process.env, GIT_TERMINAL_PROMPT: '0' } }
+    )
+    const onChunk = (buf: Buffer): void => {
+      const text = buf.toString()
+      try {
+        writeSync(fd, text)
+      } catch {
+        // Logging is best effort.
+      }
+      for (const stage of BUILD_STAGES) {
+        if (stage.match.test(text)) {
+          emit({ phase: 'preparing', percent: stage.percent, version, detail: stage.detail })
+        }
+      }
+    }
+    child.stdout?.on('data', onChunk)
+    child.stderr?.on('data', onChunk)
+    child.on('error', (error) => resolve({ ok: false, reason: error.message }))
+    child.on('close', (code) => {
+      if (code === 0) {
+        resolve({ ok: true, prepared: { kind: 'checkout', version } })
+      } else {
+        resolve({
+          ok: false,
+          reason: `The build failed (exit ${code}). See self-update.log in Pilot's data folder.`
+        })
+      }
+    })
+  })
+}
+
+/**
+ * Quits Pilot, swaps in the prepared build and relaunches. Detached so it
+ * survives this process exiting. Only call after the user has agreed.
+ */
+export function installPrepared(prepared: PreparedUpdate, sourceDir: string): { started: boolean; reason?: string } {
+  try {
+    const script =
+      prepared.kind === 'checkout'
+        ? `cd "${sourceDir}" && echo "── swap $(date) ──" && bash scripts/install-mac.sh --swap`
+        : prepared.file?.endsWith('.dmg')
+          ? `echo "── dmg install ${prepared.version} $(date) ──"
+VOL=$(hdiutil attach -nobrowse -readonly "${prepared.file}" | awk -F'\\t' '/\\/Volumes\\//{print $NF; exit}')
+[ -d "$VOL/Pilot.app" ] || { echo "✗ No Pilot.app in the dmg"; hdiutil detach "$VOL" >/dev/null 2>&1; exit 1; }
+${WAIT_FOR_EXIT}
 rm -rf /Applications/Pilot.app
 ditto "$VOL/Pilot.app" /Applications/Pilot.app
 hdiutil detach "$VOL" >/dev/null 2>&1 || true
 xattr -dr com.apple.quarantine /Applications/Pilot.app 2>/dev/null || true
-codesign --verify --deep --strict /Applications/Pilot.app || { echo "✗ Signature check failed after install"; rm -rf "${dir}"; exit 1; }
+codesign --verify --deep --strict /Applications/Pilot.app || { echo "✗ Signature check failed after install"; exit 1; }
 open /Applications/Pilot.app
-echo "✓ updated"
-rm -rf "${dir}"`
-    : `echo "── zip self-update ${release.tag_name ?? ''} $(date) ──" && cd "${dir}" && ditto -x -k "${filePath}" . && INSTALLER=$(find . -maxdepth 2 -name "Install Pilot.command" | head -1) && [ -n "$INSTALLER" ] && bash "$INSTALLER"; STATUS=$?; rm -rf "${dir}"; exit $STATUS`
-  const logFile = openSync(path.join(app.getPath('userData'), 'self-update.log'), 'a')
-  const child = spawn('/bin/bash', ['-c', script], { detached: true, stdio: ['ignore', logFile, logFile] })
-  child.unref()
-  return { started: true }
+echo "✓ updated to ${prepared.version}"`
+          : `cd "$(dirname "${prepared.file}")" && ditto -x -k "${prepared.file}" . && INSTALLER=$(find . -maxdepth 2 -name "Install Pilot.command" | head -1) && [ -n "$INSTALLER" ] && bash "$INSTALLER"`
+
+    const fd = logFd()
+    const child = spawn('/bin/bash', ['-lc', script], { detached: true, stdio: ['ignore', fd, fd] })
+    child.unref()
+    return { started: true }
+  } catch (error) {
+    return { started: false, reason: error instanceof Error ? error.message : 'Could not start the install' }
+  }
 }
