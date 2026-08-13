@@ -1,24 +1,57 @@
-import { getSessionMessages, listSessions, type SDKMessage } from '@anthropic-ai/claude-agent-sdk'
+import {
+  getSessionInfo,
+  getSessionMessages,
+  listSessions,
+  type SDKMessage,
+  type SDKSessionInfo
+} from '@anthropic-ai/claude-agent-sdk'
 import type { ClaudeHistoryItem, UiEvent } from '@shared/types'
 import { Normalizer } from './normalize'
 
 const MAX_IMPORTED_EVENTS = 2000
+const LIST_LIMIT = 200
+
+/** A session with no cwd can't be resumed against a project, so it isn't offered. */
+function toHistoryItem(session: SDKSessionInfo): ClaudeHistoryItem | null {
+  if (!session.cwd) {
+    return null
+  }
+  return {
+    sdkSessionId: session.sessionId,
+    title: session.customTitle ?? session.summary ?? session.firstPrompt ?? 'Untitled session',
+    cwd: session.cwd,
+    lastModified: session.lastModified,
+    gitBranch: session.gitBranch
+  }
+}
 
 /**
  * Bridges to the shared ~/.claude session store that the terminal Claude Code
  * CLI also writes to — Pilot can list and adopt those conversations.
  */
 export async function listClaudeSessions(): Promise<ClaudeHistoryItem[]> {
-  const sessions = await listSessions({ limit: 200 })
-  return sessions
-    .filter((s) => s.cwd)
-    .map((s) => ({
-      sdkSessionId: s.sessionId,
-      title: s.customTitle ?? s.summary ?? s.firstPrompt ?? 'Untitled session',
-      cwd: s.cwd as string,
-      lastModified: s.lastModified,
-      gitBranch: s.gitBranch
-    }))
+  const sessions = await listSessions({ limit: LIST_LIMIT })
+  return sessions.map(toHistoryItem).filter((item): item is ClaudeHistoryItem => item !== null)
+}
+
+/**
+ * Looks up a single session by its id. The listing above is capped, so this is
+ * the only way to reach an older conversation: it reads that one transcript
+ * file, searching every project directory rather than the current one.
+ */
+export async function findClaudeSession(sdkSessionId: string): Promise<ClaudeHistoryItem | null> {
+  try {
+    const info = await getSessionInfo(sdkSessionId)
+    const item = info ? toHistoryItem(info) : null
+    if (item) {
+      return item
+    }
+  } catch (error) {
+    console.warn('getSessionInfo failed, falling back to the listing', error)
+  }
+  // getSessionInfo yields nothing for a session with no extractable summary,
+  // so a recent one may still be findable in the listing.
+  return (await listClaudeSessions()).find((s) => s.sdkSessionId === sdkSessionId) ?? null
 }
 
 interface SessionMessageLike {

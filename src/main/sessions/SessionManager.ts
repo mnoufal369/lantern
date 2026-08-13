@@ -4,9 +4,10 @@ import { mkdir, rm, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import type { ClaudeHistoryItem, PastedImage, SessionMeta, SessionStatus, UiEvent } from '@shared/types'
 import { IDLE_RUNTIME_TIMEOUT_MS, META_SAVE_DEBOUNCE_MS } from '@shared/constants'
+import { extractSessionId } from '@shared/sessionId'
 import { PermissionBroker } from '../permissions/PermissionBroker'
 import { ProfileStore, SessionStore, Settings } from '../store/stores'
-import { importClaudeTranscript, listClaudeSessions } from './ClaudeHistory'
+import { findClaudeSession, importClaudeTranscript, listClaudeSessions } from './ClaudeHistory'
 import { loadTranscriptEvents, SessionRuntime } from './SessionRuntime'
 
 const BUSY_KINDS: SessionStatus['kind'][] = ['thinking', 'running-tool', 'waiting-permission']
@@ -437,16 +438,31 @@ export class SessionManager {
     return sessions.filter((s) => !known.has(s.sdkSessionId))
   }
 
+  /** Resolves a pasted session id to its stored session, without importing it. */
+  async findTerminalSession(input: string): Promise<ClaudeHistoryItem | null> {
+    const id = extractSessionId(input)
+    return id ? findClaudeSession(id) : null
+  }
+
   /** Adopts a terminal session: imports its transcript and makes it resumable in Pilot. */
   async importTerminal(sdkSessionId: string): Promise<SessionMeta> {
-    const item = (await listClaudeSessions()).find((s) => s.sdkSessionId === sdkSessionId)
+    const id = extractSessionId(sdkSessionId) ?? sdkSessionId
+    const item = await findClaudeSession(id)
     if (!item) {
-      throw new Error('Session not found in the Claude store')
+      throw new Error(
+        `No session with id ${id} in your Claude store. Check the id — ` +
+          '`claude --resume` in the terminal lists the ones on this machine.'
+      )
+    }
+    if (!existsSync(item.cwd)) {
+      throw new Error(
+        `That session's project folder is gone: ${item.cwd}. Restore it (or clone the repo back to that path) and try again.`
+      )
     }
     const profile = ProfileStore.list()[0]
     const meta: SessionMeta = {
       id: `sess_${Date.now()}_${++this.counter}`,
-      sdkSessionId,
+      sdkSessionId: item.sdkSessionId,
       profileId: profile.id,
       title: item.title.length > 60 ? `${item.title.slice(0, 60)}…` : item.title,
       cwd: item.cwd,
@@ -460,7 +476,7 @@ export class SessionManager {
       archived: false
     }
 
-    const events = await importClaudeTranscript(sdkSessionId)
+    const events = await importClaudeTranscript(item.sdkSessionId)
     const transcriptDir = path.join(app.getPath('userData'), 'transcripts')
     await mkdir(transcriptDir, { recursive: true })
     await writeFile(path.join(transcriptDir, `${meta.id}.json`), JSON.stringify(events), 'utf8')

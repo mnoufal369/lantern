@@ -91,6 +91,7 @@ export function registerIpc(manager: SessionManager): void {
   )
 
   ipcMain.handle('history:list', () => manager.listTerminalHistory())
+  ipcMain.handle('history:find', (_e, req: { sdkSessionId: string }) => manager.findTerminalSession(req.sdkSessionId))
   ipcMain.handle('history:import', (_e, req: { sdkSessionId: string }) => manager.importTerminal(req.sdkSessionId))
 
   ipcMain.handle('profiles:list', () => ProfileStore.list())

@@ -37,6 +37,8 @@ export interface IpcApi {
   'sessions:setColor': (req: { sessionId: string; color: string | null }) => void
   'permissions:respond': (req: { requestId: string; decision: PermissionDecision }) => void
   'history:list': (req?: undefined) => ClaudeHistoryItem[]
+  /** Looks up one session by pasted id (older than the listing reaches); null if unknown. */
+  'history:find': (req: { sdkSessionId: string }) => ClaudeHistoryItem | null
   'history:import': (req: { sdkSessionId: string }) => SessionMeta
   'profiles:list': (req?: undefined) => AgentProfile[]
   'profiles:save': (req: { profile: AgentProfile }) => AgentProfile

@@ -292,7 +292,7 @@ export default function Sidebar({
         </button>
         <button
           onClick={onOpenHistory}
-          title="Browse and continue your terminal Claude Code conversations"
+          title="Continue a terminal Claude Code conversation — browse, or paste a session ID"
           className="flex h-6 w-6 items-center justify-center rounded-md text-zinc-500 hover:bg-deck-raised hover:text-zinc-300"
         >
           <History size={13} />

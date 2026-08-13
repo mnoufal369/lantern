@@ -397,7 +397,7 @@ function EmptyState({
   const actions = [
     { icon: <Plus size={14} />, label: 'New session', shortcut: '⌘N', onClick: onNewSession, primary: true },
     { icon: <FolderOpen size={14} />, label: 'Open a folder', onClick: onOpenFolder },
-    { icon: <History size={14} />, label: 'Terminal history', onClick: onOpenHistory },
+    { icon: <History size={14} />, label: 'Terminal history / restore by session ID', onClick: onOpenHistory },
     { icon: <Users size={14} />, label: 'Agent profiles', onClick: onOpenBuilder },
     { icon: <SettingsIcon size={14} />, label: 'Settings', onClick: onOpenSettings }
   ]
