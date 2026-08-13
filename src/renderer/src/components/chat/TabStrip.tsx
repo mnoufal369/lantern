@@ -79,7 +79,11 @@ export default function TabStrip({ sessionId }: { sessionId: string }): React.JS
     parentOf[id] = sessions[id]?.meta.forkedFrom
   }
   const root = rootOf(sessionId, parentOf)
-  const family = order.filter((id) => !sessions[id].meta.archived && rootOf(id, parentOf) === root)
+  // Oldest first: a new tab lands to the right of the ones it was opened from, and stays
+  // there after a restart (the sidebar's order is newest-first).
+  const family = order
+    .filter((id) => !sessions[id].meta.archived && rootOf(id, parentOf) === root)
+    .sort((a, b) => sessions[a].meta.createdAt - sessions[b].meta.createdAt)
 
   // A lone session is not a tab set; the header's + is the only affordance it needs.
   if (family.length < 2) {
@@ -108,7 +112,15 @@ export default function TabStrip({ sessionId }: { sessionId: string }): React.JS
     if (warning && !window.confirm(warning)) {
       return
     }
-    void archive(id)
+    // Land on the tab to the left (or the right, when closing the first one) so closing
+    // a tab never drops out of the session.
+    const position = family.indexOf(id)
+    const neighbour = family[position - 1] ?? family[position + 1]
+    void archive(id).then(() => {
+      if (neighbour) {
+        setActive(neighbour)
+      }
+    })
   }
 
   return (

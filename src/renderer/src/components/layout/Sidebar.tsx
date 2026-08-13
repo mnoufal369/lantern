@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Plus, Archive, ArchiveRestore, ChevronDown, ChevronRight, CircleStop, History, Search, Trash2 } from 'lucide-react'
 import { useSessionsStore } from '@/stores/useSessionsStore'
 import { useProfilesStore } from '@/stores/useProfilesStore'
+import { formatTokens } from '@/lib/format'
 import type { SessionStatus } from '@shared/types'
 import { APP_NAME } from '@shared/constants'
 
@@ -118,10 +119,8 @@ export default function Sidebar({
           const { meta } = sessions[id]
           const profile = profiles.find((p) => p.id === meta.profileId)
           const active = id === activeId
-          const busy =
-            meta.status.kind === 'thinking' ||
-            meta.status.kind === 'running-tool' ||
-            meta.status.kind === 'waiting-permission'
+          const busyWorking = meta.status.kind === 'thinking' || meta.status.kind === 'running-tool'
+          const busy = busyWorking || meta.status.kind === 'waiting-permission'
           return (
             <div
               key={id}
@@ -193,17 +192,26 @@ export default function Sidebar({
                 {meta.cwd.replace(/^\/Users\/[^/]+/, '~')}
               </p>
               <div className="flex items-center justify-between pl-[26px] text-[11px]">
-                <span
-                  className={
-                    meta.status.kind === 'waiting-permission'
-                      ? 'font-medium text-amber-500'
-                      : meta.status.kind === 'error'
-                        ? 'text-red-400'
-                        : 'text-zinc-500'
-                  }
-                >
-                  {statusLabel(meta.status)}
-                </span>
+                {busyWorking ? (
+                  <span
+                    className="shimmer-text font-medium"
+                    style={{ '--shimmer-color': profile?.color ?? '#7e9cbf' } as React.CSSProperties}
+                  >
+                    {statusLabel(meta.status)}
+                  </span>
+                ) : (
+                  <span
+                    className={
+                      meta.status.kind === 'waiting-permission'
+                        ? 'font-medium text-amber-500'
+                        : meta.status.kind === 'error'
+                          ? 'text-red-400'
+                          : 'text-zinc-500'
+                    }
+                  >
+                    {statusLabel(meta.status)}
+                  </span>
+                )}
                 <span className="tabular-nums text-zinc-500">
                   ${meta.stats.totalCostUsd.toFixed(2)} · {formatTokens(meta.stats.inputTokens + meta.stats.outputTokens)}
                 </span>
@@ -294,12 +302,3 @@ export default function Sidebar({
   )
 }
 
-function formatTokens(n: number): string {
-  if (n >= 1_000_000) {
-    return `${(n / 1_000_000).toFixed(1)}M`
-  }
-  if (n >= 1_000) {
-    return `${(n / 1_000).toFixed(1)}k`
-  }
-  return String(n)
-}

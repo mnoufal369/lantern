@@ -114,6 +114,13 @@ export default function RightPanel({ sessionId }: { sessionId: string }): React.
   const filesTouched = useSessionsStore((s) => s.sessions[sessionId]?.meta.filesTouched ?? [])
   const cwd = useSessionsStore((s) => s.sessions[sessionId]?.meta.cwd ?? '')
 
+  // A file the agent edited and then reverted has no diff left, so it drops off the list.
+  // Git paths are repo-root relative while touched paths are absolute, hence the suffix match.
+  const stillChanged =
+    status?.isRepo === true
+      ? filesTouched.filter((path) => status.files.some((file) => path.endsWith(`/${file.path}`)))
+      : filesTouched
+
   const refresh = useCallback(async (): Promise<void> => {
     try {
       const result = await window.api.invoke('git:status', { sessionId })
@@ -232,10 +239,14 @@ export default function RightPanel({ sessionId }: { sessionId: string }): React.
 
         <div className="p-3">
           <p className="mb-2 text-[11px] font-medium uppercase tracking-wide text-zinc-500">
-            Files touched this session ({filesTouched.length})
+            Files touched this session ({stillChanged.length})
           </p>
-          {filesTouched.length === 0 && <p className="text-xs text-zinc-600">Nothing yet</p>}
-          {filesTouched.map((path) => (
+          {stillChanged.length === 0 && (
+            <p className="text-xs text-zinc-600">
+              {filesTouched.length > 0 ? 'Nothing left changed' : 'Nothing yet'}
+            </p>
+          )}
+          {stillChanged.map((path) => (
             <TouchedFileRow key={path} path={path} cwd={cwd} />
           ))}
         </div>

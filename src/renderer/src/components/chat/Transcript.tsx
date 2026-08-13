@@ -1,9 +1,11 @@
-import { memo, useState } from 'react'
+import { memo, useEffect, useState } from 'react'
 import type { TranscriptBlock } from '@/lib/transcript'
 import Markdown, { CopyButton } from './Markdown'
 import ToolCallCard from '@/components/tools/ToolCallCard'
 import { Brain, ChevronDown, ChevronUp, CircleAlert } from 'lucide-react'
 import { useSettingsStore } from '@/stores/useSettingsStore'
+import { formatTokens } from '@/lib/format'
+import type { SessionStatus } from '@shared/types'
 
 /** Long finished responses collapse to this many lines until expanded. */
 const COLLAPSE_LINES = 30
@@ -104,6 +106,53 @@ function SessionStart({ block }: { block: TranscriptBlock & { kind: 'init' } }):
   )
 }
 
+/** Names of sub-agents still running, taken from the Task tool calls in flight. */
+function runningSubagents(blocks: TranscriptBlock[]): string[] {
+  return blocks
+    .filter((b) => b.kind === 'tool' && b.toolName === 'Task' && b.output === undefined)
+    .map((b) => {
+      const input = (b.kind === 'tool' ? b.input : null) as Record<string, unknown> | null
+      const label = input?.description ?? input?.subagent_type
+      return typeof label === 'string' && label.trim() !== '' ? label : 'a sub-agent'
+    })
+}
+
+/** Shown whenever the agent is busy, so there is always a sign of life. */
+function WorkingIndicator({
+  blocks,
+  agentColor
+}: {
+  blocks: TranscriptBlock[]
+  agentColor: string
+}): React.JSX.Element {
+  const [wordIndex, setWordIndex] = useState(0)
+
+  useEffect(() => {
+    const timer = setInterval(() => setWordIndex((i) => i + 1), 2600)
+    return () => clearInterval(timer)
+  }, [])
+
+  const word = START_WORDS[wordIndex % START_WORDS.length]
+  const subagents = runningSubagents(blocks)
+
+  return (
+    <div className="my-3 text-[13px]">
+      <span
+        key={word}
+        className="shimmer-text font-medium"
+        style={{ '--shimmer-color': agentColor } as React.CSSProperties}
+      >
+        {word}
+      </span>
+      {subagents.length > 0 && (
+        <p className="mt-1 text-[11px] text-zinc-600">
+          waiting for {subagents.length > 2 ? `${subagents.length} sub-agents` : subagents.join(' and ')}
+        </p>
+      )}
+    </div>
+  )
+}
+
 const Block = memo(function Block({
   block,
   simple
@@ -131,9 +180,11 @@ const Block = memo(function Block({
 
     case 'text':
       return (
-        <div className="group relative my-3 max-w-[95%] text-sm leading-relaxed text-zinc-200">
+        // mt-7 reserves a clear band for the hovering Copy button, which sits above the
+        // block: without it the button lands on whatever was rendered just before.
+        <div className="group relative mb-3 mt-7 max-w-[95%] text-sm leading-relaxed text-zinc-200">
           {block.done && block.text.trim() !== '' && (
-            <span className="absolute -top-2 right-0 z-10 opacity-0 transition-opacity group-hover:opacity-100">
+            <span className="absolute -top-6 right-0 z-10 opacity-0 transition-opacity group-hover:opacity-100">
               <CopyButton text={block.text} />
             </span>
           )}
@@ -190,7 +241,7 @@ const Block = memo(function Block({
             <span>✓ done · ${block.costUsd.toFixed(2)}</span>
           ) : (
             <span>
-              ✓ turn done · ${block.costUsd.toFixed(3)} · {block.usage.inputTokens + block.usage.outputTokens} tokens
+              ✓ turn done · ${block.costUsd.toFixed(3)} · {formatTokens(block.usage.inputTokens + block.usage.outputTokens)} tokens
             </span>
           )}
           <div className="h-px flex-1 bg-deck-border" />
@@ -229,10 +280,14 @@ const Block = memo(function Block({
 
 export default function Transcript({
   blocks,
-  highlightId
+  highlightId,
+  status,
+  agentColor
 }: {
   blocks: TranscriptBlock[]
   highlightId?: string | null
+  status: SessionStatus
+  agentColor: string
 }): React.JSX.Element {
   const simple = useSettingsStore((s) => s.settings?.uiMode === 'simple')
   return (
@@ -246,6 +301,9 @@ export default function Transcript({
           <Block block={block} simple={simple} />
         </div>
       ))}
+      {(status.kind === 'thinking' || status.kind === 'running-tool') && (
+        <WorkingIndicator blocks={blocks} agentColor={agentColor} />
+      )}
     </div>
   )
 }

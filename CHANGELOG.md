@@ -1,5 +1,22 @@
 # Release notes
 
+## 0.7.0: You can see it thinking
+- **Signs of life.** While an agent works you get a playful status word, the sidebar
+  status glows in that agent's colour, and the message box is ringed by a slowly
+  turning band of colour.
+- **Sub-agents.** When an agent hands work to helpers, it says which ones it is
+  waiting on.
+- **Jump to latest.** Scrolled up mid-answer? A button appears to take you back
+  to the bottom.
+- **New Frontend Dev agent** in the presets: it studies your existing components,
+  hooks and design tokens before writing anything, and follows your code style.
+- Closing a tab now keeps you in the session and moves to the tab beside it.
+- Shift and Return adds a new line reliably, and the message box hints at the
+  handful of shortcuts worth knowing.
+- Files you have touched drop off the list once their changes are undone.
+- Token counts read as 18.3k rather than 18277, and the Copy button no longer
+  lands on top of nearby text.
+
 ## 0.6.0 — Branching conversations
 Community PR #2 — thank you!
 

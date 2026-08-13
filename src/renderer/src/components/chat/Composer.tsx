@@ -152,7 +152,12 @@ export default function Composer({
           }}
         />
       )}
-      <div className="flex flex-col gap-2 rounded-lg border border-deck-border bg-deck-raised p-2 focus-within:border-deck-accent/70">
+      <div className={busy ? 'progress-border rounded-[10px] p-[1.5px]' : ''}>
+      <div
+        className={`flex flex-col gap-2 rounded-lg border border-deck-border bg-deck-raised p-2 focus-within:border-zinc-600 ${
+          busy ? 'progress-sheen' : ''
+        }`}
+      >
         {attachments.length > 0 && (
           <div className="flex gap-2 px-1 pt-1">
             {attachments.map((att, index) => (
@@ -220,6 +225,19 @@ export default function Composer({
               void setPermissionMode(sessionId, next.value)
               return
             }
+            if (e.key === 'Enter' && e.shiftKey && !e.metaKey) {
+              // Insert the newline ourselves rather than trusting the default, which some
+              // keyboard layouts swallow.
+              e.preventDefault()
+              const el = e.currentTarget
+              const { selectionStart, selectionEnd } = el
+              setText(`${text.slice(0, selectionStart)}\n${text.slice(selectionEnd)}`)
+              requestAnimationFrame(() => {
+                el.selectionStart = selectionStart + 1
+                el.selectionEnd = selectionStart + 1
+              })
+              return
+            }
             if (e.key === 'Enter' && (e.metaKey || !e.shiftKey)) {
               if (e.nativeEvent.isComposing) {
                 return
@@ -232,7 +250,7 @@ export default function Composer({
             }
           }}
           rows={1}
-          placeholder="Message the agent… paste screenshots too  (/ or ⌘K quick actions · ⇧Tab mode · ⏎ send)"
+          placeholder="Message the agent…   ⏎ send · ⇧⏎ new line · ⌘K actions"
           className="selectable flex-1 resize-none bg-transparent px-1 py-1 text-sm leading-relaxed text-zinc-100 outline-none placeholder:text-zinc-600"
         />
         <button
@@ -269,6 +287,7 @@ export default function Composer({
           </button>
         )}
         </div>
+      </div>
       </div>
       {sendError && (
         <p className="mt-2 px-1 text-[11.5px] text-red-400">

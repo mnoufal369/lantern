@@ -7,6 +7,7 @@ import BranchSwitcher from './BranchSwitcher'
 import TabStrip from './TabStrip'
 import QuickActions from './QuickActions'
 import HoverCard from '@/components/ui/HoverCard'
+import { formatTokens } from '@/lib/format'
 import OverflowRow from '@/components/ui/OverflowRow'
 import type { OverflowItem } from '@/components/ui/OverflowRow'
 import { useSessionsStore } from '@/stores/useSessionsStore'
@@ -29,6 +30,7 @@ export default function ChatView({ sessionId }: { sessionId: string }): React.JS
   const [exported, setExported] = useState(false)
   const [copied, setCopied] = useState(false)
   const [draft, setDraft] = useState<{ text: string; nonce: number } | null>(null)
+  const [atBottom, setAtBottom] = useState(true)
   const [searchOpen, setSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [matchIndex, setMatchIndex] = useState(0)
@@ -346,16 +348,40 @@ export default function ChatView({ sessionId }: { sessionId: string }): React.JS
         </div>
       )}
 
-      <div
-        ref={scrollRef}
-        onScroll={(e) => {
-          const el = e.currentTarget
-          stickToBottom.current = el.scrollHeight - el.scrollTop - el.clientHeight < 60
-        }}
-        className="selectable min-h-0 flex-1 overflow-y-auto px-6 py-4"
-      >
-        <Transcript blocks={entry.blocks} highlightId={activeMatch} />
-        {entry.blocks.length === 0 && <StarterPrompts sessionId={sessionId} cwd={entry.meta.cwd} />}
+      <div className="relative flex min-h-0 flex-1 flex-col">
+        <div
+          ref={scrollRef}
+          onScroll={(e) => {
+            const el = e.currentTarget
+            const near = el.scrollHeight - el.scrollTop - el.clientHeight < 60
+            stickToBottom.current = near
+            setAtBottom(near)
+          }}
+          className="selectable min-h-0 flex-1 overflow-y-auto px-6 py-4"
+        >
+          <Transcript
+            blocks={entry.blocks}
+            highlightId={activeMatch}
+            status={entry.meta.status}
+            agentColor={profile?.color ?? '#7e9cbf'}
+          />
+          {entry.blocks.length === 0 && <StarterPrompts sessionId={sessionId} cwd={entry.meta.cwd} />}
+        </div>
+        {!atBottom && entry.blocks.length > 0 && (
+          <button
+            onClick={() => {
+              const el = scrollRef.current
+              if (el) {
+                el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' })
+              }
+              stickToBottom.current = true
+              setAtBottom(true)
+            }}
+            className="absolute bottom-3 left-1/2 flex -translate-x-1/2 items-center gap-1.5 rounded-full border border-deck-border bg-deck-panel px-3 py-1.5 text-[11.5px] text-zinc-300 shadow-[0_6px_20px_rgba(0,0,0,0.35)] hover:bg-deck-raised hover:text-zinc-100"
+          >
+            <ChevronDown size={13} /> Jump to latest
+          </button>
+        )}
       </div>
       <QuickActions
         sessionId={sessionId}
@@ -398,15 +424,6 @@ function MenuReadout({ children }: { children: React.ReactNode }): React.JSX.Ele
   return <span className="flex w-full items-center px-2 py-1 text-[11px] text-zinc-500">{children}</span>
 }
 
-function formatTokens(n: number): string {
-  if (n >= 1_000_000) {
-    return `${(n / 1_000_000).toFixed(1)}M`
-  }
-  if (n >= 1_000) {
-    return `${(n / 1_000).toFixed(1)}k`
-  }
-  return String(n)
-}
 
 const STARTERS = [
   { emoji: '🗺️', text: 'Give me a tour of this project. What is it and how is it organized?' },
