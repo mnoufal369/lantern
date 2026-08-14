@@ -179,7 +179,9 @@ export default function TabStrip({ sessionId }: { sessionId: string }): React.JS
                 className="selectable w-28 rounded border border-deck-border bg-deck-raised px-1 text-[12px] text-zinc-100 outline-none"
               />
             ) : (
-              <span className="truncate">{meta.title || 'New tab'}</span>
+              {/* Branched tabs carry a real "New tab" title; this is only the
+                  untitled case, so it matches what the sidebar calls it. */}
+              <span className="truncate">{meta.title || 'New session'}</span>
             )}
             <span className="ml-1 flex shrink-0 items-center gap-1.5 opacity-0 group-hover:opacity-100">
               <button
