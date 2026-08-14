@@ -6,6 +6,9 @@ directories:
 files:
   - out/**
   - package.json
+  # Shipped so the third-party notices travel with the binary, not just the repo.
+  - NOTICE.md
+  - LICENSE
   - "!node_modules/@anthropic-ai/claude-agent-sdk-linux-*/**"
 asar: true
 asarUnpack:

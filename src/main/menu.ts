@@ -24,6 +24,8 @@ const HELP_LINKS: { label: string; url: string }[] = [
   { label: 'Documentation', url: `${REPO_WEB_URL}#readme` },
   { label: 'Report an Issue…', url: `${REPO_WEB_URL}/issues/new` },
   { label: 'Release Notes', url: `${REPO_WEB_URL}/releases` },
+  // The notice also ships inside the bundle; this is the copy people can read.
+  { label: 'Third-Party Notices', url: `${REPO_WEB_URL}/blob/main/NOTICE.md` },
   { label: `${APP_NAME} on GitHub`, url: REPO_WEB_URL }
 ]
 

@@ -134,6 +134,16 @@ yarn release                # publish the built installers as a GitHub Release
 Cross-arch notes, signing details and the "damaged app" explainer live in
 [SIGNING.md](SIGNING.md) and the comments of `scripts/package-share.sh`.
 
-## License
+## Licence
 
-[MIT](LICENSE)
+Lantern's own code is [MIT](LICENSE).
+
+That covers this repository only. Distributed builds embed the **Claude Agent
+SDK and its runtime binaries, which are Anthropic's proprietary software** —
+© Anthropic PBC, all rights reserved, used under
+[Anthropic's legal agreements](https://code.claude.com/docs/en/legal-and-compliance).
+Nothing here grants any right to Anthropic's software. Lantern is not
+affiliated with or endorsed by Anthropic, and every user authenticates with
+their own Claude login or API key.
+
+Full component list, licences and the data note: [NOTICE.md](NOTICE.md).
