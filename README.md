@@ -12,11 +12,11 @@ Powered by the same engine as Claude Code. No terminal required.
 <sub>A lantern is warm light carried ahead into the dark: it goes first through
 code you have never seen, and shows you what it finds.</sub>
 
-[![CI](https://github.com/mnoufal369/loods/actions/workflows/ci.yml/badge.svg)](https://github.com/mnoufal369/loods/actions/workflows/ci.yml)
-[![Release](https://img.shields.io/github/v/release/mnoufal369/loods?color=29acc2)](https://github.com/mnoufal369/loods/releases/latest)
+[![CI](https://github.com/mnoufal369/lantern/actions/workflows/ci.yml/badge.svg)](https://github.com/mnoufal369/lantern/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/mnoufal369/lantern?color=29acc2)](https://github.com/mnoufal369/lantern/releases/latest)
 [![License: MIT](https://img.shields.io/badge/license-MIT-16998f.svg)](LICENSE)
 
-[**Product page**](https://mnoufal369.github.io/loods/) · [**Download**](https://github.com/mnoufal369/loods/releases/latest) · [**Release notes**](CHANGELOG.md)
+[**Product page**](https://mnoufal369.github.io/lantern/) · [**Download**](https://github.com/mnoufal369/lantern/releases/latest) · [**Release notes**](CHANGELOG.md)
 
 </div>
 
@@ -59,7 +59,7 @@ the code: QA, consultants, product folks.
 ### macOS
 
 **Easiest** — download the `.dmg` from the
-[latest release](https://github.com/mnoufal369/loods/releases/latest), drag
+[latest release](https://github.com/mnoufal369/lantern/releases/latest), drag
 Lantern to Applications, and approve once via System Settings → Privacy &
 Security → *Open Anyway* (builds are ad-hoc signed, not notarized). From then
 on Lantern updates itself in-app with one click.
@@ -68,7 +68,7 @@ on Lantern updates itself in-app with one click.
 fastest self-update path:
 
 ```bash
-git clone https://github.com/mnoufal369/loods.git
+git clone https://github.com/mnoufal369/lantern.git
 cd lantern
 yarn setup:mac    # installs deps, builds, installs to /Applications, launches
 ```
@@ -79,7 +79,7 @@ This also installs the `lantern` command — try `lantern .` in any project.
 ### Windows
 
 Download `Lantern-Setup-<version>-x64.exe` from the
-[latest release](https://github.com/mnoufal369/loods/releases/latest) and
+[latest release](https://github.com/mnoufal369/lantern/releases/latest) and
 run it (one SmartScreen prompt: *More info → Run anyway*). The agent runtime
 is bundled; install [Git for Windows](https://git-scm.com/download/win) to
 fetch repositories.
