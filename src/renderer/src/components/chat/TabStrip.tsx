@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { X } from 'lucide-react'
+import { Pencil, X } from 'lucide-react'
 import { PROFILE_COLORS } from '@shared/constants'
 import { useSessionsStore } from '@/stores/useSessionsStore'
 
@@ -85,8 +85,10 @@ export default function TabStrip({ sessionId }: { sessionId: string }): React.JS
     .filter((id) => !sessions[id].meta.archived && rootOf(id, parentOf) === root)
     .sort((a, b) => sessions[a].meta.createdAt - sessions[b].meta.createdAt)
 
-  // A lone session is not a tab set; the header's + is the only affordance it needs.
-  if (family.length < 2) {
+  // Every session gets a tab, including one on its own. A session imported from
+  // terminal history has no branches, and hiding the strip for it left it with
+  // no name, no colour and nowhere to rename it.
+  if (family.length === 0) {
     return null
   }
 
@@ -179,7 +181,18 @@ export default function TabStrip({ sessionId }: { sessionId: string }): React.JS
             ) : (
               <span className="truncate">{meta.title || 'New tab'}</span>
             )}
-            <span className="ml-1 flex shrink-0 items-center gap-1 opacity-0 group-hover:opacity-100">
+            <span className="ml-1 flex shrink-0 items-center gap-1.5 opacity-0 group-hover:opacity-100">
+              <button
+                title="Rename"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setRenamingId(id)
+                  setDraft(meta.title)
+                }}
+                className="text-zinc-500 hover:text-zinc-200"
+              >
+                <Pencil size={11} />
+              </button>
               <button
                 title="Close tab"
                 onClick={(e) => {

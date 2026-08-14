@@ -1,5 +1,14 @@
 # Release notes
 
+## 0.8.2: Every session is a tab, and renaming is visible
+- **A session on its own now gets a tab too.** The strip only appeared once a
+  conversation had been branched, so a session restored from terminal history
+  had no tab at all — and therefore no name, no colour tag and nowhere to
+  rename it.
+- **Rename has a button now.** A pencil appears on hover, on both the tab and
+  the session in the sidebar. Double-clicking the name still works, and ⌘K →
+  Rename is still there; none of them were labelled before.
+
 ## 0.8.1: Check for updates when you want to
 - **Loods → Check for Updates…** in the menu bar (Help on Windows), and a
   **Check for updates** button next to the version in Settings. Until now the

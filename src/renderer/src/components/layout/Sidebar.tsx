@@ -1,5 +1,16 @@
 import { useEffect, useState } from 'react'
-import { Plus, Archive, ArchiveRestore, ChevronDown, ChevronRight, CircleStop, History, Search, Trash2 } from 'lucide-react'
+import {
+  Plus,
+  Archive,
+  ArchiveRestore,
+  ChevronDown,
+  ChevronRight,
+  CircleStop,
+  History,
+  Pencil,
+  Search,
+  Trash2
+} from 'lucide-react'
 import { useSessionsStore } from '@/stores/useSessionsStore'
 import { useProfilesStore } from '@/stores/useProfilesStore'
 import { formatTokens } from '@/lib/format'
@@ -176,6 +187,17 @@ export default function Sidebar({
                       <CircleStop size={13} />
                     </button>
                   )}
+                  <button
+                    title="Rename"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setRenamingId(id)
+                      setRenameDraft(meta.title)
+                    }}
+                    className="text-zinc-500 hover:text-zinc-300"
+                  >
+                    <Pencil size={12} />
+                  </button>
                   <button
                     title="Archive"
                     onClick={(e) => {
