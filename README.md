@@ -13,7 +13,7 @@ Powered by the same engine as Claude Code. No terminal required.
 code you have never seen, and shows you what it finds.</sub>
 
 [![CI](https://github.com/mnoufal369/lantern/actions/workflows/ci.yml/badge.svg)](https://github.com/mnoufal369/lantern/actions/workflows/ci.yml)
-[![Release](https://img.shields.io/github/v/release/mnoufal369/lantern?color=29acc2)](https://github.com/mnoufal369/lantern/releases/latest)
+[![Release](https://img.shields.io/github/v/release/mnoufal369/lantern?color=ffb340)](https://github.com/mnoufal369/lantern/releases/latest)
 [![License: MIT](https://img.shields.io/badge/license-MIT-16998f.svg)](LICENSE)
 
 [**Product page**](https://mnoufal369.github.io/lantern/) · [**Download**](https://github.com/mnoufal369/lantern/releases/latest) · [**Release notes**](CHANGELOG.md)
@@ -39,9 +39,9 @@ the code: QA, consultants, product folks.
 - 🚀 **Ten repos, ten conversations** — sessions are tabs (⌘1–9), agents keep
   working in the background, notifications call you back, `lantern .` opens the
   current folder from a terminal.
-- 🧑‍✈️ **Five ready-made agents** — Dev, Planner, QA (read-only), Consultant
-  (read-only), Explainer (read-only) — plus a builder for your own: custom
-  prompt, model, permissions, MCP servers, per-session budget.
+- 🧑‍✈️ **Six ready-made agents** — Dev, Frontend Dev, Planner, QA (read-only),
+  Consultant (read-only), Explainer (read-only) — plus a builder for your own:
+  custom prompt, model, permissions, MCP servers, per-session budget.
 - 🌍 **Any repo, branch or PR** — paste a URL and optionally `release/2.4` or
   `#123`; Lantern fetches it into its own workspace. Org repo suggestions as
   you type (via `gh`).
@@ -50,9 +50,12 @@ the code: QA, consultants, product folks.
   agent).
 - 🌱 **Simple mode** — plain language everywhere: approval dialogs in one
   sentence, friendly errors, no jargon. Same power underneath.
-- 🔄 **Self-updating** — when a new version lands, a banner offers **Update
-  now**: checkout installs rebuild themselves; zip installs download the
-  latest release and swap themselves in.
+- 🕰 **Pick up terminal work** — conversations you ran with `claude` in a
+  terminal are listed inside Lantern; open one and carry on, or paste a session
+  ID to reach one older than the list shows.
+- 🔄 **Self-updating** — a banner offers **Update now**, which downloads in the
+  background while you keep working and asks before it restarts. Or check
+  whenever you like: **Lantern → Check for Updates…**
 
 ## Install
 
