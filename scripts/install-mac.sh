@@ -85,20 +85,25 @@ for BIN_DIR in /opt/homebrew/bin /usr/local/bin "$HOME/.local/bin"; do
   if [ -d "$BIN_DIR" ] && [ -w "$BIN_DIR" ]; then
     cp scripts/lantern "$BIN_DIR/lantern" && chmod +x "$BIN_DIR/lantern"
     echo "· Installed the \`lantern\` command → $BIN_DIR/lantern  (try: lantern .)"
-    # The old `pilot` shim opens pilot:// which nothing answers now — drop it
-    # rather than leave a command that fails silently.
-    if [ -f "$BIN_DIR/pilot" ] && grep -q "pilot://open" "$BIN_DIR/pilot" 2>/dev/null; then
-      rm -f "$BIN_DIR/pilot" && echo "· Removed the old \`pilot\` command"
-    fi
+    # Shims from earlier names open a scheme nothing answers now. Listed rather
+    # than hardcoded to one predecessor: renaming twice left the last one behind.
+    for OLDCMD in loods pilot; do
+      if [ -f "$BIN_DIR/$OLDCMD" ] && grep -q "://open" "$BIN_DIR/$OLDCMD" 2>/dev/null; then
+        rm -f "$BIN_DIR/$OLDCMD" && echo "· Removed the old \`$OLDCMD\` command"
+      fi
+    done
     break
   fi
 done
 
-# The rename leaves the previous bundle behind; it would keep answering pilot://
-if [ -d /Applications/Pilot.app ]; then
-  osascript -e 'quit app "Pilot"' >/dev/null 2>&1 || true
-  rm -rf /Applications/Pilot.app && echo "· Removed the previous Pilot.app"
-fi
+# Each rename leaves the previous bundle in /Applications, still registered for
+# its old URL scheme. Every former name, not just the most recent one.
+for OLDAPP in Loods Pilot; do
+  if [ -d "/Applications/$OLDAPP.app" ]; then
+    osascript -e "quit app \"$OLDAPP\"" >/dev/null 2>&1 || true
+    rm -rf "/Applications/$OLDAPP.app" && echo "· Removed the previous $OLDAPP.app"
+  fi
+done
 
 open /Applications/Lantern.app
 echo ""
