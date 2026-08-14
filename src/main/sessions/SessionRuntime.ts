@@ -113,7 +113,7 @@ export class SessionRuntime {
       env: {
         ...process.env,
         ...(this.deps.getApiKey().trim() !== '' ? { ANTHROPIC_API_KEY: this.deps.getApiKey() } : {}),
-        CLAUDE_AGENT_SDK_CLIENT_APP: `loods/${app.getVersion()}`
+        CLAUDE_AGENT_SDK_CLIENT_APP: `lantern/${app.getVersion()}`
       },
       canUseTool: (toolName, input, context) =>
         this.deps.broker.request(this.meta.id, toolName, input, {

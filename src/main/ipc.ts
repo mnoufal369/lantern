@@ -254,7 +254,7 @@ export function registerIpc(manager: SessionManager): void {
     if (!prepared) {
       return { started: false, reason: 'Nothing is prepared yet — download the update first.' }
     }
-    emitProgress({ phase: 'installing', version: prepared.version, detail: 'Restarting Loods…' })
+    emitProgress({ phase: 'installing', version: prepared.version, detail: 'Restarting Lantern…' })
     // Let the app quit without the "agents are still working" guard: the user
     // has just been asked, and the installer waits for the process to exit.
     allowQuitForUpdate()

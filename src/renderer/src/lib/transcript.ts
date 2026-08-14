@@ -187,7 +187,7 @@ export function applyEvents(blocks: TranscriptBlock[], events: UiEvent[]): Trans
   return next
 }
 
-const SLASH_COMMANDS_KEY = 'loods.slashCommands'
+const SLASH_COMMANDS_KEY = 'lantern.slashCommands'
 
 /** Claude Code's standard commands — shown until a session reports the real
  *  list (which also includes any custom commands on this machine). */
@@ -213,7 +213,7 @@ function saveCachedSlashCommands(commands: string[]): void {
   }
 }
 
-const KNOWN_NAMES_KEY = 'loods.knownToolNames'
+const KNOWN_NAMES_KEY = 'lantern.knownToolNames'
 
 function loadKnownNames(): Set<string> {
   try {

@@ -1,5 +1,5 @@
-appId: app.loods.desktop
-productName: Loods
+appId: app.lantern.desktop
+productName: Lantern
 directories:
   output: release
   buildResources: resources
@@ -15,9 +15,9 @@ asarUnpack:
   - "node_modules/@anthropic-ai/claude-agent-sdk-win32-x64/**"
 npmRebuild: false
 protocols:
-  - name: Loods
+  - name: Lantern
     schemes:
-      - loods
+      - lantern
 mac:
   target:
     - target: dmg
@@ -45,9 +45,9 @@ nsis:
   oneClick: true
   perMachine: false
   deleteAppDataOnUninstall: false
-  artifactName: "Loods-Setup-${version}-x64.${ext}"
+  artifactName: "Lantern-Setup-${version}-x64.${ext}"
 dmg:
-  title: Loods
+  title: Lantern
   contents:
     - x: 130
       y: 220

@@ -1,5 +1,19 @@
 # Release notes
 
+## 0.9.0: The app is Lantern
+- **New name.** A lantern is warm light carried ahead into the dark — it goes
+  first through code you have never seen and shows you what it finds. That is
+  what this app does, and the name now says so in a word anyone can read.
+- **New icon and palette**: an *L* whose stem carries a lit head, so the letter
+  and the lamp are one shape. Amber on deep ink, after two cool identities —
+  which also makes it easy to pick out in a Dock full of blue.
+- **New tagline**: *It knows the way.* The old one described a contractor
+  building things for you; this app guides.
+- The terminal command is `lantern`, links are `lantern://`, and installing
+  removes the previous command and app bundle so nothing answers to a dead name.
+- Your sessions, conversation history, agents and settings carry over
+  automatically.
+
 ## 0.8.2: Every session is a tab, and renaming is visible
 - **A session on its own now gets a tab too.** The strip only appeared once a
   conversation had been branched, so a session restored from terminal history

@@ -1,5 +1,5 @@
 import { Plus, Settings, Users } from 'lucide-react'
-import LoodsMark from '@/components/ui/LoodsMark'
+import LanternMark from '@/components/ui/LanternMark'
 import { APP_NAME } from '@shared/constants'
 
 interface Props {
@@ -13,7 +13,7 @@ export default function TopBar({ onNewSession, onOpenSettings, onOpenBuilder }: 
     <header className="drag-region flex h-11 shrink-0 items-center justify-between border-b border-deck-border bg-deck-panel pl-20 pr-3">
       {/* Left of the buttons, clear of the traffic lights — the window's only branding. */}
       <div className="flex min-w-0 items-center gap-2">
-        <LoodsMark size={17} />
+        <LanternMark size={17} />
         <span className="truncate text-[13.5px] font-semibold tracking-[-0.01em] text-zinc-200">{APP_NAME}</span>
       </div>
       <div className="no-drag flex shrink-0 items-center gap-1">

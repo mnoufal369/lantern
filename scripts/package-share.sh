@@ -1,5 +1,5 @@
 #!/bin/bash
-# Builds the zip you hand to a colleague: Loods.app + the self-installing
+# Builds the zip you hand to a colleague: Lantern.app + the self-installing
 # command + instructions. Refuses to ship a bundle macOS would call "damaged".
 #   usage: bash scripts/package-share.sh [arm64|x64|universal]
 set -e
@@ -15,11 +15,11 @@ esac
 ELECTRON_ARCHES="$RUNTIMES"
 
 VERSION=$(node -p "require('./package.json').version")
-STAGE="release/share/Loods $VERSION"
-ZIP="release/Loods-$VERSION-mac-$ARCH.zip"
+STAGE="release/share/Lantern $VERSION"
+ZIP="release/Lantern-$VERSION-mac-$ARCH.zip"
 SDK_DIR="Contents/Resources/app.asar.unpacked/node_modules/@anthropic-ai"
 
-echo "── Packaging Loods $VERSION ($ARCH) for sharing ──"
+echo "── Packaging Lantern $VERSION ($ARCH) for sharing ──"
 
 # The app picks an agent runtime at launch from process.arch, so every
 # architecture it can boot on needs its own copy.
@@ -38,17 +38,17 @@ npx electron-builder --mac dir $BUILD_FLAG >/dev/null
 echo "· Staging…"
 rm -rf "release/share" "$ZIP"
 mkdir -p "$STAGE"
-ditto "$OUT_DIR/Loods.app" "$STAGE/Loods.app"
-cp "scripts/Install Loods.command" "$STAGE/Install Loods.command"
+ditto "$OUT_DIR/Lantern.app" "$STAGE/Lantern.app"
+cp "scripts/Install Lantern.command" "$STAGE/Install Lantern.command"
 cp "scripts/Read me first.txt" "$STAGE/Read me first.txt"
-chmod +x "$STAGE/Install Loods.command"
+chmod +x "$STAGE/Install Lantern.command"
 
 # electron-builder bundles every runtime present in node_modules. Each is ~270MB,
 # so drop the ones this build can never execute.
 for CANDIDATE in arm64 x64; do
   case " $RUNTIMES " in
     *" $CANDIDATE "*) ;;
-    *) rm -rf "$STAGE/Loods.app/$SDK_DIR/claude-agent-sdk-darwin-$CANDIDATE" ;;
+    *) rm -rf "$STAGE/Lantern.app/$SDK_DIR/claude-agent-sdk-darwin-$CANDIDATE" ;;
   esac
 done
 
@@ -56,19 +56,19 @@ done
 # ad-hoc: enough for a self-built app, and it keeps the recipient's "Open Anyway"
 # route working (a broken signature yields "damaged", which has no override).
 echo "· Signing…"
-codesign --force --deep --sign - "$STAGE/Loods.app" 2>/dev/null
+codesign --force --deep --sign - "$STAGE/Lantern.app" 2>/dev/null
 
 echo "· Verifying…"
-if ! codesign --verify --deep --strict "$STAGE/Loods.app" 2>/dev/null; then
-  echo "✗ Bundle signature is invalid — recipients would see \"Loods is damaged\"."
+if ! codesign --verify --deep --strict "$STAGE/Lantern.app" 2>/dev/null; then
+  echo "✗ Bundle signature is invalid — recipients would see \"Lantern is damaged\"."
   exit 1
 fi
-echo "  signature valid ✓  ($(lipo -archs "$STAGE/Loods.app/Contents/MacOS/Loods"))"
+echo "  signature valid ✓  ($(lipo -archs "$STAGE/Lantern.app/Contents/MacOS/Lantern"))"
 
 # A build missing its runtime looks fine until someone starts a session and the
 # agent fails to spawn — so fail here instead.
 for RUNTIME in $RUNTIMES; do
-  if [ ! -x "$STAGE/Loods.app/$SDK_DIR/claude-agent-sdk-darwin-$RUNTIME/claude" ]; then
+  if [ ! -x "$STAGE/Lantern.app/$SDK_DIR/claude-agent-sdk-darwin-$RUNTIME/claude" ]; then
     echo "✗ Missing agent runtime for darwin-$RUNTIME — sessions would fail on that Mac."
     exit 1
   fi

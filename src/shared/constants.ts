@@ -1,6 +1,6 @@
 import type { ModelInfo } from './types'
 
-export const APP_NAME = 'Loods'
+export const APP_NAME = 'Lantern'
 
 /** Where colleagues clone from — also what the in-app update check pings. */
 export const REPO_URL = 'https://github.com/mnoufal369/loods.git'

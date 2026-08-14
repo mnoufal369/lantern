@@ -1,5 +1,5 @@
 #!/bin/bash
-# Build Loods from source and install it — locally built apps are fully
+# Build Lantern from source and install it — locally built apps are fully
 # trusted by macOS (no "damaged"/Gatekeeper warnings, ever).
 #
 #   install-mac.sh            build and install (what `yarn setup:mac` runs)
@@ -21,7 +21,7 @@ esac
 
 # ── build ────────────────────────────────────────────────────────────────────
 if [ "$MODE" != "swap" ]; then
-  echo "── Loods: build ──"
+  echo "── Lantern: build ──"
 
   if ! command -v node >/dev/null 2>&1; then
     echo "✗ Node.js is missing. Install it first:  brew install node   (or https://nodejs.org)"
@@ -42,12 +42,12 @@ if [ "$MODE" != "swap" ]; then
   pkill -f "electron/install.js" >/dev/null 2>&1 || true
   yarn install --ignore-engines --silent
 
-  echo "· Building Loods…"
+  echo "· Building Lantern…"
   yarn build >/dev/null
   npx electron-builder --mac dir >/dev/null
 
-  if [ ! -d release/mac-arm64/Loods.app ]; then
-    echo "✗ Build produced no app bundle at release/mac-arm64/Loods.app"
+  if [ ! -d release/mac-arm64/Lantern.app ]; then
+    echo "✗ Build produced no app bundle at release/mac-arm64/Lantern.app"
     exit 1
   fi
 
@@ -59,32 +59,32 @@ fi
 
 # ── swap ─────────────────────────────────────────────────────────────────────
 echo "· Installing to /Applications…"
-osascript -e 'quit app "Loods"' >/dev/null 2>&1 || true
+osascript -e 'quit app "Lantern"' >/dev/null 2>&1 || true
 # Wait for the process to actually go away before replacing the bundle.
-for _ in $(seq 1 60); do pgrep -x Loods >/dev/null || break; sleep 0.25; done
-if pgrep -x Loods >/dev/null; then
-  echo "✗ Loods is still running — not touching the bundle. Quit it and rerun."
+for _ in $(seq 1 60); do pgrep -x Lantern >/dev/null || break; sleep 0.25; done
+if pgrep -x Lantern >/dev/null; then
+  echo "✗ Lantern is still running — not touching the bundle. Quit it and rerun."
   exit 1
 fi
 
-rm -rf /Applications/Loods.app
-ditto release/mac-arm64/Loods.app /Applications/Loods.app
+rm -rf /Applications/Lantern.app
+ditto release/mac-arm64/Lantern.app /Applications/Lantern.app
 
 # Ad-hoc signature is enough for a self-built app, but macOS refuses to launch
 # anything still flagged as downloaded.
-xattr -dr com.apple.quarantine /Applications/Loods.app 2>/dev/null || true
+xattr -dr com.apple.quarantine /Applications/Lantern.app 2>/dev/null || true
 
-if ! codesign --verify --deep --strict /Applications/Loods.app 2>/dev/null; then
-  echo "✗ Signature check failed — macOS will refuse to open Loods."
-  echo "  Re-sign with:  codesign --force --deep --sign - /Applications/Loods.app"
+if ! codesign --verify --deep --strict /Applications/Lantern.app 2>/dev/null; then
+  echo "✗ Signature check failed — macOS will refuse to open Lantern."
+  echo "  Re-sign with:  codesign --force --deep --sign - /Applications/Lantern.app"
   exit 1
 fi
 
-# Install the `loods` terminal command (like `code .`) — best effort.
+# Install the `lantern` terminal command (like `code .`) — best effort.
 for BIN_DIR in /opt/homebrew/bin /usr/local/bin "$HOME/.local/bin"; do
   if [ -d "$BIN_DIR" ] && [ -w "$BIN_DIR" ]; then
-    cp scripts/loods "$BIN_DIR/loods" && chmod +x "$BIN_DIR/loods"
-    echo "· Installed the \`loods\` command → $BIN_DIR/loods  (try: loods .)"
+    cp scripts/lantern "$BIN_DIR/lantern" && chmod +x "$BIN_DIR/lantern"
+    echo "· Installed the \`lantern\` command → $BIN_DIR/lantern  (try: lantern .)"
     # The old `pilot` shim opens pilot:// which nothing answers now — drop it
     # rather than leave a command that fails silently.
     if [ -f "$BIN_DIR/pilot" ] && grep -q "pilot://open" "$BIN_DIR/pilot" 2>/dev/null; then
@@ -100,6 +100,6 @@ if [ -d /Applications/Pilot.app ]; then
   rm -rf /Applications/Pilot.app && echo "· Removed the previous Pilot.app"
 fi
 
-open /Applications/Loods.app
+open /Applications/Lantern.app
 echo ""
-echo "✓ Loods is installed and running. Rerun this script anytime to update."
+echo "✓ Lantern is installed and running. Rerun this script anytime to update."

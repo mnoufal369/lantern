@@ -207,7 +207,7 @@ body {
   100% { transform: translateX(230%); }
 }
 
-/* Loods dot-logo pulse (the red lead dot) */
+/* Lantern dot-logo pulse (the red lead dot) */
 @keyframes lead-pulse {
   0%, 100% { opacity: 1; transform: scale(1); }
   50% { opacity: 0.55; transform: scale(0.84); }

@@ -1,20 +1,22 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
   <defs>
-    <linearGradient id="bg" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="1024" y2="1024">
-      <stop offset="0" stop-color="#0b2a45"/>
-      <stop offset="1" stop-color="#14567f"/>
+    <linearGradient id="ink" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="870" y2="1024">
+      <stop offset="0" stop-color="#1b2740"/>
+      <stop offset="1" stop-color="#0b1220"/>
     </linearGradient>
-    <radialGradient id="glow" gradientUnits="userSpaceOnUse" cx="563" cy="358" r="717">
-      <stop offset="0" stop-color="#2e8fd6" stop-opacity="0.32"/>
-      <stop offset="1" stop-color="#2e8fd6" stop-opacity="0"/>
+    <radialGradient id="halo" gradientUnits="userSpaceOnUse" cx="512" cy="471" r="563">
+      <stop offset="0" stop-color="#ffb340" stop-opacity="0.42"/>
+      <stop offset="1" stop-color="#ffb340" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="orb" gradientUnits="userSpaceOnUse" cx="422" cy="229" r="134">
+      <stop offset="0" stop-color="#fff3d0"/>
+      <stop offset="0.5" stop-color="#ffb340"/>
+      <stop offset="1" stop-color="#f08a1c"/>
     </radialGradient>
   </defs>
-  <rect width="1024" height="1024" rx="224" fill="url(#bg)"/>
-  <rect width="1024" height="1024" rx="224" fill="url(#glow)"/>
-  <!-- Signal flag "H" of the international code: I have a pilot on board.
-       White hoist, red fly, the fly edge given a single soft wave so it reads as cloth. -->
-  <g transform="rotate(-4 512 512)">
-    <path d="M228 322 h286 v380 h-286 z" fill="#f4fbfd"/>
-    <path d="M514 322 h282 c-46 95 -46 285 0 380 h-282 z" fill="#e4125c"/>
-  </g>
+  <rect width="1024" height="1024" rx="224" fill="url(#ink)"/>
+  <rect width="1024" height="1024" rx="224" fill="url(#halo)"/>
+  <!-- An L whose stem carries a lit head: the letter and the lamp are one shape. -->
+  <path d="M356 336 h132 v368 h236 v132 h-368 z" fill="#f6f3ec"/>
+  <circle cx="422" cy="252" r="96" fill="url(#orb)"/>
 </svg>

@@ -49,7 +49,7 @@ export const useSessionsStore = create<SessionsState>((set, get) => ({
       order.push(meta.id)
     }
     set({ sessions, order, initialized: true })
-    const remembered = localStorage.getItem('loods.activeSession')
+    const remembered = localStorage.getItem('lantern.activeSession')
     const target =
       (remembered && sessions[remembered] && !sessions[remembered].meta.archived ? remembered : null) ??
       order.find((id) => !sessions[id].meta.archived) ??
@@ -83,10 +83,10 @@ export const useSessionsStore = create<SessionsState>((set, get) => ({
   setActive: (sessionId) => {
     set({ activeId: sessionId })
     if (!sessionId) {
-      localStorage.removeItem('loods.activeSession')
+      localStorage.removeItem('lantern.activeSession')
       return
     }
-    localStorage.setItem('loods.activeSession', sessionId)
+    localStorage.setItem('lantern.activeSession', sessionId)
     const entry = get().sessions[sessionId]
     if (entry && !entry.historyLoaded) {
       window.api.invoke('sessions:history', { sessionId }).then((events) => {

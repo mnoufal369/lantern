@@ -248,7 +248,7 @@ export default function NewSessionModal({ onClose, onOpenBuilder, initialCwd }: 
                 />
               </div>
               <p className="mt-1.5 text-[11px] text-zinc-600">
-                Loods fetches it for you: no cloning, no terminal, no running the app. Leave the second field empty
+                Lantern fetches it for you: no cloning, no terminal, no running the app. Leave the second field empty
                 for the default branch, or paste a branch name or PR number (#123). Private repos use the git access
                 already on this machine.
               </p>

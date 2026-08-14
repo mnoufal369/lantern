@@ -74,7 +74,7 @@ function AuthStatusLine({ status }: { status: AuthStatus | null }): React.JSX.El
     'env-key': {
       icon: <TerminalSquare size={13} className="text-green-400" />,
       text: 'Using ANTHROPIC_API_KEY from your environment',
-      sub: 'Set before launching Loods'
+      sub: 'Set before launching Lantern'
     },
     'claude-login': {
       icon: <UserRound size={13} className="text-green-400" />,
@@ -295,7 +295,7 @@ export default function SettingsModal({
           <label className="mb-1 block text-xs font-medium text-zinc-400">Version</label>
           <div className="flex items-center gap-3 rounded-lg border border-deck-border bg-deck-raised px-3 py-2">
             <span className="text-[13px] text-zinc-200">
-              Loods {version ? `v${version}` : ''}
+              Lantern {version ? `v${version}` : ''}
             </span>
             <span className="min-w-0 flex-1 truncate text-[11.5px] text-zinc-500">{checkLabel()}</span>
             <button

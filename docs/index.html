@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Loods — You talk. Loods builds.</title>
-<meta name="description" content="Loods is a native desktop cockpit for AI agents (macOS &amp; Windows). Your AI coloods: describe it, and a team of agents builds, tests and explains it. Review every change, stay in control, no terminal required.">
+<title>Lantern — It knows the way.</title>
+<meta name="description" content="Lantern is a native desktop cockpit for AI agents (macOS &amp; Windows). Your AI colantern: describe it, and a team of agents builds, tests and explains it. Review every change, stay in control, no terminal required.">
 <style>
   :root {
     --bg: #09090b; --panel: #111113; --raised: #18181b; --border: #26262a;
     --text: #e4e4e7; --dim: #a1a1aa; --faint: #64646e;
-    --accent: #29acc2; --accent2: #16998f; --green: #4ade80; --amber: #f59e0b;
+    --accent: #ffb340; --accent2: #f08a1c; --green: #4ade80; --amber: #f59e0b;
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   html { scroll-behavior: smooth; }
@@ -30,7 +30,7 @@
   nav .wrap { display: flex; align-items: center; gap: 28px; height: 60px; }
   nav .brand { display: flex; align-items: center; gap: 12px; font-weight: 800; font-size: 23px; letter-spacing: -.02em; }
   .wordmark {
-    background: linear-gradient(100deg, #67e8f9, #5eead4 45%, #e4125c 140%);
+    background: linear-gradient(100deg, #ffd9a0, #ffb340 45%, #e4125c 150%);
     -webkit-background-clip: text; background-clip: text; color: transparent;
   }
   .lead-dot {
@@ -54,7 +54,7 @@
   nav .links a:hover { color: var(--text); }
   .btn {
     display: inline-block; padding: 10px 20px; border-radius: 10px; font-weight: 600; font-size: 14px;
-    background: linear-gradient(135deg, var(--accent), var(--accent2)); color: #fff;
+    background: linear-gradient(135deg, var(--accent), var(--accent2)); color: #1a1710;
     box-shadow: 0 8px 30px rgba(41,172,194,.35); transition: transform .15s, box-shadow .15s;
   }
   .btn:hover { transform: translateY(-1px); box-shadow: 0 12px 36px rgba(41,172,194,.45); }
@@ -123,7 +123,7 @@
   .pbtns { display: flex; gap: 6px; }
   .pbtn { border-radius: 7px; padding: 3px 10px; font-size: 10.5px; border: 1px solid var(--border); color: var(--dim); }
   .pbtn.allow { background: #15803d; border: none; color: #fff; }
-  .pbtn.once { background: var(--accent); border: none; color: #fff; }
+  .pbtn.once { background: var(--accent); border: none; color: #1a1710; }
 
   /* sections */
   section { padding: 84px 0; position: relative; }
@@ -164,7 +164,7 @@
   .tiers { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 18px; margin-top: 48px; }
   .tier { border: 1px solid var(--border); border-radius: 18px; padding: 30px 26px; background: var(--panel); position: relative; }
   .tier.hot { border-color: rgba(41,172,194,.6); background: linear-gradient(180deg, rgba(41,172,194,.10), var(--panel) 55%); }
-  .tier .badge { position: absolute; top: -11px; left: 50%; transform: translateX(-50%); background: linear-gradient(135deg, var(--accent), var(--accent2)); font-size: 11px; font-weight: 700; padding: 3px 12px; border-radius: 999px; }
+  .tier .badge { position: absolute; top: -11px; left: 50%; transform: translateX(-50%); background: linear-gradient(135deg, var(--accent), var(--accent2)); color: #1a1710; font-size: 11px; font-weight: 700; padding: 3px 12px; border-radius: 999px; }
   .tier h3 { font-size: 16px; }
   .price { font-size: 38px; font-weight: 800; margin: 12px 0 2px; }
   .price span { font-size: 13.5px; font-weight: 500; color: var(--faint); }
@@ -186,8 +186,8 @@
 <nav>
   <div class="wrap">
     <a class="brand" href="#">
-      <svg width="42" height="42" viewBox="0 0 1024 1024"><defs><linearGradient id="lmark-nav" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0b2a45"/><stop offset="1" stop-color="#14567f"/></linearGradient></defs><rect width="1024" height="1024" rx="224" fill="url(#lmark-nav)"/><g transform="rotate(-4 512 512)"><path d="M228 322 h286 v380 h-286 z" fill="#f4fbfd"/><path d="M514 322 h282 c-46 95 -46 285 0 380 h-282 z" fill="#e4125c"/></g></svg>
-      <span class="wordmark">Loods</span>
+      <svg width="42" height="42" viewBox="0 0 1024 1024"><defs><linearGradient id="lamp1i" x1="0" y1="0" x2="0.85" y2="1"><stop offset="0" stop-color="#1b2740"/><stop offset="1" stop-color="#0b1220"/></linearGradient><radialGradient id="lamp1o" cx="0.5" cy="0.38" r="0.7"><stop offset="0" stop-color="#fff3d0"/><stop offset="0.5" stop-color="#ffb340"/><stop offset="1" stop-color="#f08a1c"/></radialGradient></defs><rect width="1024" height="1024" rx="224" fill="url(#lamp1i)"/><path d="M356 336 h132 v368 h236 v132 h-368 z" fill="#f6f3ec"/><circle cx="422" cy="252" r="96" fill="url(#lamp1o)"/></svg>
+      <span class="wordmark">Lantern</span>
     </a>
     <div class="links">
       <a href="#whoitsfor">Who it's for</a>
@@ -201,12 +201,12 @@
 <header>
   <div class="glow"></div>
   <div class="wrap">
-    <svg width="120" height="120" viewBox="0 0 1024 1024" style="margin-bottom:28px; filter: drop-shadow(0 16px 54px rgba(46,143,214,.5))"><defs><linearGradient id="lmark-hero" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0b2a45"/><stop offset="1" stop-color="#14567f"/></linearGradient></defs><rect width="1024" height="1024" rx="224" fill="url(#lmark-hero)"/><g transform="rotate(-4 512 512)"><path d="M228 322 h286 v380 h-286 z" fill="#f4fbfd"/><path d="M514 322 h282 c-46 95 -46 285 0 380 h-282 z" fill="#e4125c"/></g></svg>
+    <svg width="120" height="120" viewBox="0 0 1024 1024" style="margin-bottom:28px; filter: drop-shadow(0 16px 54px rgba(255,179,64,.42))"><defs><linearGradient id="lamp2i" x1="0" y1="0" x2="0.85" y2="1"><stop offset="0" stop-color="#1b2740"/><stop offset="1" stop-color="#0b1220"/></linearGradient><radialGradient id="lamp2o" cx="0.5" cy="0.38" r="0.7"><stop offset="0" stop-color="#fff3d0"/><stop offset="0.5" stop-color="#ffb340"/><stop offset="1" stop-color="#f08a1c"/></radialGradient></defs><rect width="1024" height="1024" rx="224" fill="url(#lamp2i)"/><path d="M356 336 h132 v368 h236 v132 h-368 z" fill="#f6f3ec"/><circle cx="422" cy="252" r="96" fill="url(#lamp2o)"/></svg>
     <br>
     <span class="eyebrow">The AI agent cockpit — macOS &amp; Windows</span>
-    <h1>You talk.<br>Loods builds.</h1>
+    <h1>It knows<br>the way.</h1>
     <p class="sub">
-      Loods puts a whole team of AI agents in one beautiful desktop app — building, testing and
+      Lantern puts a whole team of AI agents in one beautiful desktop app — building, testing and
       explaining software while you stay in command. Every change reviewable, every action approved
       by you. Powered by the same engine as Claude Code. No terminal required.
     </p>
@@ -218,7 +218,7 @@
     <div class="mock">
       <div class="mock-title">
         <span class="dot" style="background:#ff5f57"></span><span class="dot" style="background:#febc2e"></span><span class="dot" style="background:#28c840"></span>
-        <span style="color:var(--faint); margin-left:8px; font-weight:600">Loods</span>
+        <span style="color:var(--faint); margin-left:8px; font-weight:600">Lantern</span>
       </div>
       <div class="mock-body">
         <aside>
@@ -271,8 +271,8 @@
 <section id="whoitsfor" style="padding-top:70px">
   <div class="wrap">
     <p class="kicker">One app, every role</p>
-    <h2>Whatever your role, Loods has your back</h2>
-    <p class="lead">Loods asks who you are on first launch and reshapes itself — full instrument panel for engineers, plain language for everyone else.</p>
+    <h2>Whatever your role, Lantern has your back</h2>
+    <p class="lead">Lantern asks who you are on first launch and reshapes itself — full instrument panel for engineers, plain language for everyone else.</p>
     <div class="personas">
       <div class="persona">
         <div class="pe">👩‍💻</div>
@@ -298,7 +298,7 @@
       </div>
       <div class="persona">
         <div class="pe">💼</div>
-        <span class="role-tag" style="color:#67e8f9">Consultants &amp; Analysts</span>
+        <span class="role-tag" style="color:#7dd3fc">Consultants &amp; Analysts</span>
         <h3>Answers your clients can read</h3>
         <ul>
           <li>Ask anything about any codebase — read-only agent</li>
@@ -336,10 +336,10 @@
       <div class="card"><div class="ic">💬</div><h3>Talk while it works</h3><p>The composer never locks. Queue follow-ups mid-run, interrupt instantly with Esc, and keep the conversation flowing.</p></div>
       <div class="card"><div class="ic">🔎</div><h3>Named, searchable threads</h3><p>Every session has a human name — rename with a double-click, find anything by search. Close the app, come back, resume where you left off.</p></div>
       <div class="card"><div class="ic">📊</div><h3>Cost transparency</h3><p>Live token and dollar counters per turn and per session, plus hard budget caps per agent. No surprises on your bill.</p></div>
-      <div class="card"><div class="ic">🌍</div><h3>Any repo, any branch</h3><p>Paste a repository link and a branch — Loods fetches it into its own workspace and you start asking. Switch branches from a dropdown. No cloning, no Docker, no running the app.</p></div>
+      <div class="card"><div class="ic">🌍</div><h3>Any repo, any branch</h3><p>Paste a repository link and a branch — Lantern fetches it into its own workspace and you start asking. Switch branches from a dropdown. No cloning, no Docker, no running the app.</p></div>
       <div class="card"><div class="ic">🌱</div><h3>Simple mode</h3><p>One toggle turns the cockpit into plain language: changes described in sentences, no jargon, same power underneath. Perfect for teammates who don't live in code.</p></div>
       <div class="card"><div class="ic">⚡</div><h3>Everything one click away</h3><p>Type / or hit ⌘K for the quick menu: switch mode, model or branch, export, rename, interrupt. Shift+Tab cycles permission modes, just like the terminal.</p></div>
-      <div class="card"><div class="ic">🕰️</div><h3>Continue terminal sessions</h3><p>Loods reads the same store as the claude CLI — browse every past terminal conversation, search by project, open the transcript and keep talking where you left off.</p></div>
+      <div class="card"><div class="ic">🕰️</div><h3>Continue terminal sessions</h3><p>Lantern reads the same store as the claude CLI — browse every past terminal conversation, search by project, open the transcript and keep talking where you left off.</p></div>
       <div class="card"><div class="ic">📸</div><h3>Paste screenshots</h3><p>⌘V a screenshot straight into the chat — the agent sees the image. "Why does this button look broken?" plus a picture is a complete bug report.</p></div>
       <div class="card"><div class="ic">🐙</div><h3>GitHub workflows built in</h3><p>One-click chips for the daily grind: review a PR against our checklist, compose a ticket in your team’s format, update an issue's technical todos.</p></div>
       <div class="card"><div class="ic">☀️</div><h3>Your cockpit, your rules</h3><p>Dark or light theme, global instructions every agent follows, switchable branches on any repo (with a guard for uncommitted work), sessions restored exactly where you quit.</p></div>
@@ -351,7 +351,7 @@
   <div class="wrap">
     <p class="kicker">Security first</p>
     <h2>Locked down like it should be</h2>
-    <p class="lead">Loods is built on the principle that an AI with your keyboard deserves a seatbelt.</p>
+    <p class="lead">Lantern is built on the principle that an AI with your keyboard deserves a seatbelt.</p>
     <div class="grid">
       <div class="card"><div class="ic">🔐</div><h3>Keys encrypted in your keychain</h3><p>API keys are encrypted at rest with macOS keychain-backed storage, and never leave the app's core process — the UI literally cannot read them.</p></div>
       <div class="card"><div class="ic">🏠</div><h3>100% local, zero telemetry</h3><p>Sessions, transcripts and profiles live only on your machine. No analytics, no tracking, no third-party servers. The only network traffic is the agent talking to Anthropic.</p></div>
@@ -368,17 +368,17 @@
     <details><summary>Do I need to know how to code?</summary><p>No. Describe what you want in plain language; the agent writes the code and shows you everything it changes. Developers get power tools; everyone else gets a builder that explains itself.</p></details>
     <details><summary>How does it connect to Claude?</summary><p>Three ways, automatically: an API key you save in Settings (encrypted), an ANTHROPIC_API_KEY in your environment, or your existing Claude Code login on the machine. Settings shows exactly which one is active.</p></details>
     <details><summary>Does the Windows version do everything the Mac version does?</summary><p>Yes — same engine, same features: agents, personas, repo sessions with branch switching, permission control, exports. It's the identical app built for Windows x64.</p></details>
-    <details><summary>I'm in QA or consulting — do I need a dev environment?</summary><p>No. Install Loods, paste the repository link (and the branch you're testing), and ask. Loods fetches the code into its own workspace — no Docker, no local build, no IDE. Generate test cases or client-ready summaries and export them as reports. The only requirement is Git installed on the machine.</p></details>
-    <details><summary>What does AI usage cost?</summary><p>Usage bills to your Claude login or the company API key — Loods adds nothing on top and shows live per-turn costs. Budget caps per agent are built in.</p></details>
+    <details><summary>I'm in QA or consulting — do I need a dev environment?</summary><p>No. Install Lantern, paste the repository link (and the branch you're testing), and ask. Lantern fetches the code into its own workspace — no Docker, no local build, no IDE. Generate test cases or client-ready summaries and export them as reports. The only requirement is Git installed on the machine.</p></details>
+    <details><summary>What does AI usage cost?</summary><p>Usage bills to your Claude login or the company API key — Lantern adds nothing on top and shows live per-turn costs. Budget caps per agent are built in.</p></details>
     <details><summary>Can it break my project?</summary><p>It asks before changing files (unless you opt into auto mode), every change is visible as a diff, and the git panel reverts any file with one click. Work on a branch for extra comfort.</p></details>
-    <details><summary>Is my code sent anywhere?</summary><p>*Only what the agent needs goes to Anthropic's API to generate responses — the same as Claude Code in your terminal. Loods itself has no servers, no telemetry, and stores everything locally.</p></details>
+    <details><summary>Is my code sent anywhere?</summary><p>*Only what the agent needs goes to Anthropic's API to generate responses — the same as Claude Code in your terminal. Lantern itself has no servers, no telemetry, and stores everything locally.</p></details>
   </div>
 </section>
 
 <footer>
   <div class="wrap">
-    <p><b style="color:var(--dim)">Loods</b> — built on the Claude Agent SDK.</p>
-    <p style="margin-top:6px">© 2026 Loods · internal use · <a href="#security" style="text-decoration:underline">Security</a></p>
+    <p><b style="color:var(--dim)">Lantern</b> — built on the Claude Agent SDK.</p>
+    <p style="margin-top:6px">© 2026 Lantern · internal use · <a href="#security" style="text-decoration:underline">Security</a></p>
   </div>
 </footer>
 

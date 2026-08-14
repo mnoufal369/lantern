@@ -13,11 +13,11 @@ let manager: SessionManager | null = null
 let pendingOpenPath: string | null = null
 let rendererReady = false
 
-/** loods://open?path=%2FUsers%2F…&new=1 → { dir, forceNew } (or null). */
+/** lantern://open?path=%2FUsers%2F…&new=1 → { dir, forceNew } (or null). */
 function pathFromDeepLink(url: string): { dir: string; forceNew: boolean } | null {
   try {
     const parsed = new URL(url)
-    if (parsed.protocol !== 'loods:') {
+    if (parsed.protocol !== 'lantern:') {
       return null
     }
     const dir = parsed.searchParams.get('path')
@@ -27,8 +27,8 @@ function pathFromDeepLink(url: string): { dir: string; forceNew: boolean } | nul
   }
 }
 
-/** Focus (or create) a session for a folder — the `loods` CLI lands here. */
-function openFolderInLoods(dir: string, forceNew = false): void {
+/** Focus (or create) a session for a folder — the `lantern` CLI lands here. */
+function openFolderInLantern(dir: string, forceNew = false): void {
   try {
     if (!existsSync(dir) || !statSync(dir).isDirectory()) {
       return
@@ -113,7 +113,7 @@ function createWindow(): void {
       if (pendingOpenPath) {
         const dir = pendingOpenPath
         pendingOpenPath = null
-        openFolderInLoods(dir)
+        openFolderInLantern(dir)
       }
     }, 600)
   })
@@ -123,7 +123,7 @@ function createWindow(): void {
 const OWNED_DATA = ['settings.json', 'profiles.json', 'sessions.json', 'transcripts']
 
 /**
- * The app has been renamed AgentDeck -> Crew -> Pilot -> Loods, and each rename
+ * The app has been renamed AgentDeck -> Crew -> Pilot -> Lantern, and each rename
  * moves userData to a new folder. Carry our own files across from the newest
  * previous name that has them.
  *
@@ -138,7 +138,7 @@ function migrateLegacyAppData(): void {
   if (missing.length === 0) {
     return
   }
-  for (const legacyName of ['Pilot', 'dockPilot', 'Crew', 'AgentDeck']) {
+  for (const legacyName of ['Loods', 'Pilot', 'dockPilot', 'Crew', 'AgentDeck']) {
     const oldDir = path.join(path.dirname(newDir), legacyName)
     if (!existsSync(path.join(oldDir, 'settings.json'))) {
       continue
@@ -160,13 +160,13 @@ function migrateLegacyAppData(): void {
   }
 }
 
-// The `loods` CLI opens loods://open?path=… — macOS delivers it here whether
+// The `lantern` CLI opens lantern://open?path=… — macOS delivers it here whether
 // the app is already running or not (possibly before ready).
 app.on('open-url', (event, url) => {
   event.preventDefault()
   const link = pathFromDeepLink(url)
   if (link) {
-    openFolderInLoods(link.dir, link.forceNew)
+    openFolderInLantern(link.dir, link.forceNew)
   }
 })
 
@@ -174,13 +174,13 @@ app.whenReady().then(() => {
   migrateLegacyAppData()
   adoptLoginShellPath()
   ProfileStore.seedDefaults()
-  app.setAsDefaultProtocolClient('loods')
+  app.setAsDefaultProtocolClient('lantern')
   installAppMenu()
   manager = new SessionManager(() => mainWindow)
   registerIpc(manager)
   createWindow()
 
-  // `loods <dir>` can also launch the app directly with --dir (Windows path).
+  // `lantern <dir>` can also launch the app directly with --dir (Windows path).
   const dirFlag = process.argv.indexOf('--dir')
   if (dirFlag >= 0 && process.argv[dirFlag + 1]) {
     pendingOpenPath = process.argv[dirFlag + 1]

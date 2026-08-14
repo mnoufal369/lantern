@@ -1,16 +1,16 @@
 <div align="center">
 
-<img src="resources/icon.svg" width="110" alt="Loods logo">
+<img src="resources/icon.svg" width="110" alt="Lantern logo">
 
-# Loods
+# Lantern
 
-**You talk. Loods builds.**
+**It knows the way.**
 
 A native desktop cockpit for AI coding agents — macOS & Windows.<br>
 Powered by the same engine as Claude Code. No terminal required.
 
-<sub><i>loods</i> (Dutch) — the harbour pilot who boards a vessel and guides it
-safely into port. The mark is signal flag “H”: <i>I have a pilot on board.</i></sub>
+<sub>A lantern is warm light carried ahead into the dark: it goes first through
+code you have never seen, and shows you what it finds.</sub>
 
 [![CI](https://github.com/mnoufal369/loods/actions/workflows/ci.yml/badge.svg)](https://github.com/mnoufal369/loods/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/mnoufal369/loods?color=29acc2)](https://github.com/mnoufal369/loods/releases/latest)
@@ -22,7 +22,7 @@ safely into port. The mark is signal flag “H”: <i>I have a pilot on board.</
 
 ---
 
-Loods is what GitHub Desktop was to the git terminal: a beautiful, interactive
+Lantern is what GitHub Desktop was to the git terminal: a beautiful, interactive
 cockpit for terminal AI coding agents. Point an agent at a folder or paste a
 repository URL, ask for what you want in plain words — and approve every
 change before it happens. Built for developers **and** for the people around
@@ -37,13 +37,13 @@ the code: QA, consultants, product folks.
   commands (`a && b`) always re-ask. Four permission levels from Plan to
   Full auto.
 - 🚀 **Ten repos, ten conversations** — sessions are tabs (⌘1–9), agents keep
-  working in the background, notifications call you back, `loods .` opens the
+  working in the background, notifications call you back, `lantern .` opens the
   current folder from a terminal.
 - 🧑‍✈️ **Five ready-made agents** — Dev, Planner, QA (read-only), Consultant
   (read-only), Explainer (read-only) — plus a builder for your own: custom
   prompt, model, permissions, MCP servers, per-session budget.
 - 🌍 **Any repo, branch or PR** — paste a URL and optionally `release/2.4` or
-  `#123`; Loods fetches it into its own workspace. Org repo suggestions as
+  `#123`; Lantern fetches it into its own workspace. Org repo suggestions as
   you type (via `gh`).
 - 📊 **Cost, tokens & context always visible** — per-turn cost footers, a
   context-fill meter, budget bars, and a spend view (7-day / all-time / per
@@ -60,25 +60,25 @@ the code: QA, consultants, product folks.
 
 **Easiest** — download the `.dmg` from the
 [latest release](https://github.com/mnoufal369/loods/releases/latest), drag
-Loods to Applications, and approve once via System Settings → Privacy &
+Lantern to Applications, and approve once via System Settings → Privacy &
 Security → *Open Anyway* (builds are ad-hoc signed, not notarized). From then
-on Loods updates itself in-app with one click.
+on Lantern updates itself in-app with one click.
 
 **From source** — fully trusted by macOS, zero prompts, and enables the
 fastest self-update path:
 
 ```bash
 git clone https://github.com/mnoufal369/loods.git
-cd loods
+cd lantern
 yarn setup:mac    # installs deps, builds, installs to /Applications, launches
 ```
 
 Requirements: [Node 20+](https://nodejs.org) and Git (`brew install node git`).
-This also installs the `loods` command — try `loods .` in any project.
+This also installs the `lantern` command — try `lantern .` in any project.
 
 ### Windows
 
-Download `Loods-Setup-<version>-x64.exe` from the
+Download `Lantern-Setup-<version>-x64.exe` from the
 [latest release](https://github.com/mnoufal369/loods/releases/latest) and
 run it (one SmartScreen prompt: *More info → Run anyway*). The agent runtime
 is bundled; install [Git for Windows](https://git-scm.com/download/win) to
@@ -86,7 +86,7 @@ fetch repositories.
 
 ## Connect to Claude
 
-Loods authenticates in this order — Settings shows which one is active:
+Lantern authenticates in this order — Settings shows which one is active:
 
 1. API key saved in **Settings** (encrypted with your OS keychain)
 2. `ANTHROPIC_API_KEY` from your environment
