@@ -5,6 +5,7 @@ import { useSettingsStore } from '@/stores/useSettingsStore'
 import { useSessionsStore } from '@/stores/useSessionsStore'
 import { useProfilesStore } from '@/stores/useProfilesStore'
 import type { AuthStatus } from '@shared/types'
+import type { UpdateCheck } from '@/App'
 
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000
 
@@ -98,7 +99,35 @@ function AuthStatusLine({ status }: { status: AuthStatus | null }): React.JSX.El
   )
 }
 
-export default function SettingsModal({ onClose }: { onClose: () => void }): React.JSX.Element {
+export default function SettingsModal({
+  onClose,
+  onCheckForUpdates
+}: {
+  onClose: () => void
+  onCheckForUpdates: (manual?: boolean) => Promise<UpdateCheck>
+}): React.JSX.Element {
+  const [checking, setChecking] = useState(false)
+  const [checked, setChecked] = useState<UpdateCheck | null>(null)
+
+  const checkNow = async (): Promise<void> => {
+    setChecking(true)
+    setChecked(await onCheckForUpdates(true))
+    setChecking(false)
+  }
+
+  /** A check the user asked for must say something, including "nothing to do". */
+  const checkLabel = (): string => {
+    if (checking || checked === null) {
+      return ''
+    }
+    if (checked.state === 'error') {
+      return "Couldn't reach GitHub — check your connection."
+    }
+    return checked.state === 'available'
+      ? `Version ${checked.version ?? ''} is available — see the banner at the top.`
+      : "You're on the latest version."
+  }
+
   const settings = useSettingsStore((s) => s.settings)
   const update = useSettingsStore((s) => s.update)
   const [apiKey, setApiKey] = useState('')
@@ -262,7 +291,22 @@ export default function SettingsModal({ onClose }: { onClose: () => void }): Rea
           <UsageSection />
         </div>
 
-        {version && <p className="text-center text-[11px] text-zinc-600">Loods v{version}</p>}
+        <div>
+          <label className="mb-1 block text-xs font-medium text-zinc-400">Version</label>
+          <div className="flex items-center gap-3 rounded-lg border border-deck-border bg-deck-raised px-3 py-2">
+            <span className="text-[13px] text-zinc-200">
+              Loods {version ? `v${version}` : ''}
+            </span>
+            <span className="min-w-0 flex-1 truncate text-[11.5px] text-zinc-500">{checkLabel()}</span>
+            <button
+              onClick={() => void checkNow()}
+              disabled={checking}
+              className="shrink-0 rounded-md border border-deck-border px-2.5 py-1 text-[11.5px] text-zinc-300 hover:bg-deck-panel disabled:opacity-50"
+            >
+              {checking ? 'Checking…' : 'Check for updates'}
+            </button>
+          </div>
+        </div>
 
         <div className="flex justify-end gap-2 pt-2">
           <button

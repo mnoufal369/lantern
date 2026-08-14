@@ -87,6 +87,8 @@ export interface IpcEvents {
   'session:created': SessionMeta
   /** Self-update progress: download percentage, build stage, ready, or failure. */
   'update:progress': UpdateProgress
+  /** The user asked for an update check from outside the window (the app menu). */
+  'update:checkRequested': { source: 'menu' }
 }
 
 export type IpcChannel = keyof IpcApi

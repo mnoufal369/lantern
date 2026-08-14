@@ -1,5 +1,14 @@
 # Release notes
 
+## 0.8.1: Check for updates when you want to
+- **Loods → Check for Updates…** in the menu bar (Help on Windows), and a
+  **Check for updates** button next to the version in Settings. Until now the
+  app only looked on launch and every six hours, with no way to ask.
+- It always answers. If there's nothing new you get a short "You're on the
+  latest version" note rather than a button that appears to do nothing, and if
+  GitHub can't be reached it says that instead.
+- Asking by hand also brings back a banner you dismissed earlier.
+
 ## 0.8.0: Pilot is now Loods
 - **New name.** *Loods* is Dutch for the harbour pilot — the specialist who
   boards a vessel and guides it safely into port. It says what the app does

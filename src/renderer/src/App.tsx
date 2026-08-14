@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Check, Copy, FolderOpen, History, Plus, Rocket, Settings as SettingsIcon, Users, X } from 'lucide-react'
 import { APP_NAME, UPDATE_COMMAND } from '@shared/constants'
 import type { UpdateProgress } from '@shared/types'
@@ -18,6 +18,12 @@ import { useProfilesStore } from '@/stores/useProfilesStore'
 import { usePermissionsStore } from '@/stores/usePermissionsStore'
 import { useSettingsStore } from '@/stores/useSettingsStore'
 
+/** What a manual check found, for whoever asked for it. */
+export interface UpdateCheck {
+  state: 'available' | 'up-to-date' | 'error'
+  version?: string
+}
+
 export default function App(): React.JSX.Element {
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [newSessionOpen, setNewSessionOpen] = useState(false)
@@ -30,23 +36,68 @@ export default function App(): React.JSX.Element {
   })
   const [progress, setProgress] = useState<UpdateProgress | null>(null)
   const [updateDismissed, setUpdateDismissed] = useState(false)
+  // A check the user asked for has to answer even when the answer is "nothing
+  // to do" — otherwise the menu item looks broken.
+  const [checkNotice, setCheckNotice] = useState<'up-to-date' | 'error' | null>(null)
+  const noticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const activeId = useSessionsStore((s) => s.activeId)
   const settings = useSettingsStore((s) => s.settings)
   const simple = settings?.uiMode === 'simple'
 
-  useEffect(() => {
-    const check = (): void => {
-      window.api
-        .invoke('app:checkForUpdate')
-        .then(({ updateAvailable, canSelfUpdate, latestVersion }) =>
-          setUpdate({ available: updateAvailable, canSelf: canSelfUpdate, version: latestVersion })
-        )
-        .catch(() => undefined)
+  /**
+   * The one place an update check happens. Asking by hand un-dismisses the
+   * banner, so a check you requested can never come back silent.
+   */
+  const showNotice = useCallback((kind: 'up-to-date' | 'error') => {
+    if (noticeTimer.current) {
+      clearTimeout(noticeTimer.current)
     }
-    check()
-    const timer = setInterval(check, 6 * 60 * 60 * 1000)
-    return () => clearInterval(timer)
+    setCheckNotice(kind)
+    noticeTimer.current = setTimeout(() => setCheckNotice(null), 6000)
   }, [])
+
+  const runCheck = useCallback(
+    async (manual = false): Promise<UpdateCheck> => {
+      try {
+        const { updateAvailable, canSelfUpdate, latestVersion } = await window.api.invoke('app:checkForUpdate')
+        setUpdate({ available: updateAvailable, canSelf: canSelfUpdate, version: latestVersion })
+        if (manual) {
+          setUpdateDismissed(false)
+          if (updateAvailable) {
+            setCheckNotice(null)
+          } else {
+            showNotice('up-to-date')
+          }
+        }
+        return { state: updateAvailable ? 'available' : 'up-to-date', version: latestVersion }
+      } catch {
+        if (manual) {
+          showNotice('error')
+        }
+        return { state: 'error' }
+      }
+    },
+    [showNotice]
+  )
+
+  useEffect(
+    () => () => {
+      if (noticeTimer.current) {
+        clearTimeout(noticeTimer.current)
+      }
+    },
+    []
+  )
+
+  useEffect(() => {
+    void runCheck()
+    const timer = setInterval(() => void runCheck(), 6 * 60 * 60 * 1000)
+    const offRequested = window.api.on('update:checkRequested', () => void runCheck(true))
+    return () => {
+      clearInterval(timer)
+      offRequested()
+    }
+  }, [runCheck])
 
   useEffect(() => {
     void useSessionsStore.getState().init()
@@ -148,6 +199,26 @@ export default function App(): React.JSX.Element {
         onOpenSettings={() => setSettingsOpen(true)}
         onOpenBuilder={() => setBuilderOpen(true)}
       />
+      {checkNotice && !update.available && (
+        <div className="flex shrink-0 items-center gap-2.5 border-b border-deck-border bg-deck-panel px-4 py-1.5 text-[12px]">
+          {checkNotice === 'up-to-date' ? (
+            <Check size={13} className="shrink-0 text-green-400" />
+          ) : (
+            <X size={13} className="shrink-0 text-amber-400" />
+          )}
+          <span className="text-zinc-400">
+            {checkNotice === 'up-to-date'
+              ? "You're on the latest version."
+              : "Couldn't reach GitHub to check for updates."}
+          </span>
+          <button
+            onClick={() => setCheckNotice(null)}
+            className="ml-auto rounded px-2 py-0.5 text-[11.5px] text-zinc-500 hover:bg-deck-raised hover:text-zinc-300"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
       {(progress ? progress.phase !== 'ready' || !updateDismissed : update.available && !updateDismissed) && (
         <UpdateBanner
           canSelfUpdate={update.canSelf}
@@ -178,7 +249,7 @@ export default function App(): React.JSX.Element {
 
       <PermissionDialog />
       <RenameModal />
-      {settingsOpen && <SettingsModal onClose={() => setSettingsOpen(false)} />}
+      {settingsOpen && <SettingsModal onClose={() => setSettingsOpen(false)} onCheckForUpdates={runCheck} />}
       {newSessionOpen && (
         <NewSessionModal
           onClose={() => {

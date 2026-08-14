@@ -1,5 +1,24 @@
-import { app, Menu, shell, type MenuItemConstructorOptions } from 'electron'
+import { app, BrowserWindow, Menu, shell, type MenuItemConstructorOptions } from 'electron'
 import { APP_NAME, REPO_WEB_URL } from '../shared/constants'
+
+/**
+ * The window owns the whole update flow — the check, the banner, the progress —
+ * so the menu item just asks it to start one rather than duplicating any of it.
+ */
+function requestUpdateCheck(): void {
+  const window = BrowserWindow.getAllWindows()[0]
+  if (!window) {
+    return
+  }
+  window.show()
+  window.focus()
+  window.webContents.send('update:checkRequested', { source: 'menu' })
+}
+
+const CHECK_FOR_UPDATES: MenuItemConstructorOptions = {
+  label: 'Check for Updates…',
+  click: () => requestUpdateCheck()
+}
 
 const HELP_LINKS: { label: string; url: string }[] = [
   { label: 'Documentation', url: `${REPO_WEB_URL}#readme` },
@@ -15,7 +34,27 @@ const HELP_LINKS: { label: string; url: string }[] = [
  */
 export function installAppMenu(): void {
   const template: MenuItemConstructorOptions[] = [
-    ...(process.platform === 'darwin' ? [{ role: 'appMenu' } as MenuItemConstructorOptions] : []),
+    // Spelled out rather than `role: 'appMenu'` so Check for Updates can sit
+    // directly under About, where macOS users look for it. The rest stay roles.
+    ...(process.platform === 'darwin'
+      ? [
+          {
+            label: APP_NAME,
+            submenu: [
+              { role: 'about' },
+              CHECK_FOR_UPDATES,
+              { type: 'separator' },
+              { role: 'services' },
+              { type: 'separator' },
+              { role: 'hide' },
+              { role: 'hideOthers' },
+              { role: 'unhide' },
+              { type: 'separator' },
+              { role: 'quit' }
+            ]
+          } as MenuItemConstructorOptions
+        ]
+      : []),
     { role: 'fileMenu' },
     { role: 'editMenu' },
     { role: 'viewMenu' },
@@ -23,6 +62,8 @@ export function installAppMenu(): void {
     {
       role: 'help',
       submenu: [
+        // Windows and Linux have no app menu, so Help is where the item lives.
+        ...(process.platform === 'darwin' ? [] : [CHECK_FOR_UPDATES, { type: 'separator' } as MenuItemConstructorOptions]),
         ...HELP_LINKS.map(({ label, url }) => ({
           label,
           click: () => void shell.openExternal(url)
