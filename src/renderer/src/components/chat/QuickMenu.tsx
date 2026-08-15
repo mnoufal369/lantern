@@ -152,6 +152,17 @@ export default function QuickMenu({
       run: () => void useSessionsStore.getState().createSession(meta.profileId, meta.cwd).catch(() => undefined)
     })
 
+    // Branching survives the one-tab-one-session model as a plain action: it
+    // opens another independent tab that happens to start with this history.
+    all.push({
+      id: 'branch-here',
+      icon: '🌿',
+      label: 'Branch this conversation',
+      hint: 'new tab, same history so far',
+      keywords: 'branch fork copy duplicate conversation history split try',
+      run: () => void useSessionsStore.getState().forkSession(sessionId).catch(() => undefined)
+    })
+
     all.push({
       id: 'rename',
       icon: '✏️',

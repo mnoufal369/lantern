@@ -1,5 +1,24 @@
 # Release notes
 
+## 0.10.0: One tab is one session
+- **Tabs are now simply your open sessions.** Any folder, any branch, no
+  relationship between them — the same way terminal tabs work. The strip used to
+  show only conversations branched from the one you were in, which meant a
+  session restored from history appeared as a lone tab while the sidebar listed
+  everything else. Two answers to "what am I looking at" is one too many.
+- **The sidebar is History**: the sessions you have closed, and the way back
+  into one. Double-click or hit the reopen arrow and it returns as a tab. Live
+  sessions live in the tab strip and nowhere else.
+- **Closing a tab is closing a tab**, not archiving a document — the session
+  goes to History and can be reopened whenever.
+- **Tabs report their agent.** A tab glows amber when its agent needs your
+  approval, green while it works, red if it stopped — necessary now that the
+  sidebar no longer watches over background sessions for you.
+- An unnamed tab shows its folder instead of "New session", and **⌘T** opens a
+  new session alongside ⌘N.
+- Branching a conversation is still there — ⌘K → *Branch this conversation* —
+  it just makes an ordinary independent tab now.
+
 ## 0.9.0: The app is Lantern
 - **New name.** A lantern is warm light carried ahead into the dark — it goes
   first through code you have never seen and shows you what it finds. That is

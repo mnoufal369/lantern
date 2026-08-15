@@ -36,9 +36,9 @@ export default function ChatView({ sessionId }: { sessionId: string }): React.JS
   const [matchIndex, setMatchIndex] = useState(0)
   const searchInputRef = useRef<HTMLInputElement>(null)
   const subagentCount = entry?.blocks.filter((b) => b.kind === 'tool' && b.toolName === 'Task').length ?? 0
-  const hasForked = useSessionsStore((s) => Object.values(s.sessions).some((e) => e.meta.forkedFrom))
+  const openTabCount = useSessionsStore((s) => Object.values(s.sessions).filter((e) => !e.meta.archived).length)
   const [tabsHintUsed, setTabsHintUsed] = useState(localStorage.getItem(TABS_HINT_KEY) === '1')
-  const showTabsHint = !tabsHintUsed && !hasForked
+  const showTabsHint = !tabsHintUsed && openTabCount < 2
 
   const matches = useMemo(() => {
     const needle = searchQuery.trim().toLowerCase()
@@ -132,12 +132,12 @@ export default function ChatView({ sessionId }: { sessionId: string }): React.JS
     setTimeout(() => searchInputRef.current?.focus(), 0)
   }
 
-  const openParallelTab = (): void => {
+  const openTabHere = (): void => {
     localStorage.setItem(TABS_HINT_KEY, '1')
     setTabsHintUsed(true)
     useSessionsStore
       .getState()
-      .forkSession(sessionId)
+      .createSession(entry.meta.profileId, entry.meta.cwd)
       .catch((e: unknown) => {
         window.alert(
           e instanceof Error
@@ -287,12 +287,12 @@ export default function ChatView({ sessionId }: { sessionId: string }): React.JS
         <BranchSwitcher key={sessionId} sessionId={sessionId} />
         <OverflowRow items={headerItems} gap={10} className="flex-1" />
         <HoverCard
-          title={showTabsHint ? 'Introducing tabs' : 'New tab'}
-          body="Branch this conversation into a second tab. It keeps everything said so far and runs in its own process, so two things can happen at once."
+          title={showTabsHint ? 'Introducing tabs' : 'New tab on this folder'}
+          body="One tab is one conversation. This opens a fresh one on the same folder, running in its own process, so two things can happen at once."
           className="relative shrink-0"
         >
           <button
-            onClick={openParallelTab}
+            onClick={openTabHere}
             className="flex h-6 w-6 items-center justify-center rounded-md text-zinc-500 hover:bg-deck-raised hover:text-zinc-200"
           >
             <Plus size={14} />

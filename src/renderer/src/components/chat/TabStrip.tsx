@@ -2,16 +2,30 @@ import { useEffect, useRef, useState } from 'react'
 import { Pencil, X } from 'lucide-react'
 import { PROFILE_COLORS } from '@shared/constants'
 import { useSessionsStore } from '@/stores/useSessionsStore'
+import type { SessionStatus } from '@shared/types'
 
-/** Walks up the fork chain to the session every tab in this strip descends from. */
-function rootOf(sessionId: string, parentOf: Record<string, string | undefined>): string {
-  const seen = new Set<string>()
-  let current = sessionId
-  while (parentOf[current] && !seen.has(current)) {
-    seen.add(current)
-    current = parentOf[current] as string
+/** Folder name, for a session nobody has named yet. */
+function folderName(cwd: string): string {
+  const parts = cwd.split('/').filter(Boolean)
+  return parts[parts.length - 1] ?? 'Session'
+}
+
+/**
+ * A tab shows what its agent is doing, because the sidebar no longer lists live
+ * sessions — this is the only place a background agent can ask for you.
+ */
+function statusOf(status: SessionStatus): { tone: string; label: string; pulse: boolean } | null {
+  switch (status.kind) {
+    case 'waiting-permission':
+      return { tone: '#f59e0b', label: 'Needs your approval', pulse: true }
+    case 'thinking':
+    case 'running-tool':
+      return { tone: '#4ade80', label: 'Working', pulse: true }
+    case 'error':
+      return { tone: '#f87171', label: 'Stopped with an error', pulse: false }
+    default:
+      return null
   }
-  return current
 }
 
 function ColorMenu({
@@ -63,6 +77,11 @@ function ColorMenu({
   )
 }
 
+/**
+ * One tab is one session. Nothing groups them: a tab can be any folder on any
+ * branch, exactly like terminal tabs. Closing a tab moves the session to
+ * History, where it can be reopened.
+ */
 export default function TabStrip({ sessionId }: { sessionId: string }): React.JSX.Element | null {
   const sessions = useSessionsStore((s) => s.sessions)
   const order = useSessionsStore((s) => s.order)
@@ -74,21 +93,13 @@ export default function TabStrip({ sessionId }: { sessionId: string }): React.JS
   const [draft, setDraft] = useState('')
   const [colorMenuId, setColorMenuId] = useState<string | null>(null)
 
-  const parentOf: Record<string, string | undefined> = {}
-  for (const id of order) {
-    parentOf[id] = sessions[id]?.meta.forkedFrom
-  }
-  const root = rootOf(sessionId, parentOf)
-  // Oldest first: a new tab lands to the right of the ones it was opened from, and stays
-  // there after a restart (the sidebar's order is newest-first).
-  const family = order
-    .filter((id) => !sessions[id].meta.archived && rootOf(id, parentOf) === root)
+  // Oldest first, so a new tab lands on the right and tabs never reshuffle
+  // under the pointer as sessions become active.
+  const open = order
+    .filter((id) => sessions[id] && !sessions[id].meta.archived)
     .sort((a, b) => sessions[a].meta.createdAt - sessions[b].meta.createdAt)
 
-  // Every session gets a tab, including one on its own. A session imported from
-  // terminal history has no branches, and hiding the strip for it left it with
-  // no name, no colour and nowhere to rename it.
-  if (family.length === 0) {
+  if (open.length === 0) {
     return null
   }
 
@@ -105,19 +116,20 @@ export default function TabStrip({ sessionId }: { sessionId: string }): React.JS
       entry.meta.status.kind === 'thinking' ||
       entry.meta.status.kind === 'running-tool' ||
       entry.meta.status.kind === 'waiting-permission'
+    const name = entry.meta.title || folderName(entry.meta.cwd)
     const hasContent = entry.blocks.length > 0 || entry.meta.stats.turns > 0
     const warning = busy
-      ? `"${entry.meta.title || 'This tab'}" is still working. Close it anyway?`
+      ? `"${name}" is still working. Close it anyway?`
       : hasContent
-        ? `Close "${entry.meta.title || 'this tab'}"? It moves to Archived, so you can reopen it later.`
+        ? `Close "${name}"? It moves to History, so you can reopen it later.`
         : null
     if (warning && !window.confirm(warning)) {
       return
     }
-    // Land on the tab to the left (or the right, when closing the first one) so closing
-    // a tab never drops out of the session.
-    const position = family.indexOf(id)
-    const neighbour = family[position - 1] ?? family[position + 1]
+    // Land on the tab to the left (or the right, when closing the first one) so
+    // closing never drops you out of the app entirely.
+    const position = open.indexOf(id)
+    const neighbour = open[position - 1] ?? open[position + 1]
     void archive(id).then(() => {
       if (neighbour) {
         setActive(neighbour)
@@ -126,10 +138,11 @@ export default function TabStrip({ sessionId }: { sessionId: string }): React.JS
   }
 
   return (
-    <div className="flex h-8 shrink-0 items-stretch border-b border-deck-border bg-deck-panel">
-      {family.map((id) => {
+    <div className="flex h-8 shrink-0 items-stretch overflow-x-auto border-b border-deck-border bg-deck-panel">
+      {open.map((id) => {
         const { meta } = sessions[id]
         const active = id === sessionId
+        const status = statusOf(meta.status)
         return (
           <div
             key={id}
@@ -138,28 +151,35 @@ export default function TabStrip({ sessionId }: { sessionId: string }): React.JS
               setRenamingId(id)
               setDraft(meta.title)
             }}
-            title={renamingId === id ? undefined : 'Double-click to rename'}
-            className={`group relative flex max-w-[220px] cursor-pointer items-center gap-1.5 border-r border-deck-border px-3 text-[12px] ${
+            title={
+              renamingId === id
+                ? undefined
+                : `${meta.title || folderName(meta.cwd)} — ${meta.cwd.replace(/^\/Users\/[^/]+/, '~')}${
+                    status ? ` · ${status.label}` : ''
+                  }`
+            }
+            className={`group relative flex max-w-[220px] shrink-0 cursor-pointer items-center gap-1.5 border-r border-deck-border px-3 text-[12px] ${
               active ? 'bg-deck-bg text-zinc-100' : 'text-zinc-500 hover:bg-deck-bg/50 hover:text-zinc-300'
             }`}
           >
-            {/* One circle does both jobs: shows the tag, opens the picker. Space is always
-                reserved so the title never shifts when it appears on hover. */}
+            {/* One circle, two jobs: it reports status when there is any, shows the
+                colour tag otherwise, and opens the tag picker either way. */}
             <button
-              title="Colour-code this tab"
+              title={status ? status.label : 'Colour-code this tab'}
               onClick={(e) => {
                 e.stopPropagation()
                 setColorMenuId(colorMenuId === id ? null : id)
               }}
               className={`flex h-3 w-3 shrink-0 items-center justify-center ${
-                meta.color ? '' : 'opacity-0 group-hover:opacity-100'
+                meta.color || status ? '' : 'opacity-0 group-hover:opacity-100'
               }`}
             >
-              {meta.color ? (
-                <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: meta.color }} />
-              ) : (
-                <span className="h-2.5 w-2.5 rounded-full border border-zinc-600 hover:border-zinc-300" />
-              )}
+              <span
+                className={`h-2.5 w-2.5 rounded-full ${status?.pulse ? 'status-pulse' : ''} ${
+                  meta.color || status ? '' : 'border border-zinc-600 hover:border-zinc-300'
+                }`}
+                style={{ backgroundColor: status?.tone ?? meta.color }}
+              />
             </button>
             {renamingId === id ? (
               <input
@@ -179,9 +199,7 @@ export default function TabStrip({ sessionId }: { sessionId: string }): React.JS
                 className="selectable w-28 rounded border border-deck-border bg-deck-raised px-1 text-[12px] text-zinc-100 outline-none"
               />
             ) : (
-              // Branched tabs carry a real "New tab" title from the main process,
-              // so this fallback is only the untitled case — named as the sidebar names it.
-              <span className="truncate">{meta.title || 'New session'}</span>
+              <span className="truncate">{meta.title || folderName(meta.cwd)}</span>
             )}
             <span className="ml-1 flex shrink-0 items-center gap-1.5 opacity-0 group-hover:opacity-100">
               <button

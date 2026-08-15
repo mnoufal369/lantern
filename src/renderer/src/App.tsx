@@ -141,7 +141,8 @@ export default function App(): React.JSX.Element {
 
   useEffect(() => {
     const handler = (e: KeyboardEvent): void => {
-      if (e.metaKey && e.key === 'n') {
+      // ⌘T as well as ⌘N: one tab is one session, so the terminal reflex should work.
+      if (e.metaKey && (e.key === 'n' || e.key === 't')) {
         e.preventDefault()
         setNewSessionOpen(true)
       }
