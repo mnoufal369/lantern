@@ -147,18 +147,18 @@ export default function App(): React.JSX.Element {
         setNewSessionOpen(true)
       }
       if (e.metaKey && e.key >= '1' && e.key <= '9') {
+        // Exactly what the panel lists: pinned first (a pinned session shows
+        // even when closed), then open. Numbering must match what you can see.
+        e.preventDefault()
         const { order, sessions, setActive } = useSessionsStore.getState()
-        // Same order the sidebar shows: pinned first, then open, oldest first.
-        const visible = order
-          .filter((id) => !sessions[id].meta.archived)
-          .sort(
-            (a, b) =>
-              Number(Boolean(sessions[b].meta.pinned)) - Number(Boolean(sessions[a].meta.pinned)) ||
-              sessions[a].meta.createdAt - sessions[b].meta.createdAt
-          )
+        const byCreated = (a: string, b: string): number =>
+          sessions[a].meta.createdAt - sessions[b].meta.createdAt
+        const visible = [
+          ...order.filter((id) => sessions[id].meta.pinned).sort(byCreated),
+          ...order.filter((id) => !sessions[id].meta.pinned && !sessions[id].meta.archived).sort(byCreated)
+        ]
         const target = visible[Number(e.key) - 1]
         if (target) {
-          e.preventDefault()
           setActive(target)
         }
       }
@@ -227,7 +227,7 @@ export default function App(): React.JSX.Element {
           </button>
         </div>
       )}
-      {(progress ? progress.phase !== 'ready' || !updateDismissed : update.available && !updateDismissed) && (
+      {(progress ? progress.phase !== 'ready' && progress.phase !== 'error' || !updateDismissed : update.available && !updateDismissed) && (
         <UpdateBanner
           canSelfUpdate={update.canSelf}
           version={progress?.version ?? update.version}

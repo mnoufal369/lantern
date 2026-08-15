@@ -171,7 +171,11 @@ export default function Sidebar({
     if (warning && !window.confirm(warning)) {
       return
     }
-    const siblings = [...pinned, ...open].filter((other) => other !== id)
+    // From the whole list, not the search-filtered one, and never a closed
+    // session — landing on one would silently reopen it.
+    const siblings = order.filter(
+      (other) => other !== id && !sessions[other].meta.archived
+    )
     void archive(id).then(() => {
       if (id === activeId && siblings.length > 0) {
         setActive(siblings[siblings.length - 1])

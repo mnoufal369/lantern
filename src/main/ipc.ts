@@ -10,7 +10,7 @@ import {
   prepareFromRelease,
   type PreparedUpdate
 } from './updater'
-import { allowQuitForUpdate } from './quitGuard'
+import { allowQuitForUpdate, cancelQuitForUpdate } from './quitGuard'
 import type { UpdateProgress } from '@shared/types'
 import { prepareRepoWorkspace } from './git/RepoWorkspace'
 import type { PastedImage, PermissionDecision } from '@shared/types'
@@ -261,7 +261,14 @@ export function registerIpc(manager: SessionManager): void {
     // Let the app quit without the "agents are still working" guard: the user
     // has just been asked, and the installer waits for the process to exit.
     allowQuitForUpdate()
-    return installPrepared(prepared, __BUILD_SOURCE_DIR__)
+    const result = installPrepared(prepared, __BUILD_SOURCE_DIR__)
+    if (!result.started) {
+      // The installer never launched, so the app keeps running — put the
+      // busy-agent warning back rather than leaving quitting unguarded.
+      cancelQuitForUpdate()
+      emitProgress({ phase: 'error', version: prepared.version, reason: result.reason })
+    }
+    return result
   })
 
 }

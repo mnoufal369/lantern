@@ -84,9 +84,11 @@ export default function TerminalHistoryModal({ onClose }: { onClose: () => void 
     }
   }
 
-  const needle = search.toLowerCase()
+  const needle = search.trim().toLowerCase()
   const closed = Object.values(sessions)
-    .filter((s) => s.meta.archived)
+    // Pinned ones stay visible in the panel; listing them here too would put
+    // the same session in two places.
+    .filter((s) => s.meta.archived && !s.meta.pinned)
     .filter(
       (s) => s.meta.title.toLowerCase().includes(needle) || s.meta.cwd.toLowerCase().includes(needle)
     )

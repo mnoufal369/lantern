@@ -34,7 +34,14 @@ mac:
   # The agent runtimes are per-arch binaries the app selects at launch, not code to
   # lipo together. Without this the universal build refuses to merge them.
   x64ArchFiles: "**/claude-agent-sdk-darwin-*/claude"
+  # Must restate the whitelist: a platform `files` block replaces the root one,
+  # and one holding only a negation falls back to **/*, shipping all of src.
   files:
+    - out/**
+    - package.json
+    - NOTICE.md
+    - LICENSE
+    - "!node_modules/@anthropic-ai/claude-agent-sdk-linux-*/**"
     - "!node_modules/@anthropic-ai/claude-agent-sdk-win32-*/**"
 win:
   target:
@@ -43,6 +50,11 @@ win:
         - x64
   icon: resources/icon.ico
   files:
+    - out/**
+    - package.json
+    - NOTICE.md
+    - LICENSE
+    - "!node_modules/@anthropic-ai/claude-agent-sdk-linux-*/**"
     - "!node_modules/@anthropic-ai/claude-agent-sdk-darwin-*/**"
 nsis:
   oneClick: true

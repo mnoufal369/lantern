@@ -69,7 +69,12 @@ async function githubToken(): Promise<string | null> {
   })
 }
 
-function getJson(url: string, token: string | null): Promise<unknown> {
+/**
+ * Renaming the repository makes GitHub answer the old slug with a 301. Without
+ * following it, every already-installed copy of the app silently stops seeing
+ * updates — which is precisely what happened to Pilot and Loods installs.
+ */
+function getJson(url: string, token: string | null, redirects = 0): Promise<unknown> {
   return new Promise((resolve, reject) => {
     https
       .get(
@@ -82,6 +87,12 @@ function getJson(url: string, token: string | null): Promise<unknown> {
           }
         },
         (res) => {
+          const location = res.headers.location
+          if (res.statusCode && res.statusCode >= 300 && res.statusCode < 400 && location && redirects < 5) {
+            res.resume()
+            getJson(new URL(location, url).toString(), token, redirects + 1).then(resolve, reject)
+            return
+          }
           if (res.statusCode !== 200) {
             res.resume()
             reject(new Error(`GitHub API ${res.statusCode} for ${url}`))

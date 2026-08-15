@@ -133,7 +133,7 @@ export default function ChatView({ sessionId }: { sessionId: string }): React.JS
         window.alert(
           e instanceof Error
             ? e.message.replace(/^Error invoking remote method '[^']+': Error: /, '')
-            : 'Could not open a new tab'
+            : 'Could not open a new session'
         )
       })
   }
@@ -351,7 +351,16 @@ export default function ChatView({ sessionId }: { sessionId: string }): React.JS
             status={entry.meta.status}
             agentColor={profile?.color ?? '#7e9cbf'}
           />
-          {entry.blocks.length === 0 && <StarterPrompts sessionId={sessionId} cwd={entry.meta.cwd} />}
+          {/* Only once we know the conversation is empty. Showing the starter
+              prompts while the transcript is still loading makes a session with
+              200 turns look brand new — and one click sends "give me a tour"
+              into the middle of it. */}
+          {entry.blocks.length === 0 &&
+            (entry.historyLoaded ? (
+              <StarterPrompts sessionId={sessionId} cwd={entry.meta.cwd} />
+            ) : (
+              <p className="py-10 text-center text-xs text-zinc-600">Loading this conversation…</p>
+            ))}
         </div>
         {!atBottom && entry.blocks.length > 0 && (
           <button

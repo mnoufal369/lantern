@@ -11,6 +11,11 @@ export function allowQuitForUpdate(): void {
   quitAllowed = true
 }
 
+/** The install never started, so the warning must come back. */
+export function cancelQuitForUpdate(): void {
+  quitAllowed = false
+}
+
 /** Also set once the user answers "Quit anyway" to the busy-sessions prompt. */
 export function allowQuit(): void {
   quitAllowed = true

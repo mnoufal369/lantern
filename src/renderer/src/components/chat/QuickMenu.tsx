@@ -144,21 +144,21 @@ export default function QuickMenu({
     })
 
     all.push({
-      id: 'new-tab-here',
+      id: 'new-session-here',
       icon: '🗂️',
-      label: 'New tab on this project',
-      hint: 'same folder, fresh chat',
+      label: 'New session on this project',
+      hint: 'same folder, fresh conversation',
       keywords: 'new tab session duplicate project folder repo here open',
       run: () => void useSessionsStore.getState().createSession(meta.profileId, meta.cwd).catch(() => undefined)
     })
 
-    // Branching survives the one-tab-one-session model as a plain action: it
-    // opens another independent tab that happens to start with this history.
+    // Branching is a plain action now: it opens another independent session
+    // that happens to start with this history.
     all.push({
       id: 'branch-here',
       icon: '🌿',
       label: 'Branch this conversation',
-      hint: 'new tab, same history so far',
+      hint: 'new session, same history so far',
       keywords: 'branch fork copy duplicate conversation history split try',
       run: () => void useSessionsStore.getState().forkSession(sessionId).catch(() => undefined)
     })

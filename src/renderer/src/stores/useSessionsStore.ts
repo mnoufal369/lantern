@@ -42,14 +42,33 @@ export const useSessionsStore = create<SessionsState>((set, get) => ({
     if (get().initialized) {
       return
     }
+    // Claimed before the await: otherwise StrictMode's double-mount runs two
+    // inits, and the second wipes blocks the first had already fetched.
+    set({ initialized: true })
     const metas = await window.api.invoke('sessions:list')
-    const sessions: Record<string, SessionEntry> = {}
-    const order: string[] = []
-    for (const meta of metas) {
-      sessions[meta.id] = { meta, blocks: [], historyLoaded: false }
-      order.push(meta.id)
+    set((state) => {
+      const sessions: Record<string, SessionEntry> = {}
+      const order: string[] = []
+      for (const meta of metas) {
+        // Keep anything already in the store — a session created while this was
+        // in flight (the CLI opening a folder) must not be dropped.
+        sessions[meta.id] = state.sessions[meta.id] ?? { meta, blocks: [], historyLoaded: false }
+        order.push(meta.id)
+      }
+      for (const id of state.order) {
+        if (!sessions[id]) {
+          sessions[id] = state.sessions[id]
+          order.unshift(id)
+        }
+      }
+      return { sessions, order }
+    })
+    const sessions = get().sessions
+    const order = get().order
+    // Something focused a session while we were loading; leave it alone.
+    if (get().activeId) {
+      return
     }
-    set({ sessions, order, initialized: true })
     const remembered = localStorage.getItem('lantern.activeSession')
     const target =
       (remembered && sessions[remembered] && !sessions[remembered].meta.archived ? remembered : null) ??
@@ -64,9 +83,9 @@ export const useSessionsStore = create<SessionsState>((set, get) => ({
     const meta = await window.api.invoke('sessions:create', { profileId, cwd })
     set((state) => ({
       sessions: { ...state.sessions, [meta.id]: { meta, blocks: [], historyLoaded: true } },
-      order: [meta.id, ...state.order],
-      activeId: meta.id
+      order: [meta.id, ...state.order]
     }))
+    get().setActive(meta.id)
     return meta.id
   },
 
@@ -75,9 +94,9 @@ export const useSessionsStore = create<SessionsState>((set, get) => ({
     const events = await window.api.invoke('sessions:history', { sessionId: meta.id })
     set((state) => ({
       sessions: { ...state.sessions, [meta.id]: { meta, blocks: applyEvents([], events), historyLoaded: true } },
-      order: [meta.id, ...state.order],
-      activeId: meta.id
+      order: [meta.id, ...state.order]
     }))
+    get().setActive(meta.id)
     return meta.id
   },
 
@@ -97,7 +116,9 @@ export const useSessionsStore = create<SessionsState>((set, get) => ({
     localStorage.setItem('lantern.activeSession', sessionId)
     const entry = get().sessions[sessionId]
     if (entry && !entry.historyLoaded) {
-      window.api.invoke('sessions:history', { sessionId }).then((events) => {
+      window.api
+        .invoke('sessions:history', { sessionId })
+        .then((events) => {
         set((state) => {
           const current = state.sessions[sessionId]
           if (!current || current.historyLoaded) {
@@ -114,7 +135,17 @@ export const useSessionsStore = create<SessionsState>((set, get) => ({
             }
           }
         })
-      })
+        })
+        .catch(() => {
+          // Mark it loaded anyway: an empty conversation is wrong, but a
+          // permanently blank pane that never retries is worse.
+          set((state) => {
+            const current = state.sessions[sessionId]
+            return current
+              ? { sessions: { ...state.sessions, [sessionId]: { ...current, historyLoaded: true } } }
+              : state
+          })
+        })
     }
   },
 
@@ -161,8 +192,11 @@ export const useSessionsStore = create<SessionsState>((set, get) => ({
     set((state) => ({
       sessions: {
         ...state.sessions,
-        [sessionId]: { ...state.sessions[sessionId], meta }
-      }
+        [sessionId]: state.sessions[sessionId]
+          ? { ...state.sessions[sessionId], meta }
+          : { meta, blocks: [], historyLoaded: false }
+      },
+      order: state.order.includes(sessionId) ? state.order : [sessionId, ...state.order]
     }))
     // Hand off rather than setting activeId here: selecting is what loads the
     // transcript, and reopening used to skip it — so a reopened session came

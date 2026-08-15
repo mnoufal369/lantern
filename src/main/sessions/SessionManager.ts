@@ -165,29 +165,15 @@ export class SessionManager {
     return meta
   }
 
-  /** Root of a fork family, so tabs opened from any member share one naming pool. */
-  private rootOf(sessionId: string): string {
-    const seen = new Set<string>()
-    let current = sessionId
-    let parentId = this.metas.get(current)?.forkedFrom
-    while (parentId && !seen.has(current)) {
-      seen.add(current)
-      current = parentId
-      parentId = this.metas.get(current)?.forkedFrom
-    }
-    return current
-  }
-
-  /** "New tab", then "New tab (2)", skipping names already used in this family. */
+  /** "<parent> (branch)", then "(branch 2)" — a row in the list needs a name. */
   private nextTabTitle(parentId: string): string {
-    const root = this.rootOf(parentId)
-    const taken = new Set(
-      [...this.metas.values()].filter((m) => !m.archived && this.rootOf(m.id) === root).map((m) => m.title)
-    )
-    let title = 'New tab'
+    const parent = this.metas.get(parentId)
+    const base = parent?.title?.trim() || path.basename(parent?.cwd ?? '') || 'Session'
+    const taken = new Set([...this.metas.values()].map((m) => m.title))
+    let title = `${base} (branch)`
     let n = 2
     while (taken.has(title)) {
-      title = `New tab (${n})`
+      title = `${base} (branch ${n})`
       n += 1
     }
     return title
@@ -235,7 +221,11 @@ export class SessionManager {
     await writeFile(path.join(transcriptDir, `${meta.id}.json`), JSON.stringify(events), 'utf8')
 
     this.metas.set(meta.id, meta)
-    this.startRuntime(meta)
+    const runtime = this.startRuntime(meta)
+    // Load what we just wrote. Without this the runtime starts with an empty
+    // log: the branch renders blank, and its first snapshot overwrites the
+    // carried-over conversation on disk.
+    await runtime.loadTranscript()
     this.persistMeta(meta, true)
     return meta
   }
@@ -326,6 +316,14 @@ export class SessionManager {
       this.runtimes.delete(sessionId)
     }
     this.broker.disposeSession(sessionId)
+    // Cancel any debounced write first: it holds a reference to the meta and
+    // would re-add the row to sessions.json after the delete.
+    const pending = this.saveTimers.get(sessionId)
+    if (pending) {
+      clearTimeout(pending)
+      this.saveTimers.delete(sessionId)
+    }
+    this.prevStatusKind.delete(sessionId)
     this.metas.delete(sessionId)
     SessionStore.remove(sessionId)
 
@@ -466,12 +464,21 @@ export class SessionManager {
           '`claude --resume` in the terminal lists the ones on this machine.'
       )
     }
+    const owner = [...this.metas.values()].find((m) => m.sdkSessionId === item.sdkSessionId)
+    if (owner) {
+      throw new Error(
+        `That conversation is already open here as "${owner.title || 'an untitled session'}". Two sessions cannot share one transcript.`
+      )
+    }
     if (!existsSync(item.cwd)) {
       throw new Error(
         `That session's project folder is gone: ${item.cwd}. Restore it (or clone the repo back to that path) and try again.`
       )
     }
     const profile = ProfileStore.list()[0]
+    if (!profile) {
+      throw new Error('No agent profiles exist. Create one in Agents first.')
+    }
     const meta: SessionMeta = {
       id: `sess_${Date.now()}_${++this.counter}`,
       sdkSessionId: item.sdkSessionId,

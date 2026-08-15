@@ -1,5 +1,33 @@
 # Release notes
 
+## 0.10.1: The QA pass
+Two QA sweeps over the session machinery after the rewrite, and the findings fixed.
+
+- **Your builds were shipping the entire source tree** — every `src` file, the
+  scripts, and a local editor settings file — because the per-platform file
+  lists in the packaging config silently replaced the whitelist. Installers now
+  contain only the compiled app.
+- **Deleting a busy session brought it back on the next launch** as a row
+  pointing at a transcript that had been removed. A pending debounced save
+  outlived the delete.
+- **Branching a conversation produced an empty one, and destroyed the copy it
+  had just made.** The new session started with an empty log and overwrote the
+  carried history on its first save. Branches are also named after their parent
+  now instead of "New tab".
+- **⌘1–9 pointed at the wrong sessions** whenever a pinned one was closed, and
+  ignored the search box.
+- **A session with history briefly looked brand new** while its transcript
+  loaded — and stayed that way forever if the load failed. It now says it is
+  loading, and a failure no longer sticks.
+- Creating, branching or opening a session from the CLI didn't remember it, so
+  the next launch reopened the wrong one.
+- Restoring a conversation already open here is refused rather than letting two
+  sessions write to one transcript.
+- Dismissing a failed-update banner does something; a failed install no longer
+  leaves quitting unguarded for the rest of the session; `lantern -n .` keeps
+  its flag on a cold start; the updater follows the redirect left by a repo
+  rename, so a future rename won't cut off everyone's updates.
+
 ## 0.10.0: One list, one logic
 - **A tab and a session are the same thing, and they live in one place** — the
   panel on the left. The strip along the top is gone. Before, the sidebar listed

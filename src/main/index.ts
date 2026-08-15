@@ -10,7 +10,7 @@ import { ProfileStore } from './store/stores'
 
 let mainWindow: BrowserWindow | null = null
 let manager: SessionManager | null = null
-let pendingOpenPath: string | null = null
+let pendingOpen: { dir: string; forceNew: boolean } | null = null
 let rendererReady = false
 
 /** lantern://open?path=%2FUsers%2F…&new=1 → { dir, forceNew } (or null). */
@@ -37,7 +37,7 @@ function openFolderInLantern(dir: string, forceNew = false): void {
     return
   }
   if (!rendererReady || !manager) {
-    pendingOpenPath = dir
+    pendingOpen = { dir, forceNew }
     return
   }
   if (mainWindow) {
@@ -110,10 +110,10 @@ function createWindow(): void {
     // a deep link that arrived during startup.
     setTimeout(() => {
       rendererReady = true
-      if (pendingOpenPath) {
-        const dir = pendingOpenPath
-        pendingOpenPath = null
-        openFolderInLantern(dir)
+      if (pendingOpen) {
+        const { dir, forceNew } = pendingOpen
+        pendingOpen = null
+        openFolderInLantern(dir, forceNew)
       }
     }, 600)
   })
@@ -183,7 +183,7 @@ app.whenReady().then(() => {
   // `lantern <dir>` can also launch the app directly with --dir (Windows path).
   const dirFlag = process.argv.indexOf('--dir')
   if (dirFlag >= 0 && process.argv[dirFlag + 1]) {
-    pendingOpenPath = process.argv[dirFlag + 1]
+    pendingOpen = { dir: process.argv[dirFlag + 1], forceNew: false }
   }
 
   app.on('activate', () => {
