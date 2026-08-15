@@ -162,9 +162,13 @@ export const useSessionsStore = create<SessionsState>((set, get) => ({
       sessions: {
         ...state.sessions,
         [sessionId]: { ...state.sessions[sessionId], meta }
-      },
-      activeId: sessionId
+      }
     }))
+    // Hand off rather than setting activeId here: selecting is what loads the
+    // transcript, and reopening used to skip it — so a reopened session came
+    // back empty even though its transcript was sitting on disk. `meta` is
+    // un-archived by now, so this cannot bounce back into reopen.
+    get().setActive(sessionId)
   },
 
   rename: async (sessionId, title) => {
