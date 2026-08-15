@@ -82,6 +82,13 @@ export const useSessionsStore = create<SessionsState>((set, get) => ({
   },
 
   setActive: (sessionId) => {
+    // Looking at a session means it is open. Without this, selecting a closed
+    // session leaves it displayed but absent from the list, because the list
+    // only shows open ones — you would be reading something with no row.
+    if (sessionId && get().sessions[sessionId]?.meta.archived) {
+      void get().reopen(sessionId)
+      return
+    }
     set({ activeId: sessionId })
     if (!sessionId) {
       localStorage.removeItem('lantern.activeSession')

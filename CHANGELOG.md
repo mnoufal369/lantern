@@ -18,6 +18,9 @@
   working on right now. The panel stays short and about the work in front of
   you; a line at the bottom says how many are in History.
 - A session with no name shows its folder.
+- Fixed: opening a closed session from History left it displayed but missing
+  from the list — you were reading a conversation with no row anywhere.
+  Selecting a session now opens it, whichever route you arrive by.
 - **⌘T** opens a new session, and **⌘1–9** walks the list you can see.
 - Branching a conversation is still there — ⌘K → *Branch this conversation* —
   it just makes an ordinary independent session now.

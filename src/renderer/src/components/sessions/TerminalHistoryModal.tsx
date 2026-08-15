@@ -125,16 +125,22 @@ export default function TerminalHistoryModal({ onClose }: { onClose: () => void 
                 <Hash size={14} className="shrink-0 text-zinc-500" />
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-[13px] text-zinc-200">{alreadyOpen.meta.title}</span>
-                  <span className="text-[11px] text-zinc-500">Already open in Lantern.</span>
+                  <span className="text-[11px] text-zinc-500">
+                    {alreadyOpen.meta.archived ? 'Closed in Lantern — reopen it.' : 'Already open in Lantern.'}
+                  </span>
                 </span>
                 <button
                   onClick={() => {
-                    useSessionsStore.getState().setActive(alreadyOpen.meta.id)
+                    if (alreadyOpen.meta.archived) {
+                      void reopen(alreadyOpen.meta.id)
+                    } else {
+                      useSessionsStore.getState().setActive(alreadyOpen.meta.id)
+                    }
                     onClose()
                   }}
                   className="btn-brand shrink-0 rounded-md px-3 py-1.5 text-xs font-medium"
                 >
-                  Switch to it
+                  {alreadyOpen.meta.archived ? 'Reopen' : 'Switch to it'}
                 </button>
               </div>
             ) : byId === null ? (

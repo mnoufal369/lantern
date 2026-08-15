@@ -133,7 +133,9 @@ export default function Sidebar({
   // Stable ordering where you click a lot, recency where you browse.
   const byCreated = (a: string, b: string): number => sessions[a].meta.createdAt - sessions[b].meta.createdAt
   const pinned = all.filter((id) => sessions[id].meta.pinned).sort(byCreated)
-  const open = all.filter((id) => !sessions[id].meta.pinned && !sessions[id].meta.archived).sort(byCreated)
+  const open = all
+    .filter((id) => !sessions[id].meta.pinned && (!sessions[id].meta.archived || id === activeId))
+    .sort(byCreated)
   // Closed sessions are not shown here: they belong to History. A pinned one
   // still appears, because pinning means "keep this in front of me".
   const closedCount = order.filter((id) => sessions[id].meta.archived && !sessions[id].meta.pinned).length
