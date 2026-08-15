@@ -148,7 +148,14 @@ export default function App(): React.JSX.Element {
       }
       if (e.metaKey && e.key >= '1' && e.key <= '9') {
         const { order, sessions, setActive } = useSessionsStore.getState()
-        const visible = order.filter((id) => !sessions[id].meta.archived)
+        // Same order the sidebar shows: pinned first, then open, oldest first.
+        const visible = order
+          .filter((id) => !sessions[id].meta.archived)
+          .sort(
+            (a, b) =>
+              Number(Boolean(sessions[b].meta.pinned)) - Number(Boolean(sessions[a].meta.pinned)) ||
+              sessions[a].meta.createdAt - sessions[b].meta.createdAt
+          )
         const target = visible[Number(e.key) - 1]
         if (target) {
           e.preventDefault()

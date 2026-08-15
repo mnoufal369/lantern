@@ -1,23 +1,23 @@
 # Release notes
 
-## 0.10.0: One tab is one session
-- **Tabs are now simply your open sessions.** Any folder, any branch, no
-  relationship between them — the same way terminal tabs work. The strip used to
-  show only conversations branched from the one you were in, which meant a
-  session restored from history appeared as a lone tab while the sidebar listed
-  everything else. Two answers to "what am I looking at" is one too many.
-- **The sidebar is History**: the sessions you have closed, and the way back
-  into one. Double-click or hit the reopen arrow and it returns as a tab. Live
-  sessions live in the tab strip and nowhere else.
-- **Closing a tab is closing a tab**, not archiving a document — the session
-  goes to History and can be reopened whenever.
-- **Tabs report their agent.** A tab glows amber when its agent needs your
-  approval, green while it works, red if it stopped — necessary now that the
-  sidebar no longer watches over background sessions for you.
-- An unnamed tab shows its folder instead of "New session", and **⌘T** opens a
-  new session alongside ⌘N.
+## 0.10.0: One list, one logic
+- **A tab and a session are the same thing, and they live in one place** — the
+  panel on the left. The strip along the top is gone. Before, the sidebar listed
+  every session while the strip showed only conversations branched from the one
+  you were in, so a session restored by ID turned up as a lone tab beside a
+  sidebar of everything else. Two answers to "what am I looking at" is one too
+  many.
+- **Pinned · Open · Closed.** One list, in that order. Pin the sessions you keep
+  coming back to and they stay at the top, open or closed.
+- **Every row can be renamed, pinned, colour-tagged, closed and reopened**, all
+  from the row itself rather than hidden behind a double-click.
+- **Rows report their agent**: amber when it needs your approval, green while it
+  works, red if it stopped — so a background session can still reach you.
+- Closing a session keeps it in the list under Closed instead of filing it away
+  somewhere else, and a session with no name shows its folder.
+- **⌘T** opens a new session, and **⌘1–9** walks the list you can see.
 - Branching a conversation is still there — ⌘K → *Branch this conversation* —
-  it just makes an ordinary independent tab now.
+  it just makes an ordinary independent session now.
 
 ## 0.9.0: The app is Lantern
 - **New name.** A lantern is warm light carried ahead into the dark — it goes

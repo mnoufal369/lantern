@@ -35,6 +35,7 @@ export interface IpcApi {
   'sessions:rename': (req: { sessionId: string; title: string }) => void
   /** Colour tag for the session's tab; null clears it. */
   'sessions:setColor': (req: { sessionId: string; color: string | null }) => void
+  'sessions:setPinned': (req: { sessionId: string; pinned: boolean }) => void
   'permissions:respond': (req: { requestId: string; decision: PermissionDecision }) => void
   'history:list': (req?: undefined) => ClaudeHistoryItem[]
   /** Looks up one session by pasted id (older than the listing reaches); null if unknown. */

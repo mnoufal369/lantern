@@ -25,6 +25,7 @@ interface SessionsState {
   reopen: (sessionId: string) => Promise<void>
   rename: (sessionId: string, title: string) => Promise<void>
   setColor: (sessionId: string, color: string | null) => Promise<void>
+  setPinned: (sessionId: string, pinned: boolean) => Promise<void>
   setModel: (sessionId: string, model: string) => Promise<void>
   setPermissionMode: (sessionId: string, mode: SessionMeta['permissionMode']) => Promise<void>
   applyEventBatch: (sessionId: string, events: UiEvent[]) => void
@@ -168,6 +169,19 @@ export const useSessionsStore = create<SessionsState>((set, get) => ({
       }
       return {
         sessions: { ...state.sessions, [sessionId]: { ...entry, meta: { ...entry.meta, title } } }
+      }
+    })
+  },
+
+  setPinned: async (sessionId, pinned) => {
+    await window.api.invoke('sessions:setPinned', { sessionId, pinned })
+    set((state) => {
+      const entry = state.sessions[sessionId]
+      if (!entry) {
+        return state
+      }
+      return {
+        sessions: { ...state.sessions, [sessionId]: { ...entry, meta: { ...entry.meta, pinned } } }
       }
     })
   },

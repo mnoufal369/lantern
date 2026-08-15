@@ -4,7 +4,6 @@ import { CONTEXT_WINDOW_TOKENS } from '@shared/constants'
 import Transcript from './Transcript'
 import Composer from './Composer'
 import BranchSwitcher from './BranchSwitcher'
-import TabStrip from './TabStrip'
 import QuickActions from './QuickActions'
 import HoverCard from '@/components/ui/HoverCard'
 import { formatTokens } from '@/lib/format'
@@ -17,9 +16,6 @@ import { transcriptToMarkdown } from '@/lib/exportMarkdown'
 
 const COST_DISCLAIMER =
   'Added up from what the Claude Code SDK reports for each turn in this session. Treat it as a close guide rather than a bill: subscription plans, cached reads and retries can all make your real charge differ.'
-
-/** Set the first time a tab is opened, so the hint never returns. */
-const TABS_HINT_KEY = 'lantern.tabsHintUsed'
 
 export default function ChatView({ sessionId }: { sessionId: string }): React.JSX.Element {
   const entry = useSessionsStore((s) => s.sessions[sessionId])
@@ -36,9 +32,6 @@ export default function ChatView({ sessionId }: { sessionId: string }): React.JS
   const [matchIndex, setMatchIndex] = useState(0)
   const searchInputRef = useRef<HTMLInputElement>(null)
   const subagentCount = entry?.blocks.filter((b) => b.kind === 'tool' && b.toolName === 'Task').length ?? 0
-  const openTabCount = useSessionsStore((s) => Object.values(s.sessions).filter((e) => !e.meta.archived).length)
-  const [tabsHintUsed, setTabsHintUsed] = useState(localStorage.getItem(TABS_HINT_KEY) === '1')
-  const showTabsHint = !tabsHintUsed && openTabCount < 2
 
   const matches = useMemo(() => {
     const needle = searchQuery.trim().toLowerCase()
@@ -132,9 +125,7 @@ export default function ChatView({ sessionId }: { sessionId: string }): React.JS
     setTimeout(() => searchInputRef.current?.focus(), 0)
   }
 
-  const openTabHere = (): void => {
-    localStorage.setItem(TABS_HINT_KEY, '1')
-    setTabsHintUsed(true)
+  const openSessionHere = (): void => {
     useSessionsStore
       .getState()
       .createSession(entry.meta.profileId, entry.meta.cwd)
@@ -287,23 +278,18 @@ export default function ChatView({ sessionId }: { sessionId: string }): React.JS
         <BranchSwitcher key={sessionId} sessionId={sessionId} />
         <OverflowRow items={headerItems} gap={10} className="flex-1" />
         <HoverCard
-          title={showTabsHint ? 'Introducing tabs' : 'New tab on this folder'}
-          body="One tab is one conversation. This opens a fresh one on the same folder, running in its own process, so two things can happen at once."
+          title="New session on this folder"
+          body="A fresh conversation on the same folder, running in its own process, so two things can happen at once. It appears in the list on the left."
           className="relative shrink-0"
         >
           <button
-            onClick={openTabHere}
+            onClick={openSessionHere}
             className="flex h-6 w-6 items-center justify-center rounded-md text-zinc-500 hover:bg-deck-raised hover:text-zinc-200"
           >
             <Plus size={14} />
           </button>
-          {showTabsHint && (
-            <span className="ripple-dot pointer-events-none absolute -right-px -top-px h-1.5 w-1.5 rounded-full bg-deck-accent" />
-          )}
         </HoverCard>
       </div>
-
-      <TabStrip sessionId={sessionId} />
 
       {searchOpen && (
         <div className="flex shrink-0 items-center gap-2 border-b border-deck-border bg-deck-panel px-4 py-1.5">

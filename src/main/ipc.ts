@@ -83,6 +83,9 @@ export function registerIpc(manager: SessionManager): void {
     manager.rename(req.sessionId, req.title)
   )
 
+  ipcMain.handle('sessions:setPinned', (_e, req: { sessionId: string; pinned: boolean }) =>
+    manager.setPinned(req.sessionId, req.pinned)
+  )
   ipcMain.handle('sessions:setColor', (_e, req: { sessionId: string; color: string | null }) =>
     manager.setColor(req.sessionId, req.color)
   )

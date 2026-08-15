@@ -59,8 +59,10 @@ export interface SessionMeta {
   forkPending?: boolean
   /** The session this one was forked from, if any. */
   forkedFrom?: string
-  /** Optional colour tag shown on the session's tab. */
+  /** Optional colour tag shown beside the session. */
   color?: string
+  /** Pinned sessions sort to the top of the list and stay there when closed. */
+  pinned?: boolean
   profileId: string
   title: string
   cwd: string

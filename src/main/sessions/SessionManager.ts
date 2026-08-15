@@ -394,6 +394,18 @@ export class SessionManager {
     }
   }
 
+  setPinned(sessionId: string, pinned: boolean): void {
+    const meta = this.metas.get(sessionId)
+    if (meta) {
+      if (pinned) {
+        meta.pinned = true
+      } else {
+        delete meta.pinned
+      }
+      this.persistMeta(meta, true)
+    }
+  }
+
   setColor(sessionId: string, color: string | null): void {
     const meta = this.metas.get(sessionId)
     if (meta) {
