@@ -134,9 +134,9 @@ export default function Sidebar({
   const byCreated = (a: string, b: string): number => sessions[a].meta.createdAt - sessions[b].meta.createdAt
   const pinned = all.filter((id) => sessions[id].meta.pinned).sort(byCreated)
   const open = all.filter((id) => !sessions[id].meta.pinned && !sessions[id].meta.archived).sort(byCreated)
-  const closed = all
-    .filter((id) => !sessions[id].meta.pinned && sessions[id].meta.archived)
-    .sort((a, b) => sessions[b].meta.lastActiveAt - sessions[a].meta.lastActiveAt)
+  // Closed sessions are not shown here: they belong to History. A pinned one
+  // still appears, because pinning means "keep this in front of me".
+  const closedCount = order.filter((id) => sessions[id].meta.archived && !sessions[id].meta.pinned).length
 
   const commitRename = (id: string): void => {
     if (renameDraft.trim()) {
@@ -366,14 +366,24 @@ export default function Sidebar({
       </div>
 
       <div className="flex-1 overflow-y-auto px-1.5 pb-2">
-        {all.length === 0 && (
+        {pinned.length === 0 && open.length === 0 && (
           <p className="px-2 py-4 text-xs leading-relaxed text-zinc-500">
-            {search ? 'Nothing matches.' : 'No sessions yet. Start one with ⌘T.'}
+            {search
+              ? 'Nothing open matches. Closed sessions live in History.'
+              : 'Nothing open. Start one with ⌘T, or reopen an earlier one from History.'}
           </p>
         )}
         {group('Pinned', pinned)}
         {group('Open', open)}
-        {group('Closed', closed)}
+        {closedCount > 0 && (
+          <button
+            onClick={onOpenHistory}
+            className="mt-2 flex w-full items-center gap-1.5 rounded-md px-2 py-1.5 text-[11px] text-zinc-600 hover:bg-deck-raised hover:text-zinc-400"
+          >
+            <History size={11} />
+            {closedCount} closed {closedCount === 1 ? 'session' : 'sessions'} in History
+          </button>
+        )}
       </div>
 
       <p className="shrink-0 px-3 pb-1 text-[11px] text-zinc-600">
@@ -390,7 +400,7 @@ export default function Sidebar({
         </button>
         <button
           onClick={onOpenHistory}
-          title="Continue a terminal Claude Code conversation — browse, or paste a session ID"
+          title="History: sessions you closed, and your terminal Claude Code conversations"
           className="flex h-6 w-6 items-center justify-center rounded-md text-zinc-500 hover:bg-deck-raised hover:text-zinc-300"
         >
           <History size={13} />

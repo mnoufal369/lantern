@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
-import { GitBranch, Hash, Loader2, Search, TerminalSquare } from 'lucide-react'
+import { GitBranch, Hash, Loader2, RotateCcw, Search, TerminalSquare } from 'lucide-react'
 import Modal from '@/components/ui/Modal'
 import { useSessionsStore } from '@/stores/useSessionsStore'
 import { extractSessionId } from '@shared/sessionId'
+import { APP_NAME } from '@shared/constants'
 import type { ClaudeHistoryItem } from '@shared/types'
 
 function timeAgo(ms: number): string {
@@ -29,6 +30,7 @@ export default function TerminalHistoryModal({ onClose }: { onClose: () => void 
   // Result of resolving a pasted id: `item: null` means the store has no such session.
   const [byId, setById] = useState<{ id: string; item: ClaudeHistoryItem | null } | null>(null)
   const sessions = useSessionsStore((s) => s.sessions)
+  const reopen = useSessionsStore((s) => s.reopen)
 
   const pastedId = extractSessionId(search)
   const found = byId?.item ?? null
@@ -83,12 +85,19 @@ export default function TerminalHistoryModal({ onClose }: { onClose: () => void 
   }
 
   const needle = search.toLowerCase()
+  const closed = Object.values(sessions)
+    .filter((s) => s.meta.archived)
+    .filter(
+      (s) => s.meta.title.toLowerCase().includes(needle) || s.meta.cwd.toLowerCase().includes(needle)
+    )
+    .sort((a, b) => b.meta.lastActiveAt - a.meta.lastActiveAt)
+
   const visible = items?.filter(
     (item) => item.title.toLowerCase().includes(needle) || item.cwd.toLowerCase().includes(needle)
   )
 
   return (
-    <Modal title="Terminal history: your Claude Code conversations" onClose={onClose} wide>
+    <Modal title="History" onClose={onClose} wide>
       <div className="space-y-3">
         <div className="flex items-center gap-2 rounded-lg border border-deck-border bg-deck-raised px-3 py-2">
           <Search size={13} className="shrink-0 text-zinc-500" />
@@ -102,9 +111,9 @@ export default function TerminalHistoryModal({ onClose }: { onClose: () => void 
         </div>
 
         <p className="text-[11px] text-zinc-600">
-          These are the sessions you ran with <span className="font-mono">claude</span> in the terminal, same store,
-          same account. Opening one imports the transcript and lets you continue the conversation here. Older than
-          the list reaches? Paste its ID above — <span className="font-mono">claude --resume</span> shows them.
+          Everything you are not currently working on: sessions you closed in {APP_NAME}, and the conversations you
+          ran with <span className="font-mono">claude</span> in a terminal — same store, same account. Opening one
+          puts it back in the list on the left. Older than this reaches? Paste its ID above.
         </p>
 
         {error && <p className="text-xs text-red-400">{error}</p>}
@@ -170,6 +179,39 @@ export default function TerminalHistoryModal({ onClose }: { onClose: () => void 
         )}
 
         <div className="max-h-96 space-y-1 overflow-y-auto">
+          {!pastedId && closed.length > 0 && (
+            <>
+              <p className="px-1 pb-1 pt-1 text-[10px] font-semibold uppercase tracking-[0.07em] text-zinc-600">
+                Closed in {APP_NAME}
+              </p>
+              {closed.map(({ meta }) => (
+                <button
+                  key={meta.id}
+                  onClick={() => {
+                    void reopen(meta.id)
+                    onClose()
+                  }}
+                  className="flex w-full items-start gap-3 rounded-lg border border-transparent px-3 py-2 text-left hover:border-deck-border hover:bg-deck-raised"
+                >
+                  <RotateCcw size={14} className="mt-0.5 shrink-0 text-zinc-500" />
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-[13px] font-medium text-zinc-200">
+                      {meta.title || shortPath(meta.cwd).split('/').pop()}
+                    </span>
+                    <span className="mt-0.5 block truncate font-mono text-[11px] text-zinc-500">
+                      {shortPath(meta.cwd)}
+                    </span>
+                  </span>
+                  <span className="shrink-0 text-[11px] tabular-nums text-zinc-600">
+                    {timeAgo(meta.lastActiveAt)}
+                  </span>
+                </button>
+              ))}
+              <p className="px-1 pb-1 pt-3 text-[10px] font-semibold uppercase tracking-[0.07em] text-zinc-600">
+                From your terminal
+              </p>
+            </>
+          )}
           {items === null && (
             <p className="flex items-center gap-2 py-6 text-sm text-zinc-500">
               <Loader2 size={14} className="animate-spin" /> Reading your Claude store…

@@ -13,8 +13,11 @@
   from the row itself rather than hidden behind a double-click.
 - **Rows report their agent**: amber when it needs your approval, green while it
   works, red if it stopped — so a background session can still reach you.
-- Closing a session keeps it in the list under Closed instead of filing it away
-  somewhere else, and a session with no name shows its folder.
+- **Closed sessions leave the panel and go to History**, together with your
+  terminal Claude Code conversations — one place for everything you are not
+  working on right now. The panel stays short and about the work in front of
+  you; a line at the bottom says how many are in History.
+- A session with no name shows its folder.
 - **⌘T** opens a new session, and **⌘1–9** walks the list you can see.
 - Branching a conversation is still there — ⌘K → *Branch this conversation* —
   it just makes an ordinary independent session now.
