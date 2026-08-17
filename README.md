@@ -36,9 +36,10 @@ the code: QA, consultants, product folks.
   deny / allow once / always allow. Remembered rules are precise — chained
   commands (`a && b`) always re-ask. Four permission levels from Plan to
   Full auto.
-- 🚀 **Ten repos, ten conversations** — sessions are tabs (⌘1–9), agents keep
-  working in the background, notifications call you back, `lantern .` opens the
-  current folder from a terminal.
+- 🚀 **Ten repos, ten conversations** — every session is a row in one list:
+  pinned, open, or closed. ⌘1–9 jumps between them, agents keep working in the
+  background, notifications call you back, and `lantern .` opens the current
+  folder from a terminal.
 - 🧑‍✈️ **Six ready-made agents** — Dev, Frontend Dev, Planner, QA (read-only),
   Consultant (read-only), Explainer (read-only) — plus a builder for your own:
   custom prompt, model, permissions, MCP servers, per-session budget.
