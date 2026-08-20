@@ -144,6 +144,15 @@ export default function QuickMenu({
     })
 
     all.push({
+      id: 'refresh-code',
+      icon: '🔄',
+      label: 'Refresh the code from origin',
+      hint: 'fetched repositories only',
+      keywords: 'refresh pull fetch update code origin latest stale sync',
+      run: () => void window.api.invoke('git:refresh', { sessionId }).catch(() => undefined)
+    })
+
+    all.push({
       id: 'new-session-here',
       icon: '🗂️',
       label: 'New session on this project',

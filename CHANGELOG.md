@@ -1,5 +1,18 @@
 # Release notes
 
+## 0.11.0: The code stops going stale behind your back
+- **A session on a fetched repository can now be brought up to date.** The git
+  panel shows how old the snapshot is — "6d ago" — and clicking it fast-forwards
+  to origin. Also on ⌘K → *Refresh the code from origin*.
+- **Read-only sessions refresh themselves.** If the agent cannot change files
+  and the snapshot is more than half a day old, opening the session quietly
+  brings it current. That is the QA case: you asked about `master` last week and
+  you should not be answered from last week's code.
+- **Nothing moves under a session that can write.** Automatic refresh is limited
+  to read-only agents, fast-forwards only, and refuses outright if there are
+  uncommitted changes. Folders you cloned yourself are never touched — only
+  workspaces Lantern fetched.
+
 ## 0.10.2: The context meter told the truth for the first time
 - **The context meter was wrong, often by a lot.** It added up every model call
   in a turn, and a single turn can be dozens of calls — on real sessions it read

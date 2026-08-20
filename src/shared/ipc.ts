@@ -50,6 +50,11 @@ export interface IpcApi {
   'git:status': (req: { sessionId: string }) => GitStatusSummary
   'git:remoteBranches': (req: { sessionId: string }) => string[]
   'git:checkoutBranch': (req: { sessionId: string; branch: string }) => GitStatusSummary
+  /**
+   * Fast-forwards a managed workspace to origin. `auto` asks main to decide
+   * whether it is due; without it the user has asked explicitly.
+   */
+  'git:refresh': (req: { sessionId: string; auto?: boolean }) => GitStatusSummary
   'git:diffFile': (req: { sessionId: string; path: string }) => string
   'git:revertFile': (req: { sessionId: string; path: string }) => void
   'dialog:pickFolder': (req?: undefined) => string | null

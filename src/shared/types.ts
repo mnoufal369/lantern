@@ -142,6 +142,8 @@ export interface GitStatusSummary {
   files: GitFileChange[]
   /** True when the session lives in a Lantern-managed workspace (safe to switch branches). */
   managed?: boolean
+  /** When this workspace last fetched from origin (ms). Undefined for never, or a non-managed folder. */
+  fetchedAt?: number
 }
 
 export type UiMode = 'pro' | 'simple'

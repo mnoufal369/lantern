@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import {
+  RefreshCw,
   Braces,
   File,
   FileCode2,
@@ -106,6 +107,16 @@ function TouchedFileRow({ path, cwd }: { path: string; cwd: string }): React.JSX
   )
 }
 
+/** "6d ago" / "20m ago" — short enough to sit in a 320px header. */
+function fetchedAgo(ms: number): string {
+  const mins = Math.max(0, Math.round((Date.now() - ms) / 60_000))
+  if (mins < 60) {
+    return `${mins}m ago`
+  }
+  const hours = Math.round(mins / 60)
+  return hours < 24 ? `${hours}h ago` : `${Math.round(hours / 24)}d ago`
+}
+
 export default function RightPanel({ sessionId }: { sessionId: string }): React.JSX.Element | null {
   const [collapsed, setCollapsed] = useState(false)
   const [status, setStatus] = useState<GitStatusSummary | null>(null)
@@ -130,8 +141,28 @@ export default function RightPanel({ sessionId }: { sessionId: string }): React.
     }
   }, [sessionId])
 
+  const [refreshing, setRefreshing] = useState(false)
+
+  /** Explicit ask: bring the fetched snapshot up to date with origin. */
+  const refreshCode = useCallback(async (): Promise<void> => {
+    setRefreshing(true)
+    try {
+      setStatus(await window.api.invoke('git:refresh', { sessionId }))
+    } catch {
+      // leave the existing status on screen; the panel is not the place to shout
+    } finally {
+      setRefreshing(false)
+    }
+  }, [sessionId])
+
   useEffect(() => {
     void refresh()
+    // Main decides whether this is due: managed workspace, read-only session,
+    // snapshot older than half a day. Otherwise it just returns the status.
+    void window.api
+      .invoke('git:refresh', { sessionId, auto: true })
+      .then(setStatus)
+      .catch(() => undefined)
     const off = window.api.on('git:changed', (payload) => {
       if (payload.sessionId === sessionId) {
         void refresh()
@@ -184,9 +215,24 @@ export default function RightPanel({ sessionId }: { sessionId: string }): React.
         ) : (
           <span className="text-xs text-zinc-600">no git repo</span>
         )}
+        {status?.managed && (
+          <button
+            onClick={() => void refreshCode()}
+            disabled={refreshing}
+            title={
+              status.fetchedAt
+                ? `Code fetched ${fetchedAgo(status.fetchedAt)} — click to bring it up to date with origin`
+                : 'Bring this snapshot up to date with origin'
+            }
+            className="ml-auto flex items-center gap-1 rounded px-1.5 py-0.5 text-[10.5px] text-zinc-500 hover:bg-deck-raised hover:text-zinc-300 disabled:opacity-50"
+          >
+            <RefreshCw size={11} className={refreshing ? 'animate-spin' : ''} />
+            {status.fetchedAt ? fetchedAgo(status.fetchedAt) : 'refresh'}
+          </button>
+        )}
         <button
           onClick={() => setCollapsed(true)}
-          className="ml-auto text-zinc-500 hover:text-zinc-200"
+          className={`${status?.managed ? '' : 'ml-auto '}text-zinc-500 hover:text-zinc-200`}
           title="Hide panel"
         >
           <PanelRightClose size={14} />

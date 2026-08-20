@@ -19,7 +19,7 @@ import { isNewerVersion } from '@shared/version'
 import type { SessionManager } from './sessions/SessionManager'
 import { GitService } from './git/GitService'
 import { ProfileStore, Settings } from './store/stores'
-import type { AgentProfile, AppSettings } from '@shared/types'
+import type { AgentProfile, AppSettings, GitStatusSummary } from '@shared/types'
 
 export function registerIpc(manager: SessionManager): void {
   const gitService = new GitService()
@@ -159,6 +159,49 @@ export function registerIpc(manager: SessionManager): void {
     const status = await gitService.status(cwd)
     return { ...status, managed: isManaged(cwd) }
   })
+  // Tools that cannot change a file. A profile limited to these is read-only,
+  // which is what makes pulling underneath it safe.
+  const READ_ONLY_TOOLS = new Set(['Read', 'Glob', 'Grep', 'NotebookRead'])
+  const isReadOnlySession = (sessionId: string): boolean => {
+    const meta = manager.getMeta(sessionId)
+    const profile = ProfileStore.list().find((p) => p.id === meta?.profileId)
+    return (
+      !!profile &&
+      profile.allowedTools.length > 0 &&
+      profile.allowedTools.every((tool) => READ_ONLY_TOOLS.has(tool))
+    )
+  }
+  const AUTO_REFRESH_AFTER_MS = 12 * 60 * 60 * 1000
+
+  /**
+   * Keeps a fetched snapshot current. Only ever touches Lantern's own
+   * workspaces — a folder the user cloned themselves is theirs — and an
+   * automatic refresh additionally requires a read-only session and a snapshot
+   * older than half a day, so nobody's working session moves without asking.
+   */
+  ipcMain.handle('git:refresh', async (_e, req: { sessionId: string; auto?: boolean }) => {
+    const cwd = cwdOf(req.sessionId)
+    const status = async (): Promise<GitStatusSummary> => ({
+      ...(await gitService.status(cwd)),
+      managed: isManaged(cwd)
+    })
+    if (!isManaged(cwd)) {
+      return status()
+    }
+    if (req.auto) {
+      const fetchedAt = gitService.fetchedAt(cwd)
+      const due = !fetchedAt || Date.now() - fetchedAt > AUTO_REFRESH_AFTER_MS
+      if (!due || !isReadOnlySession(req.sessionId)) {
+        return status()
+      }
+    }
+    const result = await gitService.refresh(cwd)
+    if (result.moved) {
+      BrowserWindow.getAllWindows()[0]?.webContents.send('git:changed', { sessionId: req.sessionId })
+    }
+    return status()
+  })
+
   ipcMain.handle('git:diffFile', (_e, req: { sessionId: string; path: string }) =>
     gitService.diffFile(cwdOf(req.sessionId), req.path)
   )

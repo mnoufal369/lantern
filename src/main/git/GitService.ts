@@ -1,5 +1,5 @@
 import { shell } from 'electron'
-import { existsSync } from 'node:fs'
+import { existsSync, statSync } from 'node:fs'
 import path from 'node:path'
 import { simpleGit, type SimpleGit } from 'simple-git'
 import type { GitFileChange, GitStatusSummary } from '@shared/types'
@@ -56,6 +56,7 @@ export class GitService {
         branch: status.current ?? undefined,
         ahead: status.ahead,
         behind: status.behind,
+        fetchedAt: this.fetchedAt(cwd),
         files
       }
     } catch {
@@ -107,6 +108,44 @@ export class GitService {
   }
 
   /** Shallow-fetch checkout for Lantern-managed workspaces. */
+  /** When origin was last consulted — git stamps FETCH_HEAD on every fetch. */
+  fetchedAt(cwd: string): number | undefined {
+    try {
+      return statSync(path.join(cwd, '.git', 'FETCH_HEAD')).mtimeMs
+    } catch {
+      return undefined
+    }
+  }
+
+  /**
+   * Brings a managed snapshot up to date with origin. Fast-forward only, and
+   * refused outright when the tree is dirty: a session that has been edited is
+   * not something to move under the user.
+   */
+  async refresh(cwd: string): Promise<{ moved: boolean; reason?: string }> {
+    const git = this.client(cwd)
+    const before = await git.status()
+    if (!before.current) {
+      return { moved: false, reason: 'No branch checked out.' }
+    }
+    if (before.files.length > 0) {
+      return { moved: false, reason: 'There are uncommitted changes here, so the code was left alone.' }
+    }
+    const branch = before.current
+    if (!/^[\w./-]+$/.test(branch)) {
+      return { moved: false, reason: 'Unsupported branch name.' }
+    }
+    const head = await git.revparse(['HEAD'])
+    await git.fetch(['--depth', '1', 'origin', `${branch}:refs/remotes/origin/${branch}`])
+    try {
+      await git.merge(['--ff-only', `origin/${branch}`])
+    } catch {
+      return { moved: false, reason: `${branch} has diverged from origin — switch branches to refetch it.` }
+    }
+    const after = await git.revparse(['HEAD'])
+    return { moved: head.trim() !== after.trim() }
+  }
+
   async checkoutBranch(cwd: string, branch: string): Promise<void> {
     if (!/^[\w./-]+$/.test(branch)) {
       throw new Error('Invalid branch name')
