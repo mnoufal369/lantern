@@ -53,6 +53,7 @@ export class SessionRuntime {
   private waitingPermission = false
   /** Cumulative cost reported by the *current* agent process. */
   private processCost = 0
+  private liveContextTokens = 0
   /** Cost accumulated by earlier processes of this session (from disk). */
   private baseCostUsd = 0
   /** Token totals from earlier processes of this session (from disk). */
@@ -135,9 +136,30 @@ export class SessionRuntime {
     return options
   }
 
+  /**
+   * How full the model's window is *right now* — the tokens sent with the most
+   * recent model call. The turn total is a different number entirely: one turn
+   * can be dozens of calls, so summing them reported many times the window.
+   */
+  private noteContextSize(message: unknown): void {
+    const m = message as { type?: string; message?: { usage?: Record<string, number> } }
+    if (m.type !== 'assistant') {
+      return
+    }
+    const usage = m.message?.usage
+    if (!usage) {
+      return
+    }
+    const sent = (usage.input_tokens ?? 0) + (usage.cache_read_input_tokens ?? 0)
+    if (sent > 0) {
+      this.liveContextTokens = sent
+    }
+  }
+
   private async consume(stream: Query): Promise<void> {
     try {
       for await (const message of stream) {
+        this.noteContextSize(message)
         const events = this.normalizer.reduce(message)
         if (events.length > 0) {
           this.handleEvents(events)
@@ -223,9 +245,9 @@ export class SessionRuntime {
             outputTokens: this.baseUsage.outputTokens + this.processUsage.outputTokens,
             cacheReadTokens: this.baseUsage.cacheReadTokens + this.processUsage.cacheReadTokens,
             turns: this.meta.stats.turns + 1,
-            // What the model held in context this turn — fresh input, cached
-            // history, and its own output.
-            contextTokens: turnUsage.inputTokens + turnUsage.cacheReadTokens + turnUsage.outputTokens,
+            // What the model was actually holding on the last call, not the sum
+            // of every call in the turn.
+            contextTokens: this.liveContextTokens || this.meta.stats.contextTokens,
             contextWindow: event.contextWindow ?? this.meta.stats.contextWindow
           }
           this.setStatus(event.isError ? { kind: 'error', message: event.errorMessage ?? 'turn failed' } : { kind: 'idle' })

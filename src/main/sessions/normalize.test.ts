@@ -158,3 +158,24 @@ describe('Normalizer', () => {
     })
   })
 })
+
+describe('context size', () => {
+  // A turn is many model calls. Summing them reported 3x-22x the window on real
+  // sessions; the live figure is what the newest call was sent.
+  it('is the last call, not the sum of the turn', () => {
+    const calls = [
+      { input_tokens: 1_200, cache_read_input_tokens: 30_000, output_tokens: 400 },
+      { input_tokens: 900, cache_read_input_tokens: 62_000, output_tokens: 700 },
+      { input_tokens: 400, cache_read_input_tokens: 88_000, output_tokens: 250 }
+    ]
+    const live = (u: (typeof calls)[number]): number =>
+      (u.input_tokens ?? 0) + (u.cache_read_input_tokens ?? 0)
+    const summedOverTurn = calls.reduce((n, u) => n + live(u) + u.output_tokens, 0)
+    const lastCall = live(calls[calls.length - 1])
+
+    expect(lastCall).toBe(88_400)
+    expect(summedOverTurn).toBeGreaterThan(180_000)
+    // the old behaviour would have read as more than twice the true figure
+    expect(summedOverTurn / lastCall).toBeGreaterThan(2)
+  })
+})

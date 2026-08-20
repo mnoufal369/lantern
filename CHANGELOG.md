@@ -1,5 +1,16 @@
 # Release notes
 
+## 0.10.2: The context meter told the truth for the first time
+- **The context meter was wrong, often by a lot.** It added up every model call
+  in a turn, and a single turn can be dozens of calls — on real sessions it read
+  3x to 22x the size of the window it was measuring against. It now shows what
+  the newest call actually carried, which is what "how full is the context"
+  means.
+- Cost and token totals were checked against Claude's own transcripts and are
+  sound. One thing worth knowing: a "turn" is your question *and* every model
+  call the agent makes answering it, so a single turn on a long conversation can
+  genuinely cost dollars. The figure beside it explains how it is counted.
+
 ## 0.10.1: The QA pass
 Two QA sweeps over the session machinery after the rewrite, and the findings fixed.
 
