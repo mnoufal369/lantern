@@ -19,7 +19,7 @@ export const FALLBACK_MODELS: ModelInfo[] = [
   { id: 'claude-haiku-4-5', displayName: 'Haiku 4.5' }
 ]
 
-export const DEFAULT_MODEL = 'claude-sonnet-5-5'
+export const DEFAULT_MODEL = 'claude-opus-5-5'
 
 /** Muted, dusty tones — desaturated to sit beside the washed-white brand colour. */
 export const PROFILE_COLORS = [

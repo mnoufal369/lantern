@@ -1,5 +1,13 @@
 # Release notes
 
+## 0.11.3: Opus 5.5 by default, on the latest Claude Code
+- **New sessions and agents start on Opus 5.5.** The built-in agents move over
+  too. Last release changed the default but never reached agents that already
+  existed, so most of them were still on Sonnet 5.
+- Agents where you picked a model yourself keep it, and so do existing
+  sessions.
+- **Claude Code under the hood is now 2.1.292** (Agent SDK 0.3.292, was 2.1.223).
+
 ## 0.11.2: Full auto means full auto
 - **Switching a running session to Full auto did nothing.** The agent kept
   asking for permission while the composer showed the red Full auto badge, and
